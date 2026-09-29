@@ -1,0 +1,20 @@
+{$SITE_DOMAIN} {
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+    }
+    handle /lab-socket {
+        reverse_proxy gateway:3001 {
+            header_up -Authorization
+        }
+    }
+    handle {
+        basic_auth {
+            Ronak {$SITE_PASSWORD_HASH}
+        }
+        reverse_proxy web:3000 {
+            header_up -Authorization
+        }
+    }
+}

@@ -1,0 +1,10 @@
+.git
+node_modules
+.next
+.secrets
+.env*
+**/.env*
+**/node_modules
+**/.next
+coverage
+npm-debug.log*

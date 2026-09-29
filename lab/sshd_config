@@ -1,0 +1,36 @@
+Port 2222
+AddressFamily inet
+ListenAddress 0.0.0.0
+
+HostKey /run/keys/ssh_host_ed25519
+PidFile /run/sshd.pid
+
+AllowUsers Ronak
+AuthorizedKeysFile /etc/ssh/authorized_keys/%u
+StrictModes yes
+
+AuthenticationMethods publickey
+PubkeyAuthentication yes
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitEmptyPasswords no
+PermitRootLogin no
+UsePAM no
+
+PermitTTY yes
+DisableForwarding yes
+PermitTunnel no
+PermitUserRC no
+
+LoginGraceTime 30
+MaxAuthTries 3
+MaxSessions 4
+MaxStartups 4:30:10
+
+ClientAliveInterval 30
+ClientAliveCountMax 3
+
+UseDNS no
+PrintMotd no
+PrintLastLog no
+LogLevel ERROR
