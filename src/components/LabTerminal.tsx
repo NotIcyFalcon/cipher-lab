@@ -233,21 +233,20 @@ export default function LabTerminal({ labId, title }: Props) {
 
   return (
     <div className="live-lab">
-      <div className="panel-heading" style={{ borderBottom: "none", paddingBottom: 0 }}>
-        <span className="icon-label">
+      <div className="panel-heading" style={{ borderBottom: "none", alignItems: "center" }}>
+        <span className="icon-label" style={{ fontSize: "14px" }}>
           <TerminalIcon size={18} aria-hidden="true" />
           {title}
         </span>
         
         {busy ? (
-          <button type="button" className="secondary-button" style={{ padding: "4px 10px", fontSize: "11px", height: "auto" }} onClick={disconnect}>
+          <button type="button" className="secondary-button" onClick={disconnect}>
             Disconnect
           </button>
         ) : (
           <button
             type="button"
             className="primary-button"
-            style={{ padding: "4px 10px", fontSize: "11px", height: "auto" }}
             onClick={connect}
             disabled={!accessCode}
           >

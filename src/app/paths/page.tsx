@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Terminal } from "lucide-react";
 import WorkspaceShell from "@/components/WorkspaceShell";
 import { paths, pathHref } from "@/content/paths";
 
@@ -10,6 +10,12 @@ export default function PathsPage() {
         <div>
           <h1>Learning paths</h1>
           <p>Pick a topic. Start small. Build your skills.</p>
+        </div>
+        <div className="hero-art" aria-hidden="true">
+          <div className="orbit orbit-one" />
+          <div className="orbit orbit-two" />
+          <div className="hero-terminal"><Terminal size={46} /></div>
+          <span className="orbit-dot" />
         </div>
       </section>
 

@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Award } from "lucide-react";
+import { ArrowUpRight, Award, Terminal } from "lucide-react";
 import WorkspaceShell from "@/components/WorkspaceShell";
 import { lessons } from "@/content/lessons";
 import { paths, pathHref } from "@/content/paths";
@@ -65,6 +65,12 @@ export default function DashboardPage() {
         <div>
           <h1>Welcome back, Ronak.</h1>
           <p>A box made to learn Cyber Sec.</p>
+        </div>
+        <div className="hero-art" aria-hidden="true">
+          <div className="orbit orbit-one" />
+          <div className="orbit orbit-two" />
+          <div className="hero-terminal"><Terminal size={46} /></div>
+          <span className="orbit-dot" />
         </div>
       </section>
 

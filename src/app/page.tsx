@@ -100,6 +100,7 @@ function Quiz({
 function LabBlock({ block }: { block: Extract<ContentBlock, { type: "lab" }> }) {
   const [completed, setCompleted] = useState(false);
   const [flagInput, setFlagInput] = useState("");
+  const [error, setError] = useState(false);
 
   const correctFlag = "cyberbox-flag"; // You can replace this with hashed checks later
 
@@ -107,8 +108,9 @@ function LabBlock({ block }: { block: Extract<ContentBlock, { type: "lab" }> }) 
     e.preventDefault();
     if (flagInput.trim().toLowerCase() === correctFlag) {
       setCompleted(true);
+      setError(false);
     } else {
-      alert("Incorrect code. Try again!");
+      setError(true);
     }
   }
 
@@ -119,7 +121,7 @@ function LabBlock({ block }: { block: Extract<ContentBlock, { type: "lab" }> }) 
           <Check size={20} color="#b8f777" />
           <strong style={{ color: "#b8f777" }}>Practice Completed</strong>
         </div>
-        <button className="secondary-button" onClick={() => setCompleted(false)} style={{ fontSize: "12px", padding: "4px 10px", height: "auto" }}>
+        <button className="secondary-button" onClick={() => { setCompleted(false); setFlagInput(""); }} style={{ fontSize: "12px", padding: "4px 10px", height: "auto" }}>
           Reattempt
         </button>
       </section>
@@ -134,15 +136,18 @@ function LabBlock({ block }: { block: Extract<ContentBlock, { type: "lab" }> }) 
         <span className="eyebrow">YOUR MISSION</span>
         <p>{block.objective}</p>
         
-        <form onSubmit={submitFlag} style={{ display: "flex", gap: "10px", marginTop: "16px", marginBottom: "16px" }}>
-          <input 
-            type="text" 
-            value={flagInput}
-            onChange={(e) => setFlagInput(e.target.value)}
-            placeholder="Enter completion code..."
-            style={{ flex: 1, padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border)", background: "#090f13", color: "var(--text)" }}
-          />
-          <button type="submit" className="primary-button" style={{ height: "auto", padding: "8px 16px" }}>Submit</button>
+        <form onSubmit={submitFlag} style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "16px", marginBottom: "16px" }}>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <input 
+              type="text" 
+              value={flagInput}
+              onChange={(e) => { setFlagInput(e.target.value); setError(false); }}
+              placeholder="Enter completion code..."
+              style={{ flex: 1, padding: "8px 12px", borderRadius: "6px", border: error ? "1px solid #ff8b8b" : "1px solid var(--border)", background: "#090f13", color: "var(--text)", outline: "none" }}
+            />
+            <button type="submit" className="primary-button" style={{ height: "auto", padding: "8px 16px" }}>Submit</button>
+          </div>
+          {error && <span style={{ color: "#ff8b8b", fontSize: "12px", marginLeft: "4px" }}>Incorrect answer</span>}
         </form>
 
         <details>
