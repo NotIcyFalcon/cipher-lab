@@ -30,7 +30,7 @@ export default function HomeworkQuestionCard({
     startTransition(async () => {
       try {
         await work();
-      } catch (err) {
+      } catch {
         setError("The request could not finish. Please try again.");
       }
     });

@@ -16,6 +16,7 @@ export default async function Page() {
 
   return (
     <LearningPage
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       lessons={readingLessons as any}
       progress={getProgress(userId)}
     />

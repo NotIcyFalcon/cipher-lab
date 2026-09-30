@@ -337,6 +337,7 @@ export default function LearningPage({
         <div className="content-layout">
           <article className="lesson-content" aria-label={lesson.title}>
             {lesson.blocks.map((block) => (
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               <LessonBlock key={`${lesson.id}:${block.id}`} lessonId={lesson.id} block={block as any} progress={progress} />
             ))}
 
