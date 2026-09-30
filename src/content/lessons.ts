@@ -1,3 +1,30 @@
+export type HomeworkTestCase = {
+  id: string;
+  title: string;
+} & (
+  | {
+      // Compare against the uploaded script's stdout.
+      expectedOutput: string;
+      evaluationCommand?: never;
+    }
+  | {
+      // Run after the uploaded script.
+      // Without expectedOutput, exit code 0 means pass.
+      evaluationCommand: string;
+      expectedOutput?: string;
+    }
+);
+
+export type HomeworkContentBlock = {
+  id: string;
+  type: "homework";
+  homeworkId: string;
+  title: string;
+  objective: string;
+  totalPoints: number;
+  testCases: [HomeworkTestCase, ...HomeworkTestCase[]];
+};
+
 export type ContentBlock =
   | {
       id: string;
@@ -27,7 +54,8 @@ export type ContentBlock =
       options: string[];
       answer: number;
       explanation: string;
-    };
+    }
+  | HomeworkContentBlock;
 
 export type Lesson = {
   id: string;
@@ -96,6 +124,35 @@ export const lessons: [Lesson, ...Lesson[]] = [
         answer: 1,
         explanation:
           "pwd means print working directory. It shows the directory your shell is currently working in.",
+      },
+      {
+        id: "bash-homework",
+        type: "homework",
+        homeworkId: "bash-files-v1",
+        title: "Homework · Prepare an application log",
+        objective:
+          "Upload a Bash script that prints Ready, creates logs/events.log " +
+          "in the working directory, and writes a line containing " +
+          "ERROR access denied into that file. Your working directory is /work.",
+        totalPoints: 30,
+        testCases: [
+          {
+            id: "ready-output",
+            title: "Prints the readiness message",
+            expectedOutput: "Ready",
+          },
+          {
+            id: "log-created",
+            title: "Creates the application log",
+            evaluationCommand: "test -f /work/logs/events.log",
+          },
+          {
+            id: "error-recorded",
+            title: "Records the expected error",
+            evaluationCommand: "grep '^ERROR' /work/logs/events.log",
+            expectedOutput: "ERROR access denied",
+          },
+        ],
       },
     ],
   },

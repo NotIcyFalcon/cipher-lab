@@ -13,6 +13,12 @@ import {
 } from "lucide-react";
 import { lessons, type ContentBlock } from "@/content/lessons";
 import LabTerminal from "@/components/LabTerminal";
+import HomeworkBlock from "@/components/HomeworkBlock";
+import {
+  readHomeworkXp,
+  readServerHomeworkXp,
+  subscribeToHomeworkProgress,
+} from "@/lib/homework-progress";
 
 const PROGRESS_KEY = "cipher-lab:reading-progress:v1";
 const PROGRESS_EVENT = "cipher-lab:progress";
@@ -196,6 +202,8 @@ function LessonBlock({ block }: { block: ContentBlock }) {
 
     case "lab":
       return <LabBlock block={block} />;
+    case "homework":
+      return <HomeworkBlock block={block} />;
 
     case "quiz":
       return <Quiz block={block} />;

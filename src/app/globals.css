@@ -514,3 +514,89 @@ details p { overflow-wrap: anywhere; }
   .next-step, .path-card { padding: 22px; }
 }
 .terminal-screen .xterm-viewport { overflow-x: hidden !important; }
+.homework-form {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.homework-form label {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.homework-form input[type="file"] {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+}
+
+.homework-form input::file-selector-button {
+  margin-right: 12px;
+  padding: 7px 10px;
+  border: 1px solid #334b3a;
+  border-radius: 6px;
+  background: #18231e;
+  color: #c1d8c7;
+  cursor: pointer;
+}
+
+.homework-form small { color: var(--muted); }
+.homework-form .primary-button { justify-self: start; }
+
+.homework-card .homework-best strong,
+.homework-card .homework-summary strong {
+  color: var(--green);
+}
+
+.homework-card .homework-error { color: #ff8b8b; }
+
+.homework-results {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.homework-test {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0c131a;
+}
+
+.homework-test[data-passed="true"] { border-color: #344738; }
+
+.homework-test-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.homework-test-heading > span { flex: 1; }
+.homework-test-heading small { white-space: nowrap; }
+
+.homework-test[data-passed="true"] svg { color: var(--green); }
+.homework-test[data-passed="false"] svg { color: #ff8b8b; }
+
+.homework-test details,
+.homework-diagnostics {
+  margin-top: 12px;
+}
+
+.homework-card pre {
+  max-height: 220px;
+  margin-top: 10px;
+  padding: 12px;
+  overflow: auto;
+  font-size: 12px;
+}

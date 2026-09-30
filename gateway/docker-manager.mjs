@@ -2,6 +2,7 @@
 // Uses the Docker Engine API over the Unix socket to start/stop
 // containers that were defined in compose.yaml with profiles.
 
+import { startHomeworkGrader } from "./homework-grader.mjs";
 import http from "node:http";
 import {
   dockerSocketPath,
@@ -14,35 +15,88 @@ import {
 const runningLabs = new Map();
 
 // Make a request to the Docker Engine API via Unix socket
-function dockerAPI(method, path, body = null) {
+function dockerAPI(method, path, body = null, options = {}) {
+  const {
+    raw = false,
+    timeoutMs = 30_000,
+    maxBytes = 2 * 1024 * 1024,
+  } = options;
+
   return new Promise((resolve, reject) => {
-    const options = {
-      socketPath: dockerSocketPath,
-      path: `/v1.44${path}`,
-      method,
-      headers: { "Content-Type": "application/json" },
-    };
+    let timer;
 
-    const req = http.request(options, (res) => {
-      const chunks = [];
-      res.on("data", (chunk) => chunks.push(chunk));
-      res.on("end", () => {
-        const raw = Buffer.concat(chunks).toString();
-        try {
-          resolve({ status: res.statusCode, data: raw ? JSON.parse(raw) : null });
-        } catch {
-          resolve({ status: res.statusCode, data: raw });
-        }
-      });
-    });
+    function fail(error) {
+      clearTimeout(timer);
+      reject(error);
+    }
 
-    req.on("error", reject);
-    req.setTimeout(30_000, () => {
-      req.destroy(new Error("Docker API timeout"));
-    });
+    const req = http.request(
+      {
+        socketPath: dockerSocketPath,
+        path: `/v${process.env.DOCKER_API_VERSION ?? "1.44"}${path}`,
+        method,
+        headers: { "Content-Type": "application/json" },
+      },
+      (res) => {
+        const chunks = [];
+        let bytes = 0;
 
-    if (body) req.write(JSON.stringify(body));
-    req.end();
+        res.on("error", fail);
+        res.on("aborted", () => {
+          fail(new Error("Docker response was interrupted."));
+        });
+
+        res.on("data", (chunk) => {
+          bytes += chunk.length;
+
+          if (bytes > maxBytes) {
+            const error = Object.assign(
+              new Error("Docker response exceeded its output limit."),
+              { code: "DOCKER_OUTPUT_LIMIT" },
+            );
+
+            fail(error);
+            req.destroy();
+            return;
+          }
+
+          chunks.push(chunk);
+        });
+
+        res.on("end", () => {
+          clearTimeout(timer);
+
+          const buffer = Buffer.concat(chunks);
+          let data = raw ? buffer : null;
+
+          if (!raw && buffer.length) {
+            const text = buffer.toString("utf8");
+
+            try {
+              data = JSON.parse(text);
+            } catch {
+              data = text;
+            }
+          }
+
+          resolve({ status: res.statusCode, data });
+        });
+      },
+    );
+
+    req.on("error", fail);
+
+    timer = setTimeout(() => {
+      const error = Object.assign(
+        new Error("Docker request exceeded its deadline."),
+        { code: "DOCKER_TIMEOUT" },
+      );
+
+      fail(error);
+      req.destroy();
+    }, timeoutMs);
+
+    req.end(body === null ? undefined : JSON.stringify(body));
   });
 }
 
@@ -239,3 +293,5 @@ export function touchLab(labId) {
   const info = runningLabs.get(labId);
   if (info) info.lastUsed = Date.now();
 }
+
+startHomeworkGrader(dockerAPI, composeProject);
