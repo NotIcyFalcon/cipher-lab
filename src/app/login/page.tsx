@@ -55,7 +55,7 @@ export default async function LoginPage({
         </div>
 
         <h1 id="login-title">Welcome back, Ronak.</h1>
-        <p>A box made specially for you to learn Cyber Sec.</p>
+        <p>A box made to learn Cyber Sec.</p>
 
         <form action={login} className="login-form">
           <label className="terminal-code">
