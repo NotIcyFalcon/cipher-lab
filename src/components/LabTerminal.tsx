@@ -2,35 +2,20 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Terminal as TerminalIcon } from "lucide-react";
+import { getLabAccessCode } from "@/app/actions";
 
 type Props = { labId: string; title: string };
 
 export default function LabTerminal({ labId, title }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   
-  // Track the authorized code from the magic link
-  const [authorizedCode, setAuthorizedCode] = useState<string | null>(null);
+  const [accessCode, setAccessCode] = useState<string | undefined>();
   const [request, setRequest] = useState<{ code: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("Your practice space is ready.");
 
-  // Magic Link Listener
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const codeFromUrl = params.get("code");
-
-    if (codeFromUrl) {
-      window.localStorage.setItem("lab_access_code", codeFromUrl);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setAuthorizedCode(codeFromUrl);
-      // Clean up the URL so it looks nice and the code is hidden
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else {
-      const savedCode = window.localStorage.getItem("lab_access_code");
-      if (savedCode) {
-        setAuthorizedCode(savedCode);
-      }
-    }
+    getLabAccessCode().then(setAccessCode);
   }, []);
 
   useEffect(() => {
@@ -231,13 +216,13 @@ export default function LabTerminal({ labId, title }: Props) {
 
   function connect(event: FormEvent<HTMLFormElement> | React.MouseEvent) {
     if (event && "preventDefault" in event) event.preventDefault();
-    if (!authorizedCode) {
-      setStatus("No access code found. Please use the magic link provided.");
+    if (!accessCode) {
+      setStatus("No access code found in environment variables.");
       return;
     }
     setBusy(true);
     setStatus("Opening your practice space...");
-    setRequest({ code: authorizedCode.trim() });
+    setRequest({ code: accessCode.trim() });
   }
 
   function disconnect() {
@@ -257,16 +242,7 @@ export default function LabTerminal({ labId, title }: Props) {
       </div>
 
       <div className="terminal-controls">
-        <div className="terminal-code" style={{ padding: "11px 0" }}>
-          <span>Lab Access Status</span>
-          <div style={{ color: "var(--text)", fontSize: "13px" }}>
-            {authorizedCode ? (
-              <span style={{ color: "#b8f777" }}>✓ Authorized via Magic Link</span>
-            ) : (
-              <span style={{ color: "#ff8b8b" }}>Waiting for Magic Link authorization...</span>
-            )}
-          </div>
-        </div>
+
 
         {busy ? (
           <button type="button" className="secondary-button" onClick={disconnect}>
@@ -277,7 +253,7 @@ export default function LabTerminal({ labId, title }: Props) {
             type="button"
             className="primary-button"
             onClick={connect}
-            disabled={!authorizedCode}
+            disabled={!accessCode}
           >
             Connect to lab
           </button>

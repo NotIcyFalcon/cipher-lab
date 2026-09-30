@@ -22,6 +22,7 @@ services:
     environment:
       SESSION_SECRET: "${SESSION_SECRET:?Set SESSION_SECRET in .env}"
       RONAK_PASSWORD_HASH: "${RONAK_PASSWORD_HASH:?Set RONAK_PASSWORD_HASH in .env}"
+      NEXT_PUBLIC_LAB_ACCESS_CODE: "${NEXT_PUBLIC_LAB_ACCESS_CODE:?Set NEXT_PUBLIC_LAB_ACCESS_CODE in .env}"
     networks:
       - edge
   gateway:
