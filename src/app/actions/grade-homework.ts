@@ -1,89 +1,170 @@
 "use server";
 
-import { Buffer } from "node:buffer";
-import {
-  lessons,
-  type HomeworkContentBlock,
-} from "@/content/lessons";
-import type { HomeworkGradeResponse } from "@/lib/homework-types";
+import { z } from "zod";
+import { getDb } from "@/server/db";
+import { requireRonakId } from "@/server/current-user";
+import { findHomework } from "@/server/homework-catalog";
+import { runGrader } from "@/server/run-grader";
+import { getHistory, getSubmission } from "@/server/progress";
+import { refreshProgress } from "@/server/refresh-progress";
+import type {
+  HistoryPage,
+  Submission,
+} from "@/lib/progress-types";
 
-export async function gradeHomeworkScript(
-  scriptContent: string,
-  homeworkId: string,
-): Promise<HomeworkGradeResponse> {
-  // AUTH INTEGRATION:
-  // Run your existing server-side session/authorization check here.
-  // Authorize the current user before contacting the gateway.
+type GradeReply =
+  | { ok: true; submission: Submission }
+  | { ok: false; error: string };
+
+export async function gradeHomework(
+  formData: FormData,
+): Promise<GradeReply> {
+  const userId = await requireRonakId();
+
+  const homeworkId = formData.get("homeworkId");
+  const file = formData.get("file");
+
+  if (typeof homeworkId !== "string") {
+    return { ok: false, error: "Select a homework question." };
+  }
+
+  const question = findHomework(homeworkId);
+
+  if (!question) {
+    return { ok: false, error: "Unknown homework question." };
+  }
 
   if (
-    typeof scriptContent !== "string" ||
-    typeof homeworkId !== "string" ||
-    homeworkId.length > 120 ||
-    Buffer.byteLength(scriptContent, "utf8") > 32 * 1024
+    !(file instanceof File) ||
+    !file.name.toLowerCase().endsWith(".sh") ||
+    file.name.length > 180 ||
+    file.size === 0 ||
+    file.size > 64 * 1024
   ) {
-    return { ok: false, error: "Invalid submission or script exceeds 32 KiB." };
-  }
-
-  const normalizedScript = scriptContent
-    .replace(/^\uFEFF/, "")
-    .replace(/\r\n/g, "\n");
-
-  if (!normalizedScript.trim() || normalizedScript.includes("\0")) {
-    return { ok: false, error: "Upload a nonempty UTF-8 Bash script." };
-  }
-
-  const matches = lessons
-    .flatMap((lesson) => lesson.blocks)
-    .filter(
-      (block): block is HomeworkContentBlock =>
-        block.type === "homework" && block.homeworkId === homeworkId,
-    );
-
-  if (matches.length !== 1) {
-    return { ok: false, error: "This homework assignment is unavailable." };
-  }
-
-  const homework = matches[0];
-  const token = process.env.GRADER_INTERNAL_TOKEN;
-  const endpoint = process.env.GRADER_INTERNAL_URL;
-
-  if (!token || !endpoint) {
-    return { ok: false, error: "The homework grader is not configured." };
-  }
-
-  try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        scriptContent: normalizedScript,
-        homeworkId: homework.homeworkId,
-        totalPoints: homework.totalPoints,
-        testCases: homework.testCases,
-      }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(35_000),
-    });
-
-    const result = (await response.json()) as HomeworkGradeResponse;
-
-    if (!response.ok || !result.ok) {
-      return {
-        ok: false,
-        error: !result.ok
-          ? result.error
-          : "The grader could not complete this submission.",
-      };
-    }
-
-    return result;
-  } catch {
     return {
       ok: false,
-      error: "The grader is unavailable or timed out. Please try again.",
+      error: "Upload a nonempty .sh file no larger than 64 KB.",
     };
   }
+
+  let code: string;
+
+  try {
+    code = new TextDecoder("utf-8", { fatal: true }).decode(
+      await file.arrayBuffer(),
+    );
+  } catch {
+    return { ok: false, error: "The script must contain valid UTF-8 text." };
+  }
+
+  if (code.includes("\0")) {
+    return { ok: false, error: "The script contains invalid text." };
+  }
+
+  const db = getDb();
+
+  const inserted = db.prepare(`
+    INSERT INTO homework_submissions (
+      user_id,
+      homework_id,
+      filename,
+      code,
+      total_points,
+      total_tests,
+      created_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    userId,
+    question.homeworkId,
+    file.name,
+    code,
+    question.totalPoints,
+    question.testCases.length,
+    Date.now(),
+  );
+
+  const submissionId = Number(inserted.lastInsertRowid);
+
+  let grade: Awaited<ReturnType<typeof runGrader>> | undefined;
+
+  try {
+    grade = await runGrader(question, code);
+  } catch (error) {
+    console.error("Homework grading failed:", error);
+
+    db.prepare(`
+      UPDATE homework_submissions
+      SET status = 'error',
+          error = ?,
+          finished_at = ?
+      WHERE id = ? AND user_id = ?
+    `).run(
+      "Grading could not finish. Your script was saved; please submit again.",
+      Date.now(),
+      submissionId,
+      userId,
+    );
+  }
+
+  if (grade) {
+    db.prepare(`
+      UPDATE homework_submissions
+      SET status = 'graded',
+          passed_tests = ?,
+          awarded_xp = ?,
+          results_json = ?,
+          finished_at = ?,
+          error = NULL
+      WHERE id = ? AND user_id = ?
+    `).run(
+      grade.passedTests,
+      grade.awardedXp,
+      JSON.stringify(grade.results),
+      Date.now(),
+      submissionId,
+      userId,
+    );
+  }
+
+  refreshProgress();
+
+  const submission = getSubmission(userId, submissionId);
+  if (!submission) throw new Error("Saved submission could not be read");
+
+  return { ok: true, submission };
+}
+
+export async function listHomeworkSubmissions(
+  homeworkId: string,
+  beforeId?: number,
+): Promise<HistoryPage> {
+  const userId = await requireRonakId();
+  const id = z.string().min(1).max(200).parse(homeworkId);
+  const cursor = z.number()
+    .int()
+    .positive()
+    .max(Number.MAX_SAFE_INTEGER)
+    .optional()
+    .parse(beforeId);
+
+  return getHistory(userId, id, cursor);
+}
+
+export async function readHomeworkSubmission(
+  submissionId: number,
+): Promise<Submission> {
+  const userId = await requireRonakId();
+  const id = z.number()
+    .int()
+    .positive()
+    .max(Number.MAX_SAFE_INTEGER)
+    .parse(submissionId);
+
+  const submission = getSubmission(userId, id);
+  if (!submission) {
+    throw new Error("Submission not found");
+  }
+
+  return submission;
 }

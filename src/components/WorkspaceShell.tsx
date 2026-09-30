@@ -5,6 +5,7 @@ import { BookOpen, Box, LayoutDashboard } from "lucide-react";
 const navigation = [
   { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { href: "/paths", label: "Learning paths", Icon: BookOpen },
+  { href: "/homework", label: "Homework", Icon: Box },
 ];
 
 export default function WorkspaceShell({

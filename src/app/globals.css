@@ -600,3 +600,162 @@ details p { overflow-wrap: anywhere; }
   overflow: auto;
   font-size: 12px;
 }
+
+.homework-path-card,
+.homework-question {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.homework-list {
+  display: grid;
+  gap: 16px;
+}
+
+.homework-question {
+  padding-top: 0;
+  overflow: hidden;
+}
+
+.homework-question-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 24px;
+  color: var(--text);
+}
+
+.homework-question-heading strong {
+  display: block;
+  font-size: 15px;
+}
+
+.homework-question-heading small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.homework-best {
+  color: var(--green);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.homework-question[open] > summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.homework-question-body {
+  padding: 24px;
+}
+
+.homework-objective {
+  white-space: pre-line;
+}
+
+.homework-upload {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.homework-upload label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.homework-upload input {
+  width: 100%;
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.homework-upload small {
+  color: var(--muted);
+}
+
+.homework-upload button {
+  justify-self: start;
+}
+
+.homework-error,
+.test-fail {
+  color: #ff8b8b;
+}
+
+.homework-error:empty {
+  display: none;
+}
+
+.test-pass {
+  color: var(--green);
+}
+
+.submission-list,
+.homework-results {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  margin: 18px 0;
+  list-style: none;
+}
+
+.submission-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  text-align: left;
+}
+
+.submission-row[aria-pressed="true"] {
+  border-color: var(--green);
+}
+
+.submission-row small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.submission-detail {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.submission-detail pre {
+  margin-top: 12px;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.homework-results p {
+  margin: 14px 0 4px;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .homework-question-heading,
+  .submission-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .homework-question-body {
+    padding: 18px;
+  }
+}

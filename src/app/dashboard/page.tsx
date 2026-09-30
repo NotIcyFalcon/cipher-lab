@@ -1,49 +1,21 @@
-"use client";
-
-import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Award, Terminal } from "lucide-react";
 import WorkspaceShell from "@/components/WorkspaceShell";
 import { lessons } from "@/content/lessons";
 import { paths, pathHref } from "@/content/paths";
+import { requireRonakId } from "@/server/current-user";
+import { getProgress } from "@/server/progress";
 
-const PROGRESS_KEY = "cipher-lab:reading-progress:v1";
-const PROGRESS_EVENT = "cipher-lab:progress";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-function subscribe(callback: () => void) {
-  window.addEventListener("storage", callback);
-  window.addEventListener(PROGRESS_EVENT, callback);
+export default async function DashboardPage() {
+  const userId = await requireRonakId();
+  const progress = getProgress(userId);
 
-  return () => {
-    window.removeEventListener("storage", callback);
-    window.removeEventListener(PROGRESS_EVENT, callback);
-  };
-}
-
-function readProgress() {
-  try {
-    return window.localStorage.getItem(PROGRESS_KEY) ?? "[]";
-  } catch {
-    return "[]";
-  }
-}
-
-function completedLessons(value: string) {
-  try {
-    const ids: unknown = JSON.parse(value);
-    return Array.isArray(ids)
-      ? lessons.filter((lesson) => ids.includes(lesson.id))
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-export default function DashboardPage() {
-  const saved = useSyncExternalStore(subscribe, readProgress, () => "[]");
-  const read = completedLessons(saved);
-  const completed = new Set(read.map((lesson) => lesson.id));
-  const xp = read.reduce((total, lesson) => total + lesson.xp, 0);
+  const completed = new Set(progress.readingIds);
+  const xp = progress.totalXp;
+  const readCount = progress.readingIds.length;
 
   const certificates = paths.filter(
     (path) =>
@@ -86,8 +58,8 @@ export default function DashboardPage() {
       </dl>
 
       <p className="overview-info">
-        {read.length} of {lessons.length} lessons read.
-        {" "}Progress is saved in this browser.
+        {readCount} of {lessons.length} lessons read.
+        {" "}Progress is saved to your account.
       </p>
 
       <section className="completion-card next-step" aria-labelledby="next-title">
@@ -120,7 +92,7 @@ export default function DashboardPage() {
                   <Award size={23} aria-hidden="true" />
                   <span>
                     <strong>{path.title}</strong>
-                    <small>Reading completed · Ronak</small>
+                    <small>Reading completed • Ronak</small>
                   </span>
                 </Link>
               </li>

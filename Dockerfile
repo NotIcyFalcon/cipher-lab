@@ -25,10 +25,14 @@ ENV PORT=3000
 COPY --from=web-build --chown=node:node /app/.next/standalone ./
 COPY --from=web-build --chown=node:node /app/.next/static ./.next/static
 COPY --from=web-build --chown=node:node /app/public ./public
+COPY --from=web-build --chown=node:node /app/scripts ./scripts
+COPY --from=web-build --chown=node:node /app/migrations ./migrations
+
+RUN mkdir -p /app/data && chown node:node /app/data
 
 USER node
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "node scripts/migrate-db.mjs --recover && exec node server.js"]
 
 FROM node:24-bookworm-slim AS gateway
 WORKDIR /app

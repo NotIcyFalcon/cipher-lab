@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  createdAt DateTime @default(now())
+
+  readingProgress ReadingProgress[]
+  homeworks       HomeworkSubmission[]
+}
+
+model ReadingProgress {
+  id        String   @id @default(uuid())
+  userId    String
+  lessonId  String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+}
+
+model HomeworkSubmission {
+  id             String   @id @default(uuid())
+  userId         String
+  homeworkId     String
+  scriptContent  String
+  score          Int
+  totalPoints    Int
+  passedTests    Int
+  totalTests     Int
+  resultsJson    String   // Stores the array of test results
+  scriptExitCode Int
+  scriptStderr   String
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
