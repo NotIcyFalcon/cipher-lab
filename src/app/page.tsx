@@ -8,7 +8,6 @@ import {
   Check,
   ChevronRight,
   FlaskConical,
-  Sparkles,
   Terminal,
   Trophy,
 } from "lucide-react";
@@ -98,7 +97,7 @@ function Quiz({
   );
 }
 
-function LabBlock({ block }: { block: any }) {
+function LabBlock({ block }: { block: ContentBlock }) {
   const [completed, setCompleted] = useState(false);
   const [flagInput, setFlagInput] = useState("");
 
@@ -155,7 +154,7 @@ function LabBlock({ block }: { block: any }) {
   );
 }
 
-function LessonBlock({ block }: { block: any }) {
+function LessonBlock({ block }: { block: ContentBlock }) {
   switch (block.type) {
     case "note":
       return (
