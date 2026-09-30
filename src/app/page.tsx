@@ -9,6 +9,8 @@ import {
   ChevronRight,
   FlaskConical,
   Terminal,
+  Box,
+  LayoutDashboard,
   Trophy,
 } from "lucide-react";
 import { lessons, type ContentBlock } from "@/content/lessons";

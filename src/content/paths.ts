@@ -18,5 +18,6 @@ export const paths = [...new Set(lessons.map((lesson) => lesson.category))]
   });
 
 export function pathHref(id: string) {
-  return `/paths/${encodeURIComponent(id)}`;
+  // For now, all paths go to the main learning environment
+  return `/`;
 }
