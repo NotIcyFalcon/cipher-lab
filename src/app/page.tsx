@@ -97,7 +97,7 @@ function Quiz({
   );
 }
 
-function LabBlock({ block }: { block: ContentBlock }) {
+function LabBlock({ block }: { block: Extract<ContentBlock, { type: "lab" }> }) {
   const [completed, setCompleted] = useState(false);
   const [flagInput, setFlagInput] = useState("");
 
