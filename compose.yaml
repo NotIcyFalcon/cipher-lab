@@ -108,6 +108,9 @@ services:
   proxy:
     <<: *runtime
     image: caddy:2-alpine
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     read_only: true
     mem_limit: 256m
     pids_limit: 128
