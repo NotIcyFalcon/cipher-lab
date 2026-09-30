@@ -19,6 +19,9 @@ services:
       target: web
     mem_limit: 512m
     pids_limit: 128
+    environment:
+      SESSION_SECRET: "${SESSION_SECRET:?Set SESSION_SECRET in .env}"
+      RONAK_PASSWORD_HASH: "${RONAK_PASSWORD_HASH:?Set RONAK_PASSWORD_HASH in .env}"
     networks:
       - edge
   gateway:
@@ -121,7 +124,6 @@ services:
       - "443:443"
     environment:
       SITE_DOMAIN: "${SITE_DOMAIN:?Set SITE_DOMAIN in .env}"
-      SITE_PASSWORD_HASH: "${SITE_PASSWORD_HASH:?Set SITE_PASSWORD_HASH in .env}"
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
