@@ -60,7 +60,7 @@ export async function completeLab(
     INSERT INTO lab_completions (user_id, challenge_id, xp)
     VALUES (?, ?, ?)
     ON CONFLICT (user_id, challenge_id) DO NOTHING
-  `).run(userId, challengeId, block.xp);
+  `).run(userId, challengeId, 50);
 
   refreshProgress();
 

@@ -91,7 +91,7 @@ export async function runGrader(
   const results: TestResult[] = grade.results.map((r, index) => ({
     ...r,
     name: r.name || `Test ${index + 1}`,
-    expectedOutput: question.testCases[index].expectedOutput,
+    expectedOutput: question.testCases[index].expectedOutput ?? "",
   }));
 
   return {
