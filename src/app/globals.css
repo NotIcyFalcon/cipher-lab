@@ -513,3 +513,4 @@ details p { overflow-wrap: anywhere; }
   .workspace-shell .hero { padding: 32px 0 28px; }
   .next-step, .path-card { padding: 22px; }
 }
+.terminal-screen .xterm-viewport { overflow-x: hidden !important; }

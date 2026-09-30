@@ -261,17 +261,20 @@ export default function LabTerminal({ labId, title }: Props) {
           className="terminal-screen"
           aria-label={`${title} interactive terminal`}
         />
-        {!request && (
+        {!request ? (
           <p className="terminal-empty">
             A little curiosity. A few commands. <br />
             Connect whenever you are ready.
           </p>
+        ) : (
+          /* Show status overlay only when not connected/ready */
+          !status.includes("Connected.") && (
+            <p className="terminal-empty" style={{ zIndex: 10, background: "#090f13", pointerEvents: "none", color: "#b9b0ce" }}>
+              {status === "Opening your practice space..." ? "Starting the machine ..." : status}
+            </p>
+          )
         )}
       </div>
-
-      <p className="terminal-status" role="status">
-        {status}
-      </p>
     </div>
   );
 }
