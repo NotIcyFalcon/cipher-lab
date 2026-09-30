@@ -18,7 +18,7 @@ function dockerAPI(method, path, body = null) {
   return new Promise((resolve, reject) => {
     const options = {
       socketPath: dockerSocketPath,
-      path: `/v1.43${path}`,
+      path: `/v1.44${path}`,
       method,
       headers: { "Content-Type": "application/json" },
     };
