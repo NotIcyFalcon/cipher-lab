@@ -84,6 +84,9 @@ services:
     read_only: true
     mem_limit: 256m
     pids_limit: 128
+    # Allow the node user to access the Docker socket (GID 109 = docker group on host)
+    group_add:
+      - "109"
     tmpfs:
       - /tmp:size=16m,mode=1777,nosuid,nodev
     environment:
