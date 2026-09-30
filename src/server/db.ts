@@ -18,6 +18,20 @@ export function getDb() {
     db.pragma("journal_mode = WAL");
     db.pragma("foreign_keys = ON");
 
+    // Cache statements to prevent V8 Garbage Collector from destroying them
+    // and causing the RemoveEnvironmentCleanupHook assertion crash in Next.js
+    const statementCache = new Map<string, Database.Statement>();
+    const originalPrepare = db.prepare.bind(db);
+    // @ts-expect-error Monkeypatch prepare to avoid GC crashes in Next.js
+    db.prepare = (sql: string) => {
+      let stmt = statementCache.get(sql);
+      if (!stmt) {
+        stmt = originalPrepare(sql);
+        statementCache.set(sql, stmt);
+      }
+      return stmt;
+    };
+
     globalForDb.cyberboxDb = db;
   }
 

@@ -228,41 +228,39 @@ export default function HomeworkQuestionCard({
 
             <ul className="homework-results">
               {selected.results.map((result, index) => (
-                <li key={index}>
-                  <details>
-                    <summary>
-                      <span
-                        className={
-                          result.passed ? "test-pass" : "test-fail"
-                        }
-                      >
+                <li key={index} className="submission-row" style={{ display: "block", background: result.passed ? "rgba(184, 247, 119, 0.05)" : "rgba(255, 139, 139, 0.05)" }}>
+                  <details style={{ width: "100%" }}>
+                    <summary style={{ display: "flex", gap: "10px", alignItems: "center", cursor: "pointer", fontWeight: 600 }}>
+                      <span className={result.passed ? "test-pass" : "test-fail"}>
                         {result.passed ? "PASS" : "FAIL"}
                       </span>
-                      {" · "}
-                      {result.name}
+                      <span>{" · "} {result.name}</span>
                     </summary>
 
-                    <p>Expected output</p>
-                    <pre>
-                      <code>{result.expectedOutput || "(empty)"}</code>
-                    </pre>
+                    <div style={{ marginTop: "16px" }}>
+                      <p style={{ color: "var(--muted)", textTransform: "uppercase", fontSize: "11px", letterSpacing: "1px" }}>Expected output</p>
+                      <pre style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "6px", padding: "10px", marginTop: "6px" }}>
+                        <code>{result.expectedOutput || "(empty)"}</code>
+                      </pre>
 
-                    <p>Your output</p>
-                    <pre>
-                      <code>{result.actualOutput || "(empty)"}</code>
-                    </pre>
+                      <p style={{ color: "var(--muted)", textTransform: "uppercase", fontSize: "11px", letterSpacing: "1px", marginTop: "12px" }}>Your output</p>
+                      <pre style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "6px", padding: "10px", marginTop: "6px" }}>
+                        <code>{result.actualOutput || "(empty)"}</code>
+                      </pre>
 
-                    {typeof result.error === "string" && (
-                      <p className="homework-error">{result.error}</p>
-                    )}
+                      {typeof result.error === "string" && (
+                        <p className="homework-error" style={{ marginTop: "12px" }}>{result.error}</p>
+                      )}
 
-                    {typeof result.stderr === "string" &&
-                      result.stderr !== "" && (
+                      {typeof result.stderr === "string" && result.stderr !== "" && (
                         <>
-                          <p>Standard error</p>
-                          <pre><code>{result.stderr}</code></pre>
+                          <p style={{ color: "var(--muted)", textTransform: "uppercase", fontSize: "11px", letterSpacing: "1px", marginTop: "12px" }}>Standard error</p>
+                          <pre style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "6px", padding: "10px", marginTop: "6px", color: "#ff8b8b" }}>
+                            <code>{result.stderr}</code>
+                          </pre>
                         </>
                       )}
+                    </div>
                   </details>
                 </li>
               ))}

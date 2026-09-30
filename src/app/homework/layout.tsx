@@ -51,6 +51,14 @@ export default async function HomeworkLayout({
           <p>Ronak&apos;s learning progress</p>
           <small>Saved to your account.</small>
         </div>
+
+        <div className="sidebar-footer">
+          <span className="avatar" aria-hidden="true">R</span>
+          <div>
+            <strong>Ronak</strong>
+            <small>One discovery at a time.</small>
+          </div>
+        </div>
       </aside>
 
       <main id="main-content" className="main">{children}</main>

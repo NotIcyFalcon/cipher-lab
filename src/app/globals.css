@@ -759,3 +759,21 @@ details p { overflow-wrap: anywhere; }
     padding: 18px;
   }
 }
+
+.homework-upload input::file-selector-button {
+  margin-right: 12px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.homework-upload input::file-selector-button:hover {
+  background: var(--border);
+}
+
