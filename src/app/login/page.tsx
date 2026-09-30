@@ -34,7 +34,7 @@ async function login(formData: FormData) {
     maxAge: SESSION_SECONDS,
   });
 
-  redirect("/");
+  redirect("/dashboard");
 }
 
 export default async function LoginPage({

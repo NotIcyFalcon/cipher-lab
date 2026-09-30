@@ -4,7 +4,7 @@ import "@xterm/xterm/css/xterm.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Cipher Lab — Learn by doing",
+  title: "Cyber Box — Learn by doing",
   description:
     "A personal cybersecurity learning space with guided notes and hands-on labs.",
   robots: {

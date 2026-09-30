@@ -1,0 +1,131 @@
+"use client";
+
+import { useSyncExternalStore } from "react";
+import Link from "next/link";
+import { ArrowUpRight, Award } from "lucide-react";
+import WorkspaceShell from "@/components/WorkspaceShell";
+import { lessons } from "@/content/lessons";
+import { paths, pathHref } from "@/content/paths";
+
+const PROGRESS_KEY = "cipher-lab:reading-progress:v1";
+const PROGRESS_EVENT = "cipher-lab:progress";
+
+function subscribe(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener(PROGRESS_EVENT, callback);
+
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(PROGRESS_EVENT, callback);
+  };
+}
+
+function readProgress() {
+  try {
+    return window.localStorage.getItem(PROGRESS_KEY) ?? "[]";
+  } catch {
+    return "[]";
+  }
+}
+
+function completedLessons(value: string) {
+  try {
+    const ids: unknown = JSON.parse(value);
+    return Array.isArray(ids)
+      ? lessons.filter((lesson) => ids.includes(lesson.id))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+export default function DashboardPage() {
+  const saved = useSyncExternalStore(subscribe, readProgress, () => "[]");
+  const read = completedLessons(saved);
+  const completed = new Set(read.map((lesson) => lesson.id));
+  const xp = read.reduce((total, lesson) => total + lesson.xp, 0);
+
+  const certificates = paths.filter(
+    (path) =>
+      path.lessonIds.length > 0 &&
+      path.lessonIds.every((id) => completed.has(id)),
+  );
+
+  const remaining = paths.filter((path) => !certificates.includes(path));
+  const next =
+    remaining.find((path) =>
+      path.lessonIds.some((id) => completed.has(id)),
+    ) ?? remaining[0];
+
+  const started = next?.lessonIds.some((id) => completed.has(id));
+
+  return (
+    <WorkspaceShell current="/dashboard">
+      <section className="hero">
+        <div>
+          <h1>Welcome back, Ronak.</h1>
+          <p>A box made to learn Cyber Sec.</p>
+        </div>
+      </section>
+
+      <dl className="overview-stats" aria-label="Your progress">
+        <div>
+          <dt>Overall XP</dt>
+          <dd className="accent">{xp.toLocaleString("en-US")}</dd>
+        </div>
+        <div>
+          <dt>Paths completed</dt>
+          <dd>{certificates.length}</dd>
+        </div>
+      </dl>
+
+      <p className="overview-info">
+        {read.length} of {lessons.length} lessons read.
+        {" "}Progress is saved in this browser.
+      </p>
+
+      <section className="completion-card next-step" aria-labelledby="next-title">
+        <div>
+          <span className="eyebrow">YOUR NEXT STEP</span>
+          <h2 id="next-title">{next?.title ?? "Explore your learning paths"}</h2>
+          <p>One lesson at a time, at your own pace.</p>
+        </div>
+
+        <Link
+          href={next ? pathHref(next.id) : "/paths"}
+          className="primary-button"
+        >
+          {next ? (started ? "Continue path" : "Start path") : "Browse paths"}
+          <ArrowUpRight size={17} aria-hidden="true" />
+        </Link>
+      </section>
+
+      <section className="overview-section" aria-labelledby="certificates-title">
+        <h2 id="certificates-title">Certificates</h2>
+
+        {certificates.length > 0 ? (
+          <ul className="certificate-list">
+            {certificates.slice(0, 3).map((path) => (
+              <li key={path.id}>
+                <Link
+                  href={pathHref(path.id)}
+                  className="code-card certificate-row"
+                >
+                  <Award size={23} aria-hidden="true" />
+                  <span>
+                    <strong>{path.title}</strong>
+                    <small>Reading completed · Ronak</small>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="overview-info">
+            Complete the reading in a path to earn your first certificate.
+          </p>
+        )}
+      </section>
+    </WorkspaceShell>
+  );
+}

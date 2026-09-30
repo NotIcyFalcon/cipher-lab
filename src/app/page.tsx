@@ -98,7 +98,64 @@ function Quiz({
   );
 }
 
-function LessonBlock({ block }: { block: ContentBlock }) {
+function LabBlock({ block }: { block: any }) {
+  const [completed, setCompleted] = useState(false);
+  const [flagInput, setFlagInput] = useState("");
+
+  const correctFlag = "cyberbox-flag"; // You can replace this with hashed checks later
+
+  function submitFlag(e: React.FormEvent) {
+    e.preventDefault();
+    if (flagInput.trim().toLowerCase() === correctFlag) {
+      setCompleted(true);
+    } else {
+      alert("Incorrect code. Try again!");
+    }
+  }
+
+  if (completed) {
+    return (
+      <section className="lab-card" style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#152119", borderColor: "#344738" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <Check size={20} color="#b8f777" />
+          <strong style={{ color: "#b8f777" }}>Practice Completed</strong>
+        </div>
+        <button className="secondary-button" onClick={() => setCompleted(false)} style={{ fontSize: "12px", padding: "4px 10px", height: "auto" }}>
+          Reattempt
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <section className="lab-card">
+      <LabTerminal labId={block.labId} title={block.title} />
+
+      <div className="lab-instructions">
+        <span className="eyebrow">YOUR MISSION</span>
+        <p>{block.objective}</p>
+        
+        <form onSubmit={submitFlag} style={{ display: "flex", gap: "10px", marginTop: "16px", marginBottom: "16px" }}>
+          <input 
+            type="text" 
+            value={flagInput}
+            onChange={(e) => setFlagInput(e.target.value)}
+            placeholder="Enter completion code..."
+            style={{ flex: 1, padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border)", background: "#090f13", color: "var(--text)" }}
+          />
+          <button type="submit" className="primary-button" style={{ height: "auto", padding: "8px 16px" }}>Submit</button>
+        </form>
+
+        <details>
+          <summary style={{ fontSize: "16px", fontWeight: "bold", textTransform: "uppercase" }}>HINT</summary>
+          <p style={{ marginTop: "10px" }}>{block.hint}</p>
+        </details>
+      </div>
+    </section>
+  );
+}
+
+function LessonBlock({ block }: { block: any }) {
   switch (block.type) {
     case "note":
       return (
@@ -111,7 +168,7 @@ function LessonBlock({ block }: { block: ContentBlock }) {
     case "tip":
       return (
         <aside className="tip">
-          <Sparkles size={21} aria-hidden="true" />
+          <FlaskConical size={21} aria-hidden="true" />
           <div>
             <h3>{block.title}</h3>
             <p>{block.body}</p>
@@ -134,21 +191,7 @@ function LessonBlock({ block }: { block: ContentBlock }) {
       );
 
     case "lab":
-      return (
-        <section className="lab-card">
-          <LabTerminal labId={block.labId} title={block.title} />
-
-          <div className="lab-instructions">
-            <span className="eyebrow">YOUR MISSION</span>
-            <p>{block.objective}</p>
-
-            <details>
-              <summary>Need a nudge?</summary>
-              <p>{block.hint}</p>
-            </details>
-          </div>
-        </section>
-      );
+      return <LabBlock block={block} />;
 
     case "quiz":
       return <Quiz block={block} />;
@@ -193,7 +236,7 @@ export default function Home() {
       <a href="#lesson" className="skip-link">Skip to lesson</a>
 
       <aside className="sidebar">
-        <Link className="brand" href="/" aria-label="Cipher Lab home">
+        <Link className="brand" href="/" aria-label="Cyber Box home">
           <span className="brand-icon">
             <Terminal size={22} aria-hidden="true" />
           </span>
