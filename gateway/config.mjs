@@ -46,26 +46,35 @@ if (!/^[a-f0-9]{64}$/.test(accessHash)) {
 
 export const accessHashBytes = Buffer.from(accessHash, "hex");
 
-function loadLab(prefix) {
-  const fingerprint = required(`${prefix}_HOST_FINGERPRINT`);
+// Docker socket path for on-demand container management
+export const dockerSocketPath = process.env.DOCKER_SOCKET || "/var/run/docker.sock";
 
-  if (!/^SHA256:[A-Za-z0-9+/]{43}$/.test(fingerprint)) {
-    throw new Error(`Invalid ${prefix}_HOST_FINGERPRINT.`);
-  }
+// Compose project name (used to find containers)
+export const composeProject = process.env.COMPOSE_PROJECT || "cipher-lab";
 
-  return {
-    fingerprint,
-    ssh: {
-      host: required(`${prefix}_HOST`),
-      port: portNumber(`${prefix}_PORT`),
-      username: required(`${prefix}_USER`),
-      privateKey: readFileSync(required(`${prefix}_KEY_FILE`)),
-      passphrase: process.env[`${prefix}_KEY_PASSPHRASE`] || undefined,
-    },
-  };
+// Max concurrent lab containers
+export const maxRunningLabs = Number(process.env.MAX_RUNNING_LABS || "3");
+
+// SSH key and fingerprint shared by all lab containers
+export const labSshConfig = {
+  port: 2222,
+  username: required("LINUX_USER"),
+  privateKey: readFileSync(required("LINUX_KEY_FILE")),
+  passphrase: process.env.LINUX_KEY_PASSPHRASE || undefined,
+};
+
+export const labFingerprint = required("LINUX_HOST_FINGERPRINT");
+
+if (!/^SHA256:[A-Za-z0-9+/]{43}$/.test(labFingerprint)) {
+  throw new Error("Invalid LINUX_HOST_FINGERPRINT.");
 }
 
-// These IDs match labId values in src/content/lessons.ts.
+// Lab definitions: labId -> Docker Compose service name
+// All labs share the same image, SSH key, and fingerprint.
+// The gateway starts/stops these containers on demand.
 export const labs = new Map([
-  ["linux-basics", loadLab("LINUX")],
+  ["linux-basics", { service: "linux-basics" }],
+  // Add more labs here:
+  // ["web-exploit", { service: "web-exploit" }],
+  // ["ctf-forensics", { service: "ctf-forensics" }],
 ]);

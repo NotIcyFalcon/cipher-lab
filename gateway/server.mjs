@@ -7,7 +7,11 @@ import {
   gatewayPort,
   labs,
   siteOrigin,
+  labSshConfig,
+  labFingerprint,
+  maxRunningLabs,
 } from "./config.mjs";
+import { ensureLabRunning, touchLab } from "./docker-manager.mjs";
 
 const { Client } = ssh2;
 
@@ -92,10 +96,11 @@ function attachTerminal(ws) {
   let lastInput = started;
   let lastPong = started;
   let size = { cols: 80, rows: 24 };
+  let connectedLabId = null;
 
   const setupTimer = setTimeout(
     () => stop("Connection setup timed out.", 1008),
-    20_000,
+    30_000, // Increased from 20s to allow for container startup
   );
 
   const watchdog = setInterval(() => {
@@ -222,32 +227,50 @@ function attachTerminal(ws) {
           return stop("Access code not accepted.", 1008);
         }
 
-        const lab = labs.get(message.labId);
-
-        if (!lab || !validSize(message)) {
+        if (!labs.has(message.labId) || !validSize(message)) {
           return stop("Unknown lab or invalid terminal size.", 1008);
         }
 
         authenticated = true;
+        connectedLabId = message.labId;
         size = { cols: message.cols, rows: message.rows };
 
-        ssh.connect({
-          ...lab.ssh,
-          readyTimeout: 15_000,
-          keepaliveInterval: 15_000,
-          keepaliveCountMax: 2,
-          algorithms: {
-            serverHostKey: ["ssh-ed25519"],
-          },
-          hostVerifier(key) {
-            const digest = createHash("sha256")
-              .update(key)
-              .digest("base64")
-              .replace(/=+$/, "");
+        // Tell the frontend we're starting the container
+        send({ type: "status", message: "Starting lab environment..." });
 
-            return `SHA256:${digest}` === lab.fingerprint;
-          },
-        });
+        // Start the container on-demand, then SSH into it
+        ensureLabRunning(message.labId)
+          .then((host) => {
+            if (closed) return;
+
+            send({ type: "status", message: "Connecting to lab..." });
+
+            ssh.connect({
+              host,
+              port: labSshConfig.port,
+              username: labSshConfig.username,
+              privateKey: labSshConfig.privateKey,
+              passphrase: labSshConfig.passphrase,
+              readyTimeout: 15_000,
+              keepaliveInterval: 15_000,
+              keepaliveCountMax: 2,
+              algorithms: {
+                serverHostKey: ["ssh-ed25519"],
+              },
+              hostVerifier(key) {
+                const digest = createHash("sha256")
+                  .update(key)
+                  .digest("base64")
+                  .replace(/=+$/, "");
+
+                return `SHA256:${digest}` === labFingerprint;
+              },
+            });
+          })
+          .catch((err) => {
+            console.error("[Docker]", err.message);
+            stop("Could not start the lab environment. " + err.message, 1011);
+          });
 
         return;
       }
@@ -268,6 +291,7 @@ function attachTerminal(ws) {
         }
 
         lastInput = Date.now();
+        if (connectedLabId) touchLab(connectedLabId);
         stream.write(message.data);
         return;
       }
@@ -305,4 +329,5 @@ const bindHost = process.env.GATEWAY_BIND_HOST || "127.0.0.1";
 
 server.listen(gatewayPort, bindHost, () => {
   console.log(`Lab gateway listening on ${bindHost}:${gatewayPort}`);
+  console.log(`Max concurrent labs: ${labs.size} defined, ${maxRunningLabs} max running`);
 });

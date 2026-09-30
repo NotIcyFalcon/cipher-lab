@@ -5,7 +5,7 @@ install -d -m 0755 /run/sshd
 cp -R /etc/skel/. /home/Ronak/
 
 cat > /home/Ronak/README.txt <<'TEXT'
-Welcome to Cipher Lab.
+Welcome to Cyber Box.
 
 Start with:
   pwd
