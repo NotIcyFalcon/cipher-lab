@@ -1,97 +1,294 @@
 import Link from "next/link";
-import { ChevronRight, Terminal } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Check,
+  Clock3,
+  FileCode2,
+  FolderOpen,
+  Layers3,
+  Terminal,
+  Trophy,
+} from "lucide-react";
 import WorkspaceShell from "@/components/WorkspaceShell";
-import { paths, pathHref } from "@/content/paths";
-import { lessons } from "@/content/lessons";
+import { paths, pathHref, pathRevisionHref } from "@/content/paths";
+import {
+  formatLessonDuration,
+  getPathProgress,
+} from "@/lib/path-progress";
 import { requireRonakId } from "@/server/current-user";
 import { getProgress } from "@/server/progress";
+import "@/app/batch-two.css";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type PathEntry = {
+  path: (typeof paths)[number];
+  stats: ReturnType<typeof getPathProgress>;
+};
+
 export default async function PathsPage() {
   const userId = await requireRonakId();
   const progress = getProgress(userId);
-  const completedReading = new Set(progress.readingIds);
-  const completedLabs = new Set(progress.labIds);
+
+  const entries: PathEntry[] = paths.map((path) => ({
+    path,
+    stats: getPathProgress(path, progress),
+  }));
+
+  // Paths currently derive from lesson categories. Do not invent categories
+  // or courses that are not present in the content.
+  const groups = new Map<string, PathEntry[]>();
+  for (const entry of entries) {
+    const category = entry.stats.lessons[0]?.category ?? entry.path.title;
+    const group = groups.get(category) ?? [];
+    group.push(entry);
+    groups.set(category, group);
+  }
+
+  const totalLessons = entries.reduce(
+    (sum, entry) => sum + entry.stats.lessonCount,
+    0,
+  );
+  const totalEarned = entries.reduce(
+    (sum, entry) => sum + entry.stats.earned,
+    0,
+  );
+  const totalAvailable = entries.reduce(
+    (sum, entry) => sum + entry.stats.available,
+    0,
+  );
 
   return (
     <WorkspaceShell current="/paths">
-      <section className="hero">
-        <div>
-          <h1>Learning paths</h1>
-          <p>Pick a topic. Start small. Build your skills.</p>
-        </div>
-        <div className="hero-art" aria-hidden="true">
-          <div className="orbit orbit-one" />
-          <div className="orbit orbit-two" />
-          <div className="hero-terminal"><Terminal size={46} /></div>
-          <span className="orbit-dot" />
-        </div>
-      </section>
+      <div className="paths-page">
+        <header className="paths-heading">
+          <div>
+            <span className="dashboard-kicker">YOUR LEARNING LIBRARY</span>
+            <h1>Build your next skill.</h1>
+            <p>
+              Follow a focused path, put the ideas into practice, and collect points
+              as you learn.
+            </p>
+          </div>
+          <span className="paths-heading-icon" aria-hidden="true">
+            <Layers3 size={34} />
+          </span>
+        </header>
 
-      {paths.length > 0 ? (
-        <ul className="path-grid" aria-label="Available learning paths">
-          {paths.map((path) => {
-            const pathLessons = path.lessonIds.map(id => lessons.find(l => l.id === id)).filter(Boolean) as typeof lessons;
-            
-            // Calculate XP for this path
-            let totalPathXp = 0;
-            let earnedPathXp = 0;
+        <dl className="paths-summary">
+          <div>
+            <dt>
+              <FolderOpen size={16} aria-hidden="true" />
+              Learning paths
+            </dt>
+            <dd>{paths.length}</dd>
+          </div>
+          <div>
+            <dt>
+              <BookOpen size={16} aria-hidden="true" />
+              Chapters to explore
+            </dt>
+            <dd>{totalLessons}</dd>
+          </div>
+          <div>
+            <dt>
+              <Trophy size={16} aria-hidden="true" />
+              Your path points
+            </dt>
+            <dd>
+              {totalEarned} <span>/ {totalAvailable}</span>
+            </dd>
+          </div>
+        </dl>
 
-            pathLessons.forEach(lesson => {
-              // Reading XP
-              totalPathXp += lesson.xp;
-              if (completedReading.has(lesson.id)) earnedPathXp += lesson.xp;
+        <p className="paths-summary-note">
+          Path points combine reading XP, lab XP, and homework scores. CTF points
+          are separate.
+        </p>
 
-              // Lab XP
-              lesson.blocks.forEach(block => {
-                if (block.type === "lab") {
-                  totalPathXp += 50; // We hardcoded 50 XP per lab
-                  if (completedLabs.has(`${lesson.id}:${block.id}`)) {
-                    earnedPathXp += 50;
-                  }
-                }
-              });
-            });
+        {groups.size > 0 ? (
+          Array.from(groups.entries()).map(([category, categoryPaths], index) => (
+            <section
+              key={category}
+              className="paths-category"
+              aria-labelledby={`path-category-${index}`}
+            >
+              <div className="dashboard-section-heading">
+                <div>
+                  <span className="dashboard-kicker">EXPLORE A CATEGORY</span>
+                  <h2 id={`path-category-${index}`}>{category}</h2>
+                </div>
+                <span className="paths-category-count">
+                  {categoryPaths.length}{" "}
+                  {categoryPaths.length === 1 ? "path" : "paths"}
+                </span>
+              </div>
 
-            return (
-              <li key={path.id}>
-                <Link href={pathHref(path.id)} className="code-card path-card" style={{ display: 'block', height: '100%' }}>
-                  <div className="path-title">
-                    <h2>{path.title}</h2>
-                    <ChevronRight size={18} aria-hidden="true" />
-                  </div>
+              <ul className="paths-catalog">
+                {categoryPaths.map(({ path, stats }) => {
+                  const allPointsEarned =
+                    stats.available > 0 && stats.earned >= stats.available;
+                  const fullCompletion = stats.readingComplete && allPointsEarned;
 
-                  <p>
-                    {path.lessonIds.length}
-                    {" "}{path.lessonIds.length === 1 ? "lesson" : "lessons"}
-                  </p>
+                  const stateLabel = fullCompletion
+                    ? "Complete"
+                    : stats.readingComplete
+                      ? "Reading complete"
+                      : stats.started
+                        ? "In progress"
+                        : "Ready to start";
 
-                  <div style={{ marginTop: '16px', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
-                      <span style={{ color: 'var(--muted)' }}>Path progress</span>
-                      <strong className="accent">{earnedPathXp} / {totalPathXp} XP</strong>
-                    </div>
-                    <progress 
-                      value={earnedPathXp} 
-                      max={totalPathXp || 1} 
-                      style={{ width: '100%', height: '6px', borderRadius: '3px' }} 
-                    />
-                  </div>
+                  const actionLabel = fullCompletion
+                    ? "Revisit path"
+                    : stats.readingComplete
+                      ? "Continue practice"
+                      : stats.started
+                        ? "Continue path"
+                        : "Start path";
 
-                  <div className="path-tags" style={{ marginTop: 'auto' }}>
-                    <span className="pill">{path.difficulty}</span>
-                    <span className="pill">{path.type}</span>
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <p>New learning paths will appear here.</p>
-      )}
+                  return (
+                    <li key={path.id}>
+                      <article className="paths-course-card">
+                        <div className="paths-course-top">
+                          <span
+                            className="dashboard-path-icon"
+                            aria-hidden="true"
+                          >
+                            {stats.labCount > 0 ? (
+                              <Terminal size={23} />
+                            ) : (
+                              <BookOpen size={23} />
+                            )}
+                          </span>
+                          <span
+                            className={`dashboard-state${
+                              fullCompletion ? " is-complete" : ""
+                            }`}
+                          >
+                            {fullCompletion && (
+                              <Check size={12} aria-hidden="true" />
+                            )}
+                            {stateLabel}
+                          </span>
+                        </div>
+
+                        <div className="paths-course-body">
+                          <span className="dashboard-kicker">LEARNING PATH</span>
+                          <h3>
+                            <Link href={pathHref(path.id)}>{path.title}</Link>
+                          </h3>
+                          <p>
+                            {stats.lessonCount}{" "}
+                            {stats.lessonCount === 1 ? "chapter" : "chapters"} to
+                            build understanding and practice at your own pace.
+                          </p>
+
+                          <div className="paths-course-tags">
+                            <span>{path.difficulty}</span>
+                            <span>{path.type}</span>
+                            <span>
+                              <Clock3 size={12} aria-hidden="true" />
+                              {formatLessonDuration(stats.minutes)} reading
+                            </span>
+                          </div>
+                          <p className="paths-time-note">
+                            Estimated reading time. Labs and homework may take
+                            longer.
+                          </p>
+
+                          <dl
+                            className="paths-points-breakdown"
+                            aria-label={`${path.title} points breakdown`}
+                          >
+                            <div>
+                              <dt>
+                                <BookOpen size={14} aria-hidden="true" />
+                                Reading
+                              </dt>
+                              <dd>
+                                {stats.readingEarned}{" "}
+                                <span> / {stats.readingAvailable}</span>
+                              </dd>
+                            </div>
+                            <div>
+                              <dt>
+                                <Terminal size={14} aria-hidden="true" />
+                                Labs
+                              </dt>
+                              <dd>
+                                {stats.labsEarned}{" "}
+                                <span> / {stats.labsAvailable}</span>
+                              </dd>
+                            </div>
+                            <div>
+                              <dt>
+                                <FileCode2 size={14} aria-hidden="true" />
+                                Homework
+                              </dt>
+                              <dd>
+                                {stats.homeworkEarned}{" "}
+                                <span> / {stats.homeworkAvailable}</span>
+                              </dd>
+                            </div>
+                          </dl>
+                        </div>
+
+                        <div className="paths-course-progress">
+                          <div>
+                            <span>Total path points</span>
+                            <strong>
+                              {stats.earned} <span> / {stats.available}</span>
+                            </strong>
+                          </div>
+                          <progress
+                            value={stats.earned}
+                            max={stats.available || 1}
+                            aria-label={`${path.title}: ${stats.earned} of ${stats.available} points earned`}
+                          />
+                          <p>
+                            {stats.percentage}% of points earned ·{" "}
+                            {stats.readingCount}/{stats.lessonCount} chapters read
+                            · {stats.completedLabCount}/{stats.labCount} labs
+                            completed
+                          </p>
+                        </div>
+
+                        <footer className="paths-course-footer">
+                          <Link
+                            href={pathHref(path.id)}
+                            className="primary-button"
+                            aria-label={`${actionLabel}: ${path.title}`}
+                          >
+                            {actionLabel}
+                            <ArrowRight size={15} aria-hidden="true" />
+                          </Link>
+                          {stats.readingComplete && (
+                            <Link
+                              href={pathRevisionHref(path.id)}
+                              className="dashboard-text-link"
+                              aria-label={`Review reading: ${path.title}`}
+                            >
+                              Review reading
+                            </Link>
+                          )}
+                        </footer>
+                      </article>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))
+        ) : (
+          <section className="dashboard-empty">
+            <FolderOpen size={30} aria-hidden="true" />
+            <h2>Your next adventure is on its way.</h2>
+            <p>New learning paths will appear here.</p>
+          </section>
+        )}
+      </div>
     </WorkspaceShell>
   );
 }

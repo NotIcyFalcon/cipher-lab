@@ -1,21 +1,47 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Terminal as TerminalIcon } from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type MouseEvent,
+} from "react";
+import { Terminal as TerminalIcon, Trophy } from "lucide-react";
 import { getLabAccessCode } from "@/app/actions";
+import "@/app/batch-two.css";
 
-type Props = { labId: string; title: string };
+type Props = {
+  labId: string;
+  title: string;
+};
 
 export default function LabTerminal({ labId, title }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
-  
   const [accessCode, setAccessCode] = useState<string | undefined>();
   const [request, setRequest] = useState<{ code: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState("Your practice space is ready.");
 
   useEffect(() => {
-    getLabAccessCode().then(setAccessCode);
+    let disposed = false;
+    getLabAccessCode()
+      .then((code) => {
+        if (disposed) return;
+        setAccessCode(code);
+        if (!code?.trim()) {
+          setStatus("No lab access code is available.");
+        }
+      })
+      .catch(() => {
+        if (!disposed) {
+          setStatus("Could not load lab access. Please refresh and try again.");
+        }
+      });
+    return () => {
+      disposed = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -140,6 +166,7 @@ export default function LabTerminal({ labId, title }: Props) {
                 cols: terminal.cols,
                 rows: terminal.rows,
               });
+              setConnected(true);
               setStatus("Connected. Your next discovery starts here.");
               terminal.focus();
             }
@@ -168,6 +195,7 @@ export default function LabTerminal({ labId, title }: Props) {
           terminal.options.disableStdin = true;
           if (!disposed) {
             setBusy(false);
+            setConnected(false);
             setStatus(closeMessage);
           }
         };
@@ -186,7 +214,13 @@ export default function LabTerminal({ labId, title }: Props) {
         });
 
         const observer = new ResizeObserver(() => {
-          if (!disposed && host!.clientWidth > 0) fit.fit();
+          if (
+            !disposed &&
+            host!.clientWidth > 0 &&
+            host!.clientHeight > 0
+          ) {
+            fit.fit();
+          }
         });
         observer.observe(host!);
 
@@ -198,6 +232,7 @@ export default function LabTerminal({ labId, title }: Props) {
       } catch (error) {
         if (!disposed) {
           setBusy(false);
+          setConnected(false);
           setStatus(
             error instanceof Error ? error.message : "Could not start the terminal.",
           );
@@ -209,18 +244,24 @@ export default function LabTerminal({ labId, title }: Props) {
 
     return () => {
       disposed = true;
-      for (const dispose of cleanup.reverse()) dispose();
-      host?.replaceChildren();
+      for (const dispose of cleanup.reverse()) {
+        dispose();
+      }
+      host.replaceChildren();
     };
   }, [request, labId]);
 
-  function connect(event: FormEvent<HTMLFormElement> | React.MouseEvent) {
-    if (event && "preventDefault" in event) event.preventDefault();
-    if (!accessCode) {
+  function connect(
+    event: FormEvent<HTMLFormElement> | MouseEvent<HTMLButtonElement>,
+  ) {
+    event.preventDefault();
+    if (busy) return;
+    if (!accessCode?.trim()) {
       setStatus("No access code found in environment variables.");
       return;
     }
     setBusy(true);
+    setConnected(false);
     setStatus("Opening your practice space...");
     setRequest({ code: accessCode.trim() });
   }
@@ -228,37 +269,59 @@ export default function LabTerminal({ labId, title }: Props) {
   function disconnect() {
     setRequest(null);
     setBusy(false);
-    setStatus("Disconnected. Your files stay until the lab restarts or is reset.");
+    setConnected(false);
+    setStatus(
+      "Disconnected. Your files stay until the lab restarts or is reset.",
+    );
   }
 
   return (
     <div className="live-lab">
-      <div className="panel-heading" style={{ borderBottom: "none", alignItems: "center" }}>
-        <span className="icon-label" style={{ fontSize: "14px" }}>
-          <TerminalIcon size={18} aria-hidden="true" />
-          {title}
-        </span>
-        
-        {busy ? (
-          <button type="button" className="secondary-button" onClick={disconnect}>
-            Disconnect
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="primary-button"
-            onClick={connect}
-            disabled={!accessCode}
-          >
-            Connect to lab
-          </button>
-        )}
+      <div className="panel-heading lab-terminal-heading">
+        <div className="lab-terminal-title-group">
+          <span className="lab-terminal-icon" aria-hidden="true">
+            <TerminalIcon size={19} />
+          </span>
+          <div>
+            <span className="lab-terminal-kicker">HANDS-ON PRACTICE</span>
+            <strong className="lab-terminal-title">{title}</strong>
+          </div>
+        </div>
+
+        <div className="lab-terminal-actions">
+          <span className="lab-terminal-points">
+            <Trophy size={13} aria-hidden="true" /> 50 XP
+            <span className="lab-terminal-points-description">
+              {" "}· lab points
+            </span>
+          </span>
+
+          {busy ? (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={disconnect}
+            >
+              Disconnect
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="primary-button"
+              onClick={connect}
+              disabled={!accessCode?.trim()}
+            >
+              Connect to lab
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="terminal-window">
+      <div className="terminal-window" style={{ overflow: "hidden" }}>
         <div
           ref={hostRef}
           className="terminal-screen"
+          style={{ overflow: "hidden" }}
           aria-label={`${title} interactive terminal`}
         />
         {!request ? (
@@ -267,14 +330,24 @@ export default function LabTerminal({ labId, title }: Props) {
             Connect whenever you are ready.
           </p>
         ) : (
-          /* Show status overlay only when not connected/ready */
-          !status.includes("Connected.") && (
-            <p className="terminal-empty" style={{ zIndex: 10, background: "#090f13", pointerEvents: "none", color: "#b9b0ce" }}>
-              {status === "Opening your practice space..." ? "Starting the machine ..." : status}
+          !connected && (
+            <p className="terminal-empty lab-terminal-overlay">
+              {status === "Opening your practice space..." ? "Starting the machine..." : status}
             </p>
           )
         )}
       </div>
+
+      <p
+        className={`terminal-status lab-terminal-status${
+          connected ? " is-connected" : ""
+        }`}
+        role="status"
+        aria-live="polite"
+      >
+        <span aria-hidden="true" />
+        {status}
+      </p>
     </div>
   );
 }

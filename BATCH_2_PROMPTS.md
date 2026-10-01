@@ -1,0 +1,3379 @@
+# Batch 2 Prompts
+
+To ensure the new AI keeps the "crazy UI" from Batch 1, it needs to see the CSS files and the updated components. Here are 3 prompts you can paste in sequence.
+
+## PROMPT 1: Architecture & Styles
+```text
+I am building a Next.js cybersecurity learning platform called Cyber Box. I just completed Batch 1 of a massive UI refactor, and I need you to help me with Batch 2.
+
+Please read the following context files representing my CSS and data structures. Do NOT write any code yet. Just reply "Styles and data absorbed."
+
+--- BEGIN FILE: src/app/workspace.css ---
+/* Batch 1 workspace navigation and dashboard.
+   Existing lesson, homework, CTF, and xterm styling stays in globals.css. */
+
+   .workspace-frame {
+    --workspace-width: 1360px;
+    --workspace-line: #25323d;
+    --workspace-soft: #111a23;
+  
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
+    background:
+      radial-gradient(ellipse at 8% 0%, #263c2a26, transparent 38rem),
+      radial-gradient(ellipse at 95% 18%, #302d4920, transparent 36rem),
+      var(--bg);
+  }
+  
+  .workspace-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    border-bottom: 1px solid #29353e;
+    background: #0b1219f2;
+    backdrop-filter: blur(18px);
+  }
+  
+  .workspace-header-inner {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    width: 100%;
+    max-width: calc(var(--workspace-width) + 80px);
+    min-height: 82px;
+    margin-inline: auto;
+    padding-inline: 40px;
+  }
+  
+  .workspace-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    flex-shrink: 0;
+    font-size: 21px;
+    font-weight: 750;
+    letter-spacing: -.7px;
+  }
+  
+  .workspace-brand-mark {
+    display: grid;
+    place-items: center;
+    width: 37px;
+    height: 37px;
+    border: 1px solid #92bd653d;
+    border-radius: 11px;
+    color: var(--green);
+    background: linear-gradient(145deg, #293925, #14231a);
+    box-shadow: inset 0 1px 0 #d7ffc018;
+  }
+  
+  .workspace-navigation {
+    display: flex;
+    align-items: stretch;
+    align-self: stretch;
+    gap: 8px;
+    margin-inline: auto;
+  }
+  
+  .workspace-nav-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 15px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  
+  .workspace-nav-link::after {
+    position: absolute;
+    right: 15px;
+    bottom: 0;
+    left: 15px;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+    background: var(--green);
+    content: "";
+    transform: scaleX(0);
+    transform-origin: center;
+  }
+  
+  .workspace-nav-link:hover,
+  .workspace-nav-link.is-active {
+    color: var(--text);
+    background: linear-gradient(0deg, #b8f77708, transparent 75%);
+  }
+  
+  .workspace-nav-link:hover::after {
+    transform: scaleX(.55);
+  }
+  
+  .workspace-nav-link.is-active::after {
+    transform: scaleX(1);
+    box-shadow: 0 -3px 16px #b8f77726;
+  }
+  
+  .workspace-profile {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    flex-shrink: 0;
+    padding: 6px 11px 6px 6px;
+    border: 1px solid #2a3643;
+    border-radius: 999px;
+    background: #121b25;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  
+  .workspace-profile:hover {
+    border-color: #687d58;
+    background: #17221f;
+  }
+  
+  .workspace-profile-icon {
+    display: grid;
+    place-items: center;
+    width: 29px;
+    height: 29px;
+    border: 1px solid #443e57;
+    border-radius: 50%;
+    color: #d9cff7;
+    background: #292439;
+  }
+  
+  .workspace-main {
+    flex: 1;
+    width: 100%;
+    max-width: calc(var(--workspace-width) + 80px);
+    min-width: 0;
+    margin-inline: auto;
+    padding: 0 40px 64px;
+  }
+  
+  .workspace-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    width: calc(100% - 80px);
+    max-width: var(--workspace-width);
+    margin-inline: auto;
+    padding: 22px 0;
+    border-top: 1px solid var(--workspace-line);
+    color: var(--muted);
+    font-size: 11px;
+  }
+  
+  .workspace-footer > span:first-child {
+    color: #c5d1d9;
+    font-weight: 650;
+  }
+  
+  .workspace-frame h1 {
+    font-size: clamp(30px, 3.6vw, 46px);
+    line-height: 1.14;
+    letter-spacing: -1.6px;
+  }
+  
+  .workspace-frame > .workspace-main > .hero {
+    padding-block: 42px 34px;
+  }
+  
+  .workspace-frame .primary-button,
+  .workspace-frame .secondary-button {
+    min-height: 40px;
+  }
+  
+  .workspace-frame .primary-button {
+    box-shadow: inset 0 1px 0 #ffffff38;
+  }
+  
+  .workspace-frame .secondary-button:hover {
+    border-color: #627c53;
+    background: #213027;
+  }
+  
+  /* Dashboard */
+  .dashboard-page {
+    padding-top: 42px;
+  }
+  
+  .dashboard-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 28px;
+    margin-bottom: 30px;
+  }
+  
+  .dashboard-kicker {
+    display: inline-block;
+    color: #91a38f;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 1.7px;
+    text-transform: uppercase;
+  }
+  
+  .dashboard-heading h1 {
+    margin: 10px 0 12px;
+  }
+  
+  .dashboard-heading p {
+    max-width: 650px;
+    margin: 0;
+    font-size: 14px;
+  }
+  
+  .dashboard-account-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-bottom: 4px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  
+  .dashboard-account-note > span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #94c870;
+  }
+  
+  .dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0 0 24px;
+    overflow: hidden;
+    border: 1px solid var(--workspace-line);
+    border-radius: 15px;
+    background: linear-gradient(120deg, #15201d60, #111922);
+  }
+  
+  .dashboard-stat {
+    min-width: 0;
+    padding: 24px;
+  }
+  
+  .dashboard-stat + .dashboard-stat {
+    border-left: 1px solid var(--workspace-line);
+  }
+  
+  .dashboard-stat dt {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: #b3c0ca;
+    font-size: 12px;
+  }
+  
+  .dashboard-stat dt svg {
+    color: #819887;
+  }
+  
+  .dashboard-stat dd {
+    margin: 15px 0 9px;
+    font-size: 33px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  
+  .dashboard-stat dd > span {
+    color: #8494a1;
+    font-size: 19px;
+    font-weight: 500;
+  }
+  
+  .dashboard-stat p {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  
+  .dashboard-feature-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.8fr) minmax(280px, 1fr);
+    gap: 24px;
+  }
+  
+  .dashboard-next {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 22px;
+    min-width: 0;
+    padding: 32px;
+    overflow: hidden;
+    border: 1px solid #3b4e3b;
+    border-radius: 16px;
+    background:
+      radial-gradient(ellipse at 100% 0%, #95be4c13, transparent 65%),
+      linear-gradient(120deg, #17251d, #111c1c);
+    box-shadow: inset 0 1px 0 #d5ffc00a;
+  }
+  
+  .dashboard-next-icon {
+    display: grid;
+    place-items: center;
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+    border: 1px solid #4d653b;
+    border-radius: 14px;
+    color: var(--green);
+    background: linear-gradient(135deg, #2d4226, #1a2b20);
+  }
+  
+  .dashboard-next-content {
+    flex: 1 1 240px;
+    min-width: 0;
+  }
+  
+  .dashboard-next-content h2 {
+    margin: 11px 0 12px;
+    font-size: clamp(22px, 2.3vw, 29px);
+    letter-spacing: -.7px;
+  }
+  
+  .dashboard-next-content p {
+    max-width: 520px;
+    margin: 0 0 24px;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  
+  .dashboard-action {
+    padding-inline: 18px;
+  }
+  
+  .dashboard-next-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 18px;
+    width: 100%;
+    padding-top: 17px;
+    border-top: 1px solid #b8f77714;
+    color: #aabca6;
+    font-size: 11px;
+  }
+  
+  .dashboard-next-meta > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  
+  .dashboard-panel {
+    min-width: 0;
+    padding: 26px;
+    border: 1px solid var(--workspace-line);
+    border-radius: 16px;
+    background: linear-gradient(145deg, #121c25, #101820);
+  }
+  
+  .dashboard-section {
+    margin-top: 42px;
+  }
+  
+  .dashboard-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 22px;
+  }
+  
+  .dashboard-section-heading h2 {
+    margin: 6px 0 0;
+    font-size: 23px;
+    letter-spacing: -.6px;
+  }
+  
+  .dashboard-section-heading p {
+    margin: 8px 0 0;
+    font-size: 12px;
+  }
+  
+  .dashboard-section-heading > svg {
+    color: #a9bd9d;
+  }
+  
+  .dashboard-section-heading.compact {
+    margin-bottom: 20px;
+  }
+  
+  .dashboard-section-heading.compact h2 {
+    font-size: 20px;
+  }
+  
+  .dashboard-text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    color: #d0e3c2;
+    font-size: 12px;
+    font-weight: 650;
+  }
+  
+  .dashboard-text-link:hover {
+    color: var(--green);
+  }
+  
+  .dashboard-xp-list {
+    display: grid;
+    gap: 13px;
+    margin: 0;
+  }
+  
+  .dashboard-xp-list > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  
+  .dashboard-xp-list dt {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #bac7d0;
+    font-size: 12px;
+  }
+  
+  .dashboard-xp-list dd {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+  
+  .dashboard-xp-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+  }
+  
+  .dashboard-xp-dot.reading { background: #b8f777; }
+  .dashboard-xp-dot.labs { background: #86d9dc; }
+  .dashboard-xp-dot.homework { background: #c4b5fd; }
+  .dashboard-xp-dot.ctf { background: #e6bd77; }
+  
+  .dashboard-panel-note {
+    margin: 20px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--workspace-line);
+    color: #94a4b0;
+    font-size: 11px;
+    line-height: 1.8;
+  }
+  
+  .dashboard-path-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  
+  .dashboard-path-grid > li {
+    min-width: 0;
+  }
+  
+  .dashboard-path-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #2b3943;
+    border-radius: 16px;
+    background:
+      radial-gradient(ellipse at 100% 0%, #b8f77708, transparent 70%),
+      #111a23;
+  }
+  
+  .dashboard-path-card:hover,
+  .dashboard-path-card:focus-within {
+    border-color: #53684a;
+    box-shadow: 0 8px 28px #0000001c;
+  }
+  
+  .dashboard-path-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 25px 25px 20px;
+  }
+  
+  .dashboard-path-icon {
+    display: grid;
+    place-items: center;
+    width: 45px;
+    height: 45px;
+    border: 1px solid #3a4c3c;
+    border-radius: 12px;
+    color: #c6e4b0;
+    background: #1b2b22;
+  }
+  
+  .dashboard-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 9px;
+    border: 1px solid #34404b;
+    border-radius: 6px;
+    color: #b0bec8;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  
+  .dashboard-state.is-complete {
+    border-color: #3b543b;
+    color: #c0e3ae;
+    background: #1b2a20;
+  }
+  
+  .dashboard-path-body {
+    padding: 0 25px;
+  }
+  
+  .dashboard-path-body h3 {
+    margin: 8px 0;
+    overflow-wrap: anywhere;
+    font-size: 23px;
+    letter-spacing: -.6px;
+  }
+  
+  .dashboard-path-body > p {
+    margin: 0;
+    font-size: 12px;
+  }
+  
+  .dashboard-path-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 19px;
+  }
+  
+  .dashboard-path-tags > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border: 1px solid #2b3844;
+    border-radius: 5px;
+    color: #b3c1cb;
+    background: #0e1720;
+    font-size: 10px;
+  }
+  
+  .dashboard-path-progress {
+    margin-top: auto;
+    padding: 25px;
+  }
+  
+  .dashboard-path-progress > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 11px;
+  }
+  
+  .dashboard-path-progress > div > span {
+    color: var(--muted);
+  }
+  
+  .dashboard-path-progress strong {
+    color: var(--green);
+    font-variant-numeric: tabular-nums;
+  }
+  
+  .dashboard-path-progress strong > span {
+    color: #a9bac6;
+    font-weight: 500;
+  }
+  
+  .dashboard-path-progress progress {
+    display: block;
+    height: 5px;
+    margin: 13px 0 10px;
+    background: #26332c;
+  }
+  
+  .dashboard-path-progress p {
+    margin: 0;
+    font-size: 10px;
+  }
+  
+  .dashboard-path-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 25px;
+    border-top: 1px solid #2a3741;
+    background: #0c141a75;
+  }
+  
+  .dashboard-path-footer > span {
+    color: #91a390;
+    font-size: 10px;
+  }
+  
+  .dashboard-footnote {
+    margin: 13px 0 0;
+    color: #8d9eab;
+    font-size: 11px;
+  }
+  
+  .dashboard-bottom-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 24px;
+    margin-top: 34px;
+  }
+  
+  .dashboard-certificate-list {
+    display: grid;
+    gap: 13px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  
+  .dashboard-certificate {
+    padding: 19px;
+    border: 1px solid #3a3949;
+    border-radius: 12px;
+    background: linear-gradient(120deg, #2722394d, transparent), #101820;
+  }
+  
+  .dashboard-certificate-heading {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  
+  .dashboard-certificate-heading > div {
+    min-width: 0;
+  }
+  
+  .dashboard-certificate-seal {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border: 1px solid #4b425e;
+    border-radius: 50%;
+    background: #292438;
+    color: #d0c0f5;
+  }
+  
+  .dashboard-certificate h3 {
+    margin: 0 0 4px;
+    overflow-wrap: anywhere;
+    font-size: 15px;
+  }
+  
+  .dashboard-certificate p {
+    margin: 0;
+    font-size: 11px;
+  }
+  
+  .dashboard-certificate-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 17px;
+  }
+  
+  .dashboard-certificate-actions .secondary-button {
+    min-height: 34px;
+    padding: 7px 12px;
+    font-size: 11px;
+  }
+  
+  .dashboard-certificate-actions .dashboard-footnote {
+    margin: 0;
+  }
+  
+  .dashboard-certificate-empty {
+    padding: 17px 8px 8px;
+    text-align: center;
+  }
+  
+  .dashboard-certificate-empty h3 {
+    margin: 17px 0 8px;
+    font-size: 16px;
+  }
+  
+  .dashboard-certificate-empty p {
+    max-width: 340px;
+    margin: 0 auto 18px;
+    font-size: 12px;
+  }
+  
+  .dashboard-practice-links {
+    display: grid;
+    gap: 12px;
+  }
+  
+  .dashboard-practice-link {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 16px;
+    border: 1px solid #2b3944;
+    border-radius: 11px;
+    background: #0d161e;
+  }
+  
+  .dashboard-practice-link:hover {
+    border-color: #59704d;
+    background: #141f23;
+  }
+  
+  .dashboard-practice-icon {
+    display: grid;
+    place-items: center;
+    width: 39px;
+    height: 39px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    color: #b7dba4;
+    background: #213025;
+  }
+  
+  .dashboard-practice-icon.purple {
+    color: #cfc1f2;
+    background: #2a253b;
+  }
+  
+  .dashboard-practice-link > span:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .dashboard-practice-link strong {
+    display: block;
+    font-size: 12px;
+  }
+  
+  .dashboard-practice-link small {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 10px;
+  }
+  
+  .dashboard-practice-link > svg {
+    color: #9caf98;
+  }
+  
+  .dashboard-learning-note {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--workspace-line);
+    color: #82977e;
+  }
+  
+  .dashboard-learning-note p {
+    margin: 0;
+    font-size: 11px;
+  }
+  
+  .dashboard-empty {
+    padding: 36px;
+    border: 1px dashed #35473e;
+    border-radius: 14px;
+    background: #13201970;
+    text-align: center;
+  }
+  
+  .dashboard-empty > svg {
+    color: var(--green);
+  }
+  
+  .dashboard-empty h3 {
+    margin: 14px 0 8px;
+    font-size: 18px;
+  }
+  
+  .dashboard-empty p {
+    margin: 0;
+    font-size: 13px;
+  }
+  
+  /* Minimal lesson integration for the global topbar and local revision.
+     Batch 2 will replace this chapter strip with the dedicated inner sidebar. */
+  .learning-workspace {
+    max-width: 1240px;
+    margin-inline: auto;
+  }
+  
+  .learning-workspace .hero {
+    padding-block: 36px;
+  }
+  
+  .learning-workspace .mission-card {
+    top: 105px;
+  }
+  
+  .learning-chapter-strip {
+    margin-top: 24px;
+    padding: 18px;
+    border: 1px solid var(--workspace-line);
+    border-radius: 12px;
+    background: #101922;
+  }
+  
+  .learning-chapter-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  
+  .learning-chapter-heading > span:last-child {
+    color: var(--muted);
+    font-size: 11px;
+  }
+  
+  .learning-chapter-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+  
+  .learning-chapter-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #2d3a45;
+    border-radius: 8px;
+    background: #0c141c;
+    color: #b7c5ce;
+    text-align: left;
+    font-size: 12px;
+  }
+  
+  .learning-chapter-button:hover,
+  .learning-chapter-button.is-active {
+    border-color: #536b45;
+    background: #1a281f;
+    color: #d2e9c2;
+  }
+  
+  .learning-chapter-number {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    border: 1px solid #364535;
+    border-radius: 5px;
+    color: var(--green);
+    font-size: 10px;
+  }
+  
+  .revision-banner {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 24px;
+    padding: 18px 20px;
+    border: 1px solid #4a405f;
+    border-radius: 12px;
+    background: linear-gradient(110deg, #252037, #151b25);
+    color: #d4c7f4;
+  }
+  
+  .revision-banner > div {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .revision-banner strong {
+    font-size: 13px;
+  }
+  
+  .revision-banner p {
+    margin: 4px 0 0;
+    color: #b9b2c9;
+    font-size: 12px;
+  }
+  
+  .revision-banner .secondary-button {
+    flex-shrink: 0;
+  }
+  
+  .learning-import {
+    padding: 18px 0 0;
+  }
+  
+  .learning-import p {
+    margin-block: 12px;
+    font-size: 12px;
+  }
+  
+  /* Responsive layout */
+  @media (min-width: 1050px) {
+    .dashboard-path-grid > li:only-child .dashboard-path-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 1fr);
+    }
+    .dashboard-path-grid > li:only-child .dashboard-path-top {
+      grid-column: 1 / -1;
+      padding-bottom: 15px;
+    }
+    .dashboard-path-grid > li:only-child .dashboard-path-body {
+      padding-bottom: 25px;
+    }
+    .dashboard-path-grid > li:only-child .dashboard-path-progress {
+      align-self: center;
+      margin: 0;
+      border-left: 1px solid #2a3741;
+    }
+    .dashboard-path-grid > li:only-child .dashboard-path-footer {
+      grid-column: 1 / -1;
+    }
+  }
+  
+  @media (max-width: 1100px) {
+    .workspace-header-inner {
+      gap: 20px;
+      padding-inline: 28px;
+    }
+    .workspace-nav-link {
+      padding-inline: 11px;
+    }
+    .workspace-main {
+      padding-inline: 28px;
+    }
+    .workspace-footer {
+      width: calc(100% - 56px);
+    }
+    .dashboard-stat {
+      padding: 21px;
+    }
+    .dashboard-feature-grid {
+      grid-template-columns: minmax(0, 1.35fr) minmax(270px, 1fr);
+    }
+    .dashboard-next {
+      padding: 25px;
+    }
+    .dashboard-next-icon {
+      display: none;
+    }
+    .dashboard-account-note {
+      display: none;
+    }
+  }
+  
+  @media (max-width: 850px) {
+    .workspace-header-inner {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0 20px;
+      padding-top: 14px;
+    }
+    .workspace-brand {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .workspace-profile {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .workspace-navigation {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-content: center;
+      width: 100%;
+      min-width: 0;
+      margin-top: 10px;
+    }
+    .workspace-nav-link {
+      min-height: 49px;
+    }
+    .dashboard-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .dashboard-stat:nth-child(3) {
+      border-left: 0;
+    }
+    .dashboard-stat:nth-child(n + 3) {
+      border-top: 1px solid var(--workspace-line);
+    }
+    .dashboard-feature-grid,
+    .dashboard-bottom-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .dashboard-next-icon {
+      display: grid;
+    }
+    .learning-workspace .mission-card {
+      position: static;
+    }
+  }
+  
+  @media (max-width: 560px) {
+    .workspace-header-inner {
+      padding-inline: 16px;
+    }
+    .workspace-brand {
+      font-size: 19px;
+    }
+    .workspace-brand-mark {
+      width: 33px;
+      height: 33px;
+    }
+    .workspace-navigation {
+      justify-content: space-between;
+      gap: 0;
+    }
+    .workspace-nav-link {
+      padding-inline: 7px;
+      font-size: 11px;
+    }
+    .workspace-nav-link::after {
+      right: 7px;
+      left: 7px;
+    }
+    .workspace-profile {
+      gap: 6px;
+      font-size: 11px;
+    }
+    .workspace-main {
+      padding: 0 16px 40px;
+    }
+    .workspace-footer {
+      flex-direction: column;
+      gap: 5px;
+      width: calc(100% - 32px);
+      padding-block: 18px;
+    }
+    .dashboard-page {
+      padding-top: 28px;
+    }
+    .dashboard-heading {
+      margin-bottom: 23px;
+    }
+    .dashboard-heading p {
+      font-size: 13px;
+    }
+    .dashboard-stat {
+      padding: 18px 15px;
+    }
+    .dashboard-stat dt {
+      gap: 7px;
+      font-size: 10px;
+    }
+    .dashboard-stat dt svg {
+      width: 14px;
+      height: 14px;
+    }
+    .dashboard-stat dd {
+      font-size: 29px;
+    }
+    .dashboard-stat p {
+      font-size: 10px;
+    }
+    .dashboard-next,
+    .dashboard-panel {
+      padding: 21px;
+    }
+    .dashboard-next {
+      gap: 16px;
+    }
+    .dashboard-next-content {
+      flex-basis: 100%;
+    }
+    .dashboard-next-content h2 {
+      font-size: 24px;
+    }
+    .dashboard-section {
+      margin-top: 32px;
+    }
+    .dashboard-section-heading {
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+    .dashboard-section-heading h2 {
+      font-size: 21px;
+    }
+    .dashboard-section-heading.compact {
+      flex-wrap: nowrap;
+    }
+    .dashboard-path-top {
+      padding: 21px 20px 17px;
+    }
+    .dashboard-path-body {
+      padding-inline: 20px;
+    }
+    .dashboard-path-progress {
+      padding: 23px 20px;
+    }
+    .dashboard-path-footer {
+      padding-inline: 20px;
+    }
+    .dashboard-bottom-grid {
+      margin-top: 25px;
+    }
+    .dashboard-certificate {
+      padding: 15px;
+    }
+    .revision-banner {
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .revision-banner > div {
+      flex-basis: calc(100% - 40px);
+    }
+    .learning-chapter-button {
+      width: 100%;
+    }
+  }
+  
+  @media (prefers-reduced-motion: no-preference) {
+    .workspace-nav-link,
+    .workspace-profile,
+    .dashboard-path-card,
+    .dashboard-practice-link,
+    .dashboard-text-link {
+      transition: color .18s ease, background-color .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+    .workspace-nav-link::after {
+      transition: transform .2s ease;
+    }
+  }
+
+--- END FILE: src/app/workspace.css ---
+
+--- BEGIN FILE: src/app/globals.css ---
+:root {
+  color-scheme: dark;
+  --bg: #090e14;
+  --surface: #101820;
+  --border: #24313c;
+  --text: #edf3f7;
+  --muted: #a0afbd;
+  --green: #b8f777;
+  --purple: #c4b5fd;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+button, a, summary { -webkit-tap-highlight-color: transparent; }
+button { font: inherit; cursor: pointer; }
+button:disabled { cursor: default; opacity: .65; }
+a { color: inherit; text-decoration: none; }
+button, a, summary { outline-offset: 5px; }
+:focus-visible { outline: 2px solid var(--green); }
+::selection { background: #b8f777; color: #101820; }
+h1, h2, h3, p { margin-top: 0; }
+h2, h3 { line-height: 1.35; }
+p { color: var(--muted); }
+svg { flex-shrink: 0; }
+.accent { color: var(--green); }
+
+.app-shell { display: flex; min-height: 100vh; }
+.skip-link {
+  position: fixed; top: 10px; left: 10px; z-index: 100;
+  padding: 10px 18px; background: var(--green); color: var(--bg);
+  transform: translateY(-160%);
+}
+.skip-link:focus { transform: translateY(0); }
+
+.sidebar {
+  width: 260px; flex-shrink: 0; padding: 32px 20px 24px;
+  border-right: 1px solid var(--border); background: #0c1219;
+  position: sticky; top: 0; height: 100vh;
+  overflow-y: auto; display: flex; flex-direction: column;
+}
+.brand {
+  display: flex; align-items: center; gap: 11px;
+  padding: 0 10px; font-size: 23px; font-weight: 800;
+  letter-spacing: -.8px;
+}
+.brand-icon, .avatar {
+  display: grid; place-items: center; flex-shrink: 0;
+  width: 39px; height: 39px; border-radius: 12px;
+  background: #b8f777; color: #14210d;
+}
+.workspace-label {
+  font-size: 10px; letter-spacing: 1.7px;
+  color: var(--muted); margin: 48px 12px 18px;
+}
+.sidebar-section {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 12px; font-size: 13px; font-weight: 650;
+}
+.lesson-navigation { display: grid; gap: 8px; margin-top: 20px; }
+.lesson-link {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 13px 10px; border: 1px solid transparent;
+  border-radius: 10px; background: transparent;
+  color: var(--muted); text-align: left; font-size: 12px;
+}
+.lesson-link > span:nth-child(2) { flex: 1; }
+.lesson-link:hover { background: #151e27; color: var(--text); }
+.lesson-link.active {
+  color: var(--green); background: #17231c; border-color: #304333;
+}
+.lesson-number {
+  width: 26px; height: 26px; display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: 7px; font-size: 10px;
+}
+.sidebar-progress {
+  margin-top: auto; padding: 36px 12px 25px; font-size: 12px;
+}
+.icon-label { display: inline-flex; align-items: center; gap: 9px; }
+.sidebar-progress .icon-label { color: var(--green); }
+progress {
+  width: 100%; height: 6px; margin: 16px 0 7px;
+  border: 0; border-radius: 20px; overflow: hidden;
+  background: #22302a; accent-color: var(--green);
+}
+progress::-webkit-progress-bar { background: #22302a; }
+progress::-webkit-progress-value { background: var(--green); }
+progress::-moz-progress-bar { background: var(--green); }
+.sidebar-progress p { margin-bottom: 0; }
+.sidebar-progress small, .sidebar-footer small { color: var(--muted); }
+.sidebar-footer {
+  display: flex; align-items: center; gap: 11px;
+  border-top: 1px solid var(--border); padding: 22px 6px 0;
+}
+.avatar { background: #29243c; color: #e0d5ff; font-weight: 700; }
+.sidebar-footer strong, .sidebar-footer small {
+  display: block; font-size: 11px;
+}
+
+.main { min-width: 0; width: 100%; max-width: 1500px; margin: 0 auto; padding: 0 48px 70px; }
+.topbar {
+  min-height: 85px; display: flex; align-items: center;
+  justify-content: space-between; gap: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.breadcrumb {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 10px; color: var(--muted); font-size: 12px;
+}
+.breadcrumb span { color: var(--text); }
+.pill, .offline-badge {
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 5px 10px; font-size: 10px; letter-spacing: 1px;
+  white-space: nowrap; color: var(--muted);
+}
+.hero {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 28px; padding: 55px 0 44px;
+}
+.hero > div:first-child { max-width: 660px; }
+.eyebrow { font-size: 10px; font-weight: 750; letter-spacing: 1.8px; }
+h1 {
+  margin: 14px 0 18px; font-size: clamp(36px, 4.5vw, 62px);
+  line-height: 1.05; letter-spacing: -2.8px; font-weight: 750;
+}
+.hero p { max-width: 560px; margin-bottom: 22px; font-size: 15px; }
+.lesson-meta { display: flex; flex-wrap: wrap; gap: 20px; font-size: 11px; }
+.lesson-meta span + span::before {
+  content: "·"; color: var(--muted); margin-right: 20px;
+}
+.hero-art {
+  position: relative; width: 170px; height: 170px;
+  flex-shrink: 0; display: grid; place-items: center;
+}
+.orbit { position: absolute; border: 1px solid #2b3d31; border-radius: 50%; }
+.orbit-one { width: 164px; height: 164px; }
+.orbit-two { width: 125px; height: 125px; border-style: dashed; }
+.hero-terminal {
+  width: 82px; height: 82px; display: grid; place-items: center;
+  border: 1px solid #49663a; border-radius: 23px;
+  color: var(--green); background: #1c2d20;
+  transform: rotate(-8deg); box-shadow: 0 0 65px #b8f77712;
+}
+.orbit-dot {
+  position: absolute; width: 11px; height: 11px; border-radius: 50%;
+  background: var(--green); top: 28px; right: 18px;
+  box-shadow: 0 0 18px #b8f77770;
+}
+
+.content-layout {
+  display: grid; grid-template-columns: minmax(0, 1fr) 245px;
+  gap: 30px; align-items: start;
+}
+.lesson-content { min-width: 0; display: grid; gap: 25px; }
+.note { padding: 5px 0; }
+.note h2 { font-size: 23px; letter-spacing: -.6px; margin-bottom: 13px; }
+.note p { margin-bottom: 0; white-space: pre-line; }
+.code-card, .lab-card, .quiz-card, .mission-card, .completion-card {
+  border: 1px solid var(--border); border-radius: 16px;
+  background: var(--surface); overflow: hidden;
+}
+.panel-heading {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px; padding: 14px 20px;
+  border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.panel-heading .eyebrow { color: var(--muted); }
+pre {
+  margin: 0; padding: 22px; background: #0b1217;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+code { color: var(--green); font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; }
+.code-caption { padding: 15px 20px; margin: 0; font-size: 12px; }
+.tip {
+  display: flex; align-items: flex-start; gap: 13px; padding: 21px;
+  border: 1px solid #3a3153; background: #1a1727; border-radius: 13px;
+}
+.tip > svg { color: var(--purple); margin-top: 3px; }
+.tip h3 { color: #e0d5ff; font-size: 14px; margin-bottom: 7px; }
+.tip p { margin-bottom: 0; color: #b9b0ce; font-size: 13px; }
+.lab-card { border-color: transparent; background: #090f13; }
+.lab-card .panel-heading { background: #152119; }
+.terminal-placeholder {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 36px 24px; text-align: center;
+  background-color: #090f13;
+  background-image: radial-gradient(#26392c 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.terminal-symbol {
+  display: grid; place-items: center; width: 55px; height: 55px;
+  margin-bottom: 15px; border-radius: 15px;
+  background: #17241b; color: var(--green); border: 1px solid #324738;
+}
+.terminal-placeholder h3 { margin-bottom: 6px; font-size: 17px; }
+.terminal-placeholder p { max-width: 330px; font-size: 12px; }
+.primary-button, .secondary-button {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; padding: 10px 15px; border-radius: 9px;
+  border: 1px solid transparent; font-size: 12px; font-weight: 700;
+}
+.primary-button { background: var(--green); color: #15210d; }
+.primary-button:hover:not(:disabled) { background: #cefaa4; }
+.secondary-button { background: #18231e; border-color: #334b3a; color: #c1d8c7; }
+.lab-instructions { padding: 21px; }
+.lab-instructions .eyebrow { color: var(--green); }
+.lab-instructions p { margin: 9px 0 15px; font-size: 13px; }
+details { border-top: 1px solid var(--border); padding-top: 12px; }
+summary { cursor: pointer; color: var(--green); font-size: 12px; }
+details p { overflow-wrap: anywhere; }
+
+.quiz-card { padding: 23px; }
+.quiz-card > .eyebrow { color: var(--purple); }
+.quiz-card h3 { margin: 11px 0 18px; font-size: 18px; }
+.quiz-options { display: grid; gap: 9px; }
+.quiz-option {
+  display: flex; align-items: center; gap: 12px; padding: 12px;
+  text-align: left; background: #0c131a; color: var(--text);
+  border: 1px solid var(--border); border-radius: 10px; font-size: 13px;
+}
+.quiz-option:hover { border-color: #60764d; }
+.quiz-option.selected { border-color: var(--green); background: #1b291e; }
+.quiz-option > svg { margin-left: auto; color: var(--green); }
+.option-letter {
+  display: grid; place-items: center; width: 25px; height: 25px;
+  border: 1px solid var(--border); border-radius: 6px;
+  font-size: 10px; color: var(--muted);
+}
+.quiz-feedback { margin: 15px 0 0; font-size: 12px; min-height: 20px; }
+.mission-card { padding: 24px; position: sticky; top: 25px; }
+.mission-icon {
+  display: grid; place-items: center; width: 45px; height: 45px;
+  background: #272138; color: var(--purple); border-radius: 13px;
+  margin-bottom: 23px;
+}
+.mission-card > .eyebrow { color: var(--muted); }
+.mission-card h2 { font-size: 26px; letter-spacing: -.9px; margin: 12px 0; }
+.mission-card p, .mission-card li { font-size: 12px; }
+.mission-card ol { padding-left: 20px; margin: 20px 0 26px; }
+.mission-card li { padding-left: 6px; margin-bottom: 15px; }
+.mission-card li::marker { color: var(--green); font-weight: 700; }
+.mission-note {
+  padding-top: 18px; border-top: 1px solid var(--border);
+  color: var(--muted); font-size: 11px;
+}
+.completion-card {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px; padding: 23px;
+}
+.completion-card h3 { margin-bottom: 5px; font-size: 16px; }
+.completion-card p { margin-bottom: 0; font-size: 12px; }
+.completion-card .save-notice { width: 100%; color: var(--green); }
+.save-notice:empty { display: none; }
+
+@media (max-width: 1150px) {
+  .main { padding-inline: 30px; }
+  .content-layout { grid-template-columns: minmax(0, 1fr); }
+  .mission-card { position: static; grid-row: 1; }
+  .mission-card h2 br { display: none; }
+  .mission-card ol { margin-bottom: 0; }
+  .mission-card .mission-note, .mission-icon { display: none; }
+  .hero-art { width: 140px; }
+}
+
+@media (max-width: 760px) {
+  .app-shell { display: block; }
+  .sidebar {
+    position: static; width: 100%; height: auto; padding: 20px;
+    border-right: 0; border-bottom: 1px solid var(--border);
+  }
+  .brand { padding: 0; }
+  .workspace-label, .sidebar-section, .sidebar-footer { display: none; }
+  .lesson-navigation { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lesson-link { font-size: 11px; }
+  .lesson-link > svg { display: none; }
+  .sidebar-progress { padding: 20px 0 0; }
+  .sidebar-progress progress { margin-top: 10px; }
+  .main { padding: 0 20px 40px; }
+  .topbar { min-height: 65px; }
+  .topbar .pill { display: none; }
+  .hero { padding: 34px 0; }
+  .hero-art { display: none; }
+  h1 { letter-spacing: -1.8px; }
+  .lesson-meta { gap: 10px; }
+  .lesson-meta span + span::before { margin-right: 10px; }
+  .content-layout { gap: 23px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  button { transition: background-color .15s ease, border-color .15s ease; }
+}
+
+.live-lab { min-width: 0; }
+
+.terminal-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  background: #101a15;
+}
+
+.terminal-code {
+  display: grid;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+}
+
+.terminal-code > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.terminal-code input {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #344738;
+  border-radius: 9px;
+  background: #090f13;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.terminal-code input::placeholder { color: #92a196; }
+.terminal-code input:disabled { opacity: .6; }
+
+.terminal-window {
+  position: relative;
+  padding: 14px;
+  background: #090f13;
+}
+
+.terminal-screen {
+  height: 500px;
+  min-width: 0;
+}
+
+.terminal-screen .xterm { height: 100%; }
+
+.terminal-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  margin: 0;
+  padding: 24px;
+  text-align: center;
+  pointer-events: none;
+  font-size: 13px;
+}
+
+.terminal-status {
+  margin: 0;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  color: #bfd3c2;
+  background: #101a15;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .terminal-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .terminal-screen { height: 400px; }
+  .terminal-window { padding: 10px; }
+}
+.login-shell {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 410px;
+  padding: 30px;
+}
+
+.login-card .brand { padding: 0; }
+
+.login-card h1 {
+  margin: 28px 0 12px;
+  font-size: 32px;
+  letter-spacing: -1.2px;
+}
+
+.login-card > p { font-size: 13px; }
+
+.login-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.login-form .quiz-feedback {
+  margin: 0;
+  color: var(--purple);
+}
+.workspace-shell { background: var(--bg); }
+.workspace-shell .main { max-width: 1080px; }
+.workspace-shell .sidebar-footer { margin-top: auto; }
+
+.workspace-shell .hero { padding: 44px 0 32px; }
+.workspace-shell .hero p { margin-bottom: 0; }
+
+.workspace-shell h1 {
+  margin: 0 0 12px;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.15;
+  letter-spacing: -1.2px;
+}
+
+.overview-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px 56px;
+  margin: 0;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.overview-stats dt { color: var(--muted); font-size: 12px; }
+
+.overview-stats dd {
+  margin: 6px 0 0;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.overview-info {
+  margin: 16px 0 32px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.next-step { padding: 26px; margin-bottom: 40px; gap: 24px; }
+.next-step .eyebrow { color: var(--muted); }
+.next-step h2 { margin: 10px 0 8px; font-size: 20px; }
+.next-step p { margin: 0; font-size: 13px; }
+.overview-section > h2 { margin-bottom: 18px; font-size: 18px; }
+
+.certificate-list,
+.path-grid {
+  display: grid;
+  gap: 14px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.certificate-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+}
+
+.certificate-row > svg { color: var(--purple); }
+.certificate-row strong { display: block; font-size: 13px; }
+.certificate-row small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.path-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.path-card { display: block; height: 100%; padding: 26px; }
+
+.path-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.path-title h2 { margin: 0; font-size: 19px; }
+.path-title > svg { margin-top: 4px; color: var(--muted); }
+.path-card > p { margin: 12px 0 24px; font-size: 12px; }
+.path-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.path-tags .pill { font-size: 11px; letter-spacing: 0; }
+
+.path-title h2,
+.certificate-row strong,
+.next-step h2 { overflow-wrap: anywhere; }
+
+.path-card:hover,
+.certificate-row:hover { border-color: #48613d; }
+
+@media (max-width: 1000px) {
+  .path-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 760px) {
+  .workspace-shell .hero { padding: 32px 0 28px; }
+  .next-step, .path-card { padding: 22px; }
+}
+.terminal-screen .xterm-viewport { overflow-x: hidden !important; }
+.homework-form {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.homework-form label {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.homework-form input[type="file"] {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+}
+
+.homework-form input::file-selector-button {
+  margin-right: 12px;
+  padding: 7px 10px;
+  border: 1px solid #334b3a;
+  border-radius: 6px;
+  background: #18231e;
+  color: #c1d8c7;
+  cursor: pointer;
+}
+
+.homework-form small { color: var(--muted); }
+.homework-form .primary-button { justify-self: start; }
+
+.homework-card .homework-best strong,
+.homework-card .homework-summary strong {
+  color: var(--green);
+}
+
+.homework-card .homework-error { color: #ff8b8b; }
+
+.homework-results {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.homework-test {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0c131a;
+}
+
+.homework-test[data-passed="true"] { border-color: #344738; }
+
+.homework-test-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.homework-test-heading > span { flex: 1; }
+.homework-test-heading small { white-space: nowrap; }
+
+.homework-test[data-passed="true"] svg { color: var(--green); }
+.homework-test[data-passed="false"] svg { color: #ff8b8b; }
+
+.homework-test details,
+.homework-diagnostics {
+  margin-top: 12px;
+}
+
+.homework-card pre {
+  max-height: 220px;
+  margin-top: 10px;
+  padding: 12px;
+  overflow: auto;
+  font-size: 12px;
+}
+
+.homework-path-card,
+.homework-question {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.homework-list {
+  display: grid;
+  gap: 16px;
+}
+
+.homework-question {
+  padding-top: 0;
+  overflow: hidden;
+}
+
+.homework-question-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 24px;
+  color: var(--text);
+}
+
+.homework-question-heading strong {
+  display: block;
+  font-size: 15px;
+}
+
+.homework-question-heading small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.homework-best {
+  color: var(--green);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.homework-question[open] > summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.homework-question-body {
+  padding: 24px;
+}
+
+.homework-objective {
+  white-space: pre-line;
+}
+
+.homework-upload {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.homework-upload label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.homework-upload input {
+  width: 100%;
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.homework-upload small {
+  color: var(--muted);
+}
+
+.homework-upload button {
+  justify-self: start;
+}
+
+.homework-error,
+.test-fail {
+  color: #ff8b8b;
+}
+
+.homework-error:empty {
+  display: none;
+}
+
+.test-pass {
+  color: var(--green);
+}
+
+.submission-list,
+.homework-results {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  margin: 18px 0;
+  list-style: none;
+}
+
+.submission-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.submission-row:hover {
+  border-color: var(--green);
+  background: #151e27;
+}
+
+.submission-row[aria-pressed="true"] {
+  border-color: var(--green);
+  background: rgba(184, 247, 119, 0.06);
+}
+
+.submission-row small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.homework-question > summary {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.homework-question > summary:hover {
+  background: #151e27;
+}
+
+.homework-results details > summary {
+  cursor: pointer;
+}
+
+.homework-results details > summary:hover {
+  opacity: 0.85;
+}
+
+.submission-detail {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.submission-detail pre {
+  margin-top: 12px;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.homework-results p {
+  margin: 14px 0 4px;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .homework-question-heading,
+  .submission-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .homework-question-body {
+    padding: 18px;
+  }
+}
+
+.homework-upload input::file-selector-button {
+  margin-right: 12px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.homework-upload input::file-selector-button:hover {
+  background: var(--border);
+}
+
+
+--- END FILE: src/app/globals.css ---
+
+--- BEGIN FILE: src/content/lessons.ts ---
+export type HomeworkTestCase = {
+  id: string;
+  title: string;
+} & (
+  | {
+      // Compare against the uploaded script's stdout.
+      expectedOutput: string;
+      evaluationCommand?: never;
+    }
+  | {
+      // Run after the uploaded script.
+      // Without expectedOutput, exit code 0 means pass.
+      evaluationCommand: string;
+      expectedOutput?: string;
+    }
+);
+
+export type HomeworkContentBlock = {
+  id: string;
+  type: "homework";
+  homeworkId: string;
+  title: string;
+  objective: string;
+  totalPoints: number;
+  testCases: [HomeworkTestCase, ...HomeworkTestCase[]];
+};
+
+export type ContentBlock =
+  | {
+      id: string;
+      type: "note" | "tip";
+      title: string;
+      body: string;
+    }
+  | {
+      id: string;
+      type: "code";
+      title: string;
+      code: string;
+      caption: string;
+    }
+  | {
+      id: string;
+      type: "lab";
+      labId: string;
+      title: string;
+      objective: string;
+      hint: string;
+    }
+  | {
+      id: string;
+      type: "quiz";
+      question: string;
+      options: string[];
+      answer: number;
+      explanation: string;
+    }
+  | HomeworkContentBlock;
+
+export type Lesson = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  minutes: number;
+  xp: number;
+  objectives: string[];
+  blocks: ContentBlock[];
+};
+
+// At least one lesson is required.
+export const lessons: [Lesson, ...Lesson[]] = [
+  {
+    id: "terminal-basics",
+    title: "Meet your terminal.",
+    description:
+      "A blinking cursor is an invitation. Learn to find your bearings, ask questions, and explore with confidence.",
+    category: "Linux foundations",
+    minutes: 12,
+    xp: 100,
+    objectives: [
+      "Find your current directory",
+      "Identify your Linux user",
+      "Discover hidden files",
+    ],
+    blocks: [
+      {
+        id: "orientation",
+        type: "note",
+        title: "First, find your bearings",
+        body:
+          "Think of the terminal as a conversation with your machine. You give it a command; it gives you an answer. Start with three questions: Where am I? Who am I? What is around me?",
+      },
+      {
+        id: "starter-commands",
+        type: "code",
+        title: "Your first three questions",
+        code: "pwd\nwhoami\nls -la",
+        caption:
+          "pwd shows your current directory. whoami prints your username. ls -la lists directory entries, including hidden ones, with extra details.",
+      },
+      {
+        id: "first-terminal",
+        type: "lab",
+        labId: "linux-basics",
+        title: "Mission 01 · Get your bearings",
+        objective:
+          "Run the three commands above. Find your username and current directory, then look for an entry whose name begins with a dot.",
+        hint:
+          "Run one command at a time. In the ls output, entries beginning with a dot are normally hidden. The -a option reveals them.",
+      },
+      {
+        id: "curiosity",
+        type: "tip",
+        title: "Keep a tiny investigation journal",
+        body:
+          "Before running a command, predict what it will show. Afterward, write down one thing you noticed. Small observations turn commands into understanding.",
+      },
+      {
+        id: "directory-quiz",
+        type: "quiz",
+        question: "Which command tells you where you are?",
+        options: ["whoami", "pwd", "ls -la"],
+        answer: 1,
+        explanation:
+          "pwd means print working directory. It shows the directory your shell is currently working in.",
+      },
+      {
+        id: "bash-homework",
+        type: "homework",
+        homeworkId: "bash-files-v1",
+        title: "Homework · Prepare an application log",
+        objective:
+          "Upload a Bash script that prints Ready, creates logs/events.log " +
+          "in the working directory, and writes a line containing " +
+          "ERROR access denied into that file. Your working directory is /work.",
+        totalPoints: 30,
+        testCases: [
+          {
+            id: "ready-output",
+            title: "Prints the readiness message",
+            expectedOutput: "Ready",
+          },
+          {
+            id: "log-created",
+            title: "Creates the application log",
+            evaluationCommand: "test -f /work/logs/events.log",
+          },
+          {
+            id: "error-recorded",
+            title: "Records the expected error",
+            evaluationCommand: "grep '^ERROR' /work/logs/events.log",
+            expectedOutput: "ERROR access denied",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "investigate-files",
+    title: "Follow the breadcrumbs.",
+    description:
+      "Files tell stories. Create a small log, read the evidence, and find the line that deserves a closer look.",
+    category: "Linux foundations",
+    minutes: 15,
+    xp: 120,
+    objectives: [
+      "Create a practice directory",
+      "Read a text file",
+      "Find matching lines with grep",
+    ],
+    blocks: [
+      {
+        id: "files-intro",
+        type: "note",
+        title: "Every investigation starts with a clue",
+        body:
+          "Logs record events. A useful first step is to read a small sample, then search for something specific. Here, you will create your own harmless practice log.",
+      },
+      {
+        id: "make-evidence",
+        type: "code",
+        title: "Create your practice evidence",
+        code:
+          "mkdir -p ~/practice\n" +
+          "printf 'INFO started\\nERROR access denied\\nINFO finished\\n' > ~/practice/events.log\n" +
+          "cat ~/practice/events.log",
+        caption:
+          "This creates a directory and writes three sample lines into events.log. Running it again replaces that practice file.",
+      },
+      {
+        id: "log-terminal",
+        type: "lab",
+        labId: "linux-basics",
+        title: "Mission 02 · Find the unusual event",
+        objective:
+          "Create the sample log using the commands above. Then use grep to display only the line containing ERROR.",
+        hint: "Try: grep 'ERROR' ~/practice/events.log",
+      },
+      {
+        id: "evidence-tip",
+        type: "tip",
+        title: "An error is a clue, not a conclusion",
+        body:
+          "One error message does not prove an attack happened. Read the surrounding events and ask what else could explain it.",
+      },
+      {
+        id: "grep-quiz",
+        type: "quiz",
+        question: "Which command searches for matching lines in a file?",
+        options: ["mkdir", "pwd", "grep"],
+        answer: 2,
+        explanation:
+          "grep searches text for a pattern and, by default, prints the lines that match.",
+      },
+    ],
+  },
+];
+--- END FILE: src/content/lessons.ts ---
+
+--- BEGIN FILE: src/content/paths.ts ---
+import { lessons } from "@/content/lessons";
+
+export const paths = [...new Set(lessons.map((lesson) => lesson.category))]
+  .map((category) => {
+    const items = lessons.filter((lesson) => lesson.category === category);
+    return {
+      id: category,
+      title: category,
+      difficulty: "Beginner",
+      type: items.some((lesson) =>
+        lesson.blocks.some((block) => block.type === "lab"),
+      )
+        ? "Hands-on"
+        : "Reading",
+      lessonIds: items.map((lesson) => lesson.id),
+    };
+  });
+
+export function pathHref(id: string) {
+  const params = new URLSearchParams({ path: id });
+  return `/?${params.toString()}`;
+}
+
+export function pathRevisionHref(id: string) {
+  const params = new URLSearchParams({
+    path: id,
+    revise: "1",
+  });
+  return `/?${params.toString()}`;
+}
+
+--- END FILE: src/content/paths.ts ---
+
+--- BEGIN FILE: src/lib/path-progress.ts ---
+import { lessons, type Lesson } from "@/content/lessons";
+import type { Progress } from "@/lib/progress-types";
+
+// Matches the current completeLab Server Action.
+// No scoring changes are introduced in Batch 1.
+const LAB_XP = 50;
+
+type PathLike = {
+  lessonIds: readonly string[];
+};
+
+export function getPathProgress(path: PathLike, progress: Progress) {
+  const reading = new Set(progress.readingIds);
+  const completedLabs = new Set(progress.labIds);
+
+  const pathLessons = path.lessonIds
+    .map((id) => lessons.find((lesson) => lesson.id === id))
+    .filter((lesson): lesson is Lesson => lesson !== undefined);
+
+  let readingAvailable = 0;
+  let readingEarned = 0;
+  let labsAvailable = 0;
+  let labsEarned = 0;
+  let homeworkAvailable = 0;
+  let homeworkEarned = 0;
+  let labCount = 0;
+  let completedLabCount = 0;
+
+  const homeworkIds = new Set<string>();
+  const homeworkLessonIds = new Set<string>();
+
+  for (const lesson of pathLessons) {
+    readingAvailable += lesson.xp;
+    if (reading.has(lesson.id)) {
+      readingEarned += lesson.xp;
+    }
+
+    for (const block of lesson.blocks) {
+      if (block.type === "lab") {
+        labCount += 1;
+        labsAvailable += LAB_XP;
+        if (completedLabs.has(`${lesson.id}:${block.id}`)) {
+          completedLabCount += 1;
+          labsEarned += LAB_XP;
+        }
+      }
+
+      if (block.type === "homework") {
+        homeworkLessonIds.add(lesson.id);
+        // A homework definition contributes once per path.
+        if (!homeworkIds.has(block.homeworkId)) {
+          homeworkIds.add(block.homeworkId);
+          homeworkAvailable += block.totalPoints;
+          homeworkEarned += Math.min(
+            block.totalPoints,
+            Math.max(0, progress.homeworkBest[block.homeworkId] ?? 0),
+          );
+        }
+      }
+    }
+  }
+
+  const readingCount = pathLessons.filter((lesson) =>
+    reading.has(lesson.id),
+  ).length;
+
+  const available = readingAvailable + labsAvailable + homeworkAvailable;
+  const earned = readingEarned + labsEarned + homeworkEarned;
+
+  const readingComplete =
+    path.lessonIds.length > 0 &&
+    path.lessonIds.every((id) => reading.has(id));
+
+  return {
+    lessons: pathLessons,
+    lessonCount: pathLessons.length,
+    readingCount,
+    readingComplete,
+    minutes: pathLessons.reduce((sum, lesson) => sum + lesson.minutes, 0),
+    labCount,
+    completedLabCount,
+    homeworkCount: homeworkIds.size,
+    homeworkLessonIds: [...homeworkLessonIds],
+    readingAvailable,
+    readingEarned,
+    labsAvailable,
+    labsEarned,
+    homeworkAvailable,
+    homeworkEarned,
+    available,
+    earned,
+    percentage: available > 0 ? Math.round((earned / available) * 100) : 0,
+    started: readingCount > 0 || earned > 0,
+  };
+}
+
+export function formatLessonDuration(minutes: number) {
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return remainder === 0 ? `${hours} hr` : `${hours} hr ${remainder} min`;
+}
+
+--- END FILE: src/lib/path-progress.ts ---
+
+```
+
+## PROMPT 2: Components & Pages
+```text
+Great. Now read the React components that we will be modifying or integrating with for Batch 2. Do NOT write any code yet. Just reply "Components absorbed, ready for instructions."
+
+--- BEGIN FILE: src/components/WorkspaceShell.tsx ---
+import type { ReactNode } from "react";
+import Link from "next/link";
+import { Box, UserRound } from "lucide-react";
+
+const navigation = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/paths", label: "Learning Paths" },
+  { href: "/homework", label: "Homework" },
+  { href: "/ctf", label: "CTF" },
+] as const;
+
+type WorkspaceRoute = (typeof navigation)[number]["href"];
+
+export default function WorkspaceShell({
+  current,
+  children,
+}: {
+  current: WorkspaceRoute;
+  children: ReactNode;
+}) {
+  return (
+    <div className="workspace-frame">
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
+
+      <header className="workspace-header">
+        <div className="workspace-header-inner">
+          <Link
+            href="/dashboard"
+            className="workspace-brand"
+            aria-label="Cyber Box home"
+          >
+            <span className="workspace-brand-mark">
+              <Box size={21} aria-hidden="true" />
+            </span>
+            <span>
+              Cyber <span className="accent">Box</span>
+            </span>
+          </Link>
+
+          <nav className="workspace-navigation" aria-label="Main navigation">
+            {navigation.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`workspace-nav-link${
+                  current === href ? " is-active" : ""
+                }`}
+                aria-current={current === href ? "page" : undefined}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+
+          <Link
+            href="#"
+            className="workspace-profile"
+            aria-label="Ronak profile"
+          >
+            <span className="workspace-profile-icon">
+              <UserRound size={17} aria-hidden="true" />
+            </span>
+            <span>Ronak</span>
+          </Link>
+        </div>
+      </header>
+
+      <main
+        id="main-content"
+        className="workspace-main"
+        tabIndex={-1}
+      >
+        {children}
+      </main>
+
+      <footer className="workspace-footer">
+        <span>Cyber Box</span>
+        <span>Build understanding. Put it into practice.</span>
+      </footer>
+    </div>
+  );
+}
+
+--- END FILE: src/components/WorkspaceShell.tsx ---
+
+--- BEGIN FILE: src/components/LabTerminal.tsx ---
+"use client";
+
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Terminal as TerminalIcon } from "lucide-react";
+import { getLabAccessCode } from "@/app/actions";
+
+type Props = { labId: string; title: string };
+
+export default function LabTerminal({ labId, title }: Props) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  
+  const [accessCode, setAccessCode] = useState<string | undefined>();
+  const [request, setRequest] = useState<{ code: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState("Your practice space is ready.");
+
+  useEffect(() => {
+    getLabAccessCode().then(setAccessCode);
+  }, []);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!request || !host) return;
+
+    let disposed = false;
+    const cleanup: Array<() => void> = [];
+
+    async function start() {
+      try {
+        const [{ Terminal }, { FitAddon }] = await Promise.all([
+          import("@xterm/xterm"),
+          import("@xterm/addon-fit"),
+        ]);
+
+        if (disposed) return;
+
+        const terminal = new Terminal({
+          cursorBlink: true,
+          disableStdin: true,
+          screenReaderMode: true,
+          fontSize: 14,
+          lineHeight: 1.25,
+          fontFamily: '"SFMono-Regular", Consolas, monospace',
+          scrollback: 2000,
+          theme: {
+            background: "#090f13",
+            foreground: "#e1eadf",
+            cursor: "#b8f777",
+            selectionBackground: "#3a573d",
+            green: "#b8f777",
+            cyan: "#86d9dc",
+            magenta: "#c4b5fd",
+          },
+        });
+
+        cleanup.push(() => terminal.dispose());
+
+        const fit = new FitAddon();
+        terminal.loadAddon(fit);
+        terminal.open(host!);
+        fit.fit();
+
+        const url = new URL(
+          process.env.NEXT_PUBLIC_LAB_WS_URL || "/lab-socket",
+          window.location.href,
+        );
+
+        if (url.protocol === "http:") url.protocol = "ws:";
+        if (url.protocol === "https:") url.protocol = "wss:";
+        if (
+          !["ws:", "wss:"].includes(url.protocol) ||
+          (window.location.protocol === "https:" && url.protocol !== "wss:")
+        ) {
+          throw new Error("The terminal requires a valid, secure gateway URL.");
+        }
+
+        const socket = new WebSocket(url);
+        socket.binaryType = "arraybuffer";
+
+        let ready = false;
+        let closeMessage = "Connection closed. Connect again when you are ready.";
+
+        cleanup.push(() => {
+          socket.onopen = null;
+          socket.onmessage = null;
+          socket.onerror = null;
+          socket.onclose = null;
+          socket.close();
+        });
+
+        function send(message: object) {
+          if (!disposed && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify(message));
+          }
+        }
+
+        const connectionTimer = window.setTimeout(() => {
+          if (ready || disposed) return;
+          closeMessage = "Connection timed out. Check that the gateway is running.";
+          setStatus(closeMessage);
+          socket.close();
+        }, 30_000);
+
+        cleanup.push(() => window.clearTimeout(connectionTimer));
+
+        socket.onopen = () => {
+          send({
+            type: "auth",
+            code: request!.code,
+            labId,
+            cols: terminal.cols,
+            rows: terminal.rows,
+          });
+        };
+
+        socket.onmessage = (event: MessageEvent) => {
+          if (disposed) return;
+
+          if (event.data instanceof ArrayBuffer) {
+            const bytes = new Uint8Array(event.data);
+            terminal.write(bytes, () => {
+              send({ type: "ack", bytes: bytes.byteLength });
+            });
+            return;
+          }
+
+          try {
+            const message = JSON.parse(event.data) as {
+              type?: string;
+              message?: string;
+            };
+
+            if (message.type === "ready") {
+              ready = true;
+              window.clearTimeout(connectionTimer);
+              terminal.options.disableStdin = false;
+              fit.fit();
+              send({
+                type: "resize",
+                cols: terminal.cols,
+                rows: terminal.rows,
+              });
+              setStatus("Connected. Your next discovery starts here.");
+              terminal.focus();
+            }
+
+            if (
+              message.type === "status" &&
+              typeof message.message === "string"
+            ) {
+              closeMessage = message.message;
+              setStatus(message.message);
+            }
+          } catch {
+            closeMessage = "The gateway returned an invalid response.";
+            socket.close();
+          }
+        };
+
+        socket.onerror = () => {
+          closeMessage = "Could not reach the gateway. Check its address and connection limits.";
+          if (!disposed) setStatus(closeMessage);
+        };
+
+        socket.onclose = () => {
+          window.clearTimeout(connectionTimer);
+          ready = false;
+          terminal.options.disableStdin = true;
+          if (!disposed) {
+            setBusy(false);
+            setStatus(closeMessage);
+          }
+        };
+
+        const input = terminal.onData((data) => {
+          if (!ready) return;
+          if (data.length > 4096) {
+            setStatus("Please paste fewer than 4,096 characters at a time.");
+            return;
+          }
+          send({ type: "input", data });
+        });
+
+        const resize = terminal.onResize(({ cols, rows }) => {
+          if (ready) send({ type: "resize", cols, rows });
+        });
+
+        const observer = new ResizeObserver(() => {
+          if (!disposed && host!.clientWidth > 0) fit.fit();
+        });
+        observer.observe(host!);
+
+        cleanup.push(
+          () => input.dispose(),
+          () => resize.dispose(),
+          () => observer.disconnect(),
+        );
+      } catch (error) {
+        if (!disposed) {
+          setBusy(false);
+          setStatus(
+            error instanceof Error ? error.message : "Could not start the terminal.",
+          );
+        }
+      }
+    }
+
+    void start();
+
+    return () => {
+      disposed = true;
+      for (const dispose of cleanup.reverse()) dispose();
+      host?.replaceChildren();
+    };
+  }, [request, labId]);
+
+  function connect(event: FormEvent<HTMLFormElement> | React.MouseEvent) {
+    if (event && "preventDefault" in event) event.preventDefault();
+    if (!accessCode) {
+      setStatus("No access code found in environment variables.");
+      return;
+    }
+    setBusy(true);
+    setStatus("Opening your practice space...");
+    setRequest({ code: accessCode.trim() });
+  }
+
+  function disconnect() {
+    setRequest(null);
+    setBusy(false);
+    setStatus("Disconnected. Your files stay until the lab restarts or is reset.");
+  }
+
+  return (
+    <div className="live-lab">
+      <div className="panel-heading" style={{ borderBottom: "none", alignItems: "center" }}>
+        <span className="icon-label" style={{ fontSize: "14px" }}>
+          <TerminalIcon size={18} aria-hidden="true" />
+          {title}
+        </span>
+        
+        {busy ? (
+          <button type="button" className="secondary-button" onClick={disconnect}>
+            Disconnect
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="primary-button"
+            onClick={connect}
+            disabled={!accessCode}
+          >
+            Connect to lab
+          </button>
+        )}
+      </div>
+
+      <div className="terminal-window">
+        <div
+          ref={hostRef}
+          className="terminal-screen"
+          aria-label={`${title} interactive terminal`}
+        />
+        {!request ? (
+          <p className="terminal-empty">
+            A little curiosity. A few commands. <br />
+            Connect whenever you are ready.
+          </p>
+        ) : (
+          /* Show status overlay only when not connected/ready */
+          !status.includes("Connected.") && (
+            <p className="terminal-empty" style={{ zIndex: 10, background: "#090f13", pointerEvents: "none", color: "#b9b0ce" }}>
+              {status === "Opening your practice space..." ? "Starting the machine ..." : status}
+            </p>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+--- END FILE: src/components/LabTerminal.tsx ---
+
+--- BEGIN FILE: src/app/paths/page.tsx ---
+import Link from "next/link";
+import { ChevronRight, Terminal } from "lucide-react";
+import WorkspaceShell from "@/components/WorkspaceShell";
+import { paths, pathHref } from "@/content/paths";
+import { lessons } from "@/content/lessons";
+import { requireRonakId } from "@/server/current-user";
+import { getProgress } from "@/server/progress";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export default async function PathsPage() {
+  const userId = await requireRonakId();
+  const progress = getProgress(userId);
+  const completedReading = new Set(progress.readingIds);
+  const completedLabs = new Set(progress.labIds);
+
+  return (
+    <WorkspaceShell current="/paths">
+      <section className="hero">
+        <div>
+          <h1>Learning paths</h1>
+          <p>Pick a topic. Start small. Build your skills.</p>
+        </div>
+        <div className="hero-art" aria-hidden="true">
+          <div className="orbit orbit-one" />
+          <div className="orbit orbit-two" />
+          <div className="hero-terminal"><Terminal size={46} /></div>
+          <span className="orbit-dot" />
+        </div>
+      </section>
+
+      {paths.length > 0 ? (
+        <ul className="path-grid" aria-label="Available learning paths">
+          {paths.map((path) => {
+            const pathLessons = path.lessonIds.map(id => lessons.find(l => l.id === id)).filter(Boolean) as typeof lessons;
+            
+            // Calculate XP for this path
+            let totalPathXp = 0;
+            let earnedPathXp = 0;
+
+            pathLessons.forEach(lesson => {
+              // Reading XP
+              totalPathXp += lesson.xp;
+              if (completedReading.has(lesson.id)) earnedPathXp += lesson.xp;
+
+              // Lab XP
+              lesson.blocks.forEach(block => {
+                if (block.type === "lab") {
+                  totalPathXp += 50; // We hardcoded 50 XP per lab
+                  if (completedLabs.has(`${lesson.id}:${block.id}`)) {
+                    earnedPathXp += 50;
+                  }
+                }
+              });
+            });
+
+            return (
+              <li key={path.id}>
+                <Link href={pathHref(path.id)} className="code-card path-card" style={{ display: 'block', height: '100%' }}>
+                  <div className="path-title">
+                    <h2>{path.title}</h2>
+                    <ChevronRight size={18} aria-hidden="true" />
+                  </div>
+
+                  <p>
+                    {path.lessonIds.length}
+                    {" "}{path.lessonIds.length === 1 ? "lesson" : "lessons"}
+                  </p>
+
+                  <div style={{ marginTop: '16px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
+                      <span style={{ color: 'var(--muted)' }}>Path progress</span>
+                      <strong className="accent">{earnedPathXp} / {totalPathXp} XP</strong>
+                    </div>
+                    <progress 
+                      value={earnedPathXp} 
+                      max={totalPathXp || 1} 
+                      style={{ width: '100%', height: '6px', borderRadius: '3px' }} 
+                    />
+                  </div>
+
+                  <div className="path-tags" style={{ marginTop: 'auto' }}>
+                    <span className="pill">{path.difficulty}</span>
+                    <span className="pill">{path.type}</span>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p>New learning paths will appear here.</p>
+      )}
+    </WorkspaceShell>
+  );
+}
+
+--- END FILE: src/app/paths/page.tsx ---
+
+--- BEGIN FILE: src/components/LearningPage.tsx ---
+"use client";
+
+import { useState, useTransition, type FormEvent } from "react";
+import Link from "next/link";
+import {
+  ArrowUpRight,
+  Check,
+  ChevronRight,
+  FlaskConical,
+  RotateCcw,
+  Terminal,
+} from "lucide-react";
+
+import { type Lesson, type ContentBlock } from "@/content/lessons";
+import WorkspaceShell from "@/components/WorkspaceShell";
+import LabTerminal from "@/components/LabTerminal";
+import type { Progress } from "@/lib/progress-types";
+import {
+  markReadingComplete,
+  completeLab,
+  importReadingProgress,
+} from "@/app/actions/progress";
+
+type ReadingBlock = Exclude<ContentBlock, { type: "homework" }>;
+type ReadingLesson = Omit<Lesson, "blocks"> & {
+  blocks: ReadingBlock[];
+};
+
+function Quiz({
+  block,
+}: {
+  block: Extract<ContentBlock, { type: "quiz" }>;
+}) {
+  const [selected, setSelected] = useState<number | null>(null);
+  const correct = selected === block.answer;
+
+  return (
+    <section className="quiz-card">
+      <span className="eyebrow">QUICK CHECK</span>
+      <h3>{block.question}</h3>
+      <div className="quiz-options">
+        {block.options.map((option, index) => (
+          <button
+            key={option}
+            type="button"
+            className={`quiz-option ${
+              selected === index ? "selected" : ""
+            }`}
+            aria-pressed={selected === index}
+            onClick={() => setSelected(index)}
+          >
+            <span className="option-letter">
+              {String.fromCharCode(65 + index)}
+            </span>
+            {option}
+            {selected === index && correct && (
+              <Check size={18} aria-hidden="true" />
+            )}
+          </button>
+        ))}
+      </div>
+      <p className="quiz-feedback" aria-live="polite">
+        {selected === null
+          ? "Take a guess. Curiosity counts."
+          : correct
+            ? `Exactly! ${block.explanation}`
+            : "Not quite. Revisit the notes and try another answer."}
+      </p>
+    </section>
+  );
+}
+
+function LabBlock({
+  lessonId,
+  block,
+  isCompleted,
+  revision,
+}: {
+  lessonId: string;
+  block: Extract<ContentBlock, { type: "lab" }>;
+  isCompleted: boolean;
+  revision: boolean;
+}) {
+  const [retrying, setRetrying] = useState(revision);
+  const [flagInput, setFlagInput] = useState("");
+  const [error, setError] = useState(false);
+  const [submitting, startSubmitting] = useTransition();
+
+  function submitFlag(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    startSubmitting(async () => {
+      try {
+        const result = await completeLab(lessonId, block.id, flagInput);
+        setError(!result.ok);
+        if (result.ok) {
+          setRetrying(false);
+          setFlagInput("");
+        }
+      } catch {
+        setError(true);
+      }
+    });
+  }
+
+  if (isCompleted && !retrying) {
+    return (
+      <section
+        className="lab-card"
+        style={{
+          padding: "16px 20px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "12px",
+          background: "#152119",
+          borderColor: "#344738",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+          }}
+        >
+          <Check size={20} color="#b8f777" aria-hidden="true" />
+          <strong style={{ color: "#b8f777" }}>
+            Practice Completed
+          </strong>
+        </div>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => setRetrying(true)}
+          style={{ fontSize: "12px", padding: "4px 10px", height: "auto" }}
+        >
+          Reattempt
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <section className="lab-card">
+      <LabTerminal labId={block.labId} title={block.title} />
+      <div className="lab-instructions">
+        <span className="eyebrow">YOUR MISSION</span>
+        <p>{block.objective}</p>
+        <form
+          onSubmit={submitFlag}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+            marginTop: "16px",
+            marginBottom: "16px",
+          }}
+        >
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            <input
+              type="text"
+              value={flagInput}
+              onChange={(event) => {
+                setFlagInput(event.target.value);
+                setError(false);
+              }}
+              placeholder="Enter completion code..."
+              aria-label="Lab completion code"
+              disabled={submitting}
+              style={{
+                flex: "1 1 180px",
+                minWidth: 0,
+                padding: "8px 12px",
+                borderRadius: "6px",
+                border: error ? "1px solid #ff8b8b" : "1px solid var(--border)",
+                background: "#090f13",
+                color: "var(--text)",
+              }}
+            />
+            <button
+              type="submit"
+              disabled={submitting}
+              className="primary-button"
+              style={{ height: "auto", padding: "8px 16px" }}
+            >
+              {submitting ? "Checking..." : "Submit"}
+            </button>
+          </div>
+          {error && (
+            <span
+              role="alert"
+              style={{ color: "#ff8b8b", fontSize: "12px", marginLeft: "4px" }}
+            >
+              Incorrect answer or submission could not finish.
+            </span>
+          )}
+        </form>
+
+        <details>
+          <summary
+            style={{
+              fontSize: "16px",
+              fontWeight: "bold",
+              textTransform: "uppercase",
+            }}
+          >
+            HINT
+          </summary>
+          <p style={{ marginTop: "10px" }}>{block.hint}</p>
+        </details>
+      </div>
+    </section>
+  );
+}
+
+function LessonBlock({
+  lessonId,
+  block,
+  progress,
+  revision,
+}: {
+  lessonId: string;
+  block: ReadingBlock;
+  progress: Progress;
+  revision: boolean;
+}) {
+  switch (block.type) {
+    case "note":
+      return (
+        <section className="note">
+          <h2>{block.title}</h2>
+          <p>{block.body}</p>
+        </section>
+      );
+    case "tip":
+      return (
+        <aside className="tip">
+          <FlaskConical size={21} aria-hidden="true" />
+          <div>
+            <h3>{block.title}</h3>
+            <p>{block.body}</p>
+          </div>
+        </aside>
+      );
+    case "code":
+      return (
+        <section className="code-card">
+          <div className="panel-heading">
+            <span>{block.title}</span>
+            <span className="eyebrow">BASH</span>
+          </div>
+          <pre>
+            <code>{block.code}</code>
+          </pre>
+          <p className="code-caption">{block.caption}</p>
+        </section>
+      );
+    case "lab":
+      return (
+        <LabBlock
+          lessonId={lessonId}
+          block={block}
+          isCompleted={progress.labIds.includes(`${lessonId}:${block.id}`)}
+          revision={revision}
+        />
+      );
+    case "quiz":
+      return <Quiz block={block} />;
+  }
+}
+
+export default function LearningPage({
+  lessons,
+  progress,
+  initialLessonId,
+  revision = false,
+  pathTitle,
+}: {
+  lessons: ReadingLesson[];
+  progress: Progress;
+  initialLessonId: string;
+  revision?: boolean;
+  pathTitle: string;
+}) {
+  const [activeId, setActiveId] = useState(initialLessonId);
+  const [notice, setNotice] = useState("");
+  const [revisionReading, setRevisionReading] = useState<string[]>([]);
+  const [saving, startSaving] = useTransition();
+
+  const completed = revision ? revisionReading : progress.readingIds;
+  const lesson = lessons.find((item) => item.id === activeId) ?? lessons[0];
+  const lessonIndex = lessons.findIndex((item) => item.id === lesson.id);
+
+  const isRead = completed.includes(lesson.id);
+  const readCount = lessons.filter((item) => completed.includes(item.id)).length;
+
+  function markAsRead() {
+    if (revision) {
+      setRevisionReading((current) =>
+        current.includes(lesson.id) ? current : [...current, lesson.id],
+      );
+      setNotice("Reviewed for this visit. Your saved XP is unchanged.");
+      return;
+    }
+
+    startSaving(async () => {
+      try {
+        await markReadingComplete(lesson.id);
+        setNotice("Reading progress saved.");
+      } catch {
+        setNotice("Progress could not be saved. Please try again.");
+      }
+    });
+  }
+
+  async function importOldReading() {
+    try {
+      const raw = window.localStorage.getItem("cipher-lab:reading-progress:v1") ?? "[]";
+      await importReadingProgress(raw);
+      setNotice("Existing reading progress imported.");
+    } catch {
+      setNotice("Reading progress could not be imported.");
+    }
+  }
+
+  return (
+    <WorkspaceShell current="/paths">
+      <div className="learning-workspace">
+        <header className="topbar">
+          <div className="breadcrumb">
+            <Link href="/paths">Learning paths</Link>
+            <ChevronRight size={14} aria-hidden="true" />
+            <span>{pathTitle}</span>
+          </div>
+          <span className="pill">SELF-PACED</span>
+        </header>
+
+        {revision && (
+          <div className="revision-banner" role="note">
+            <RotateCcw size={20} aria-hidden="true" />
+            <div>
+              <strong>Revision mode</strong>
+              <p>
+                A fresh reading pass for this visit. Your saved XP and previous
+                completions are unchanged. Reloading starts this local pass
+                over.
+              </p>
+            </div>
+            <Link href="/dashboard" className="secondary-button">
+              Exit revision
+            </Link>
+          </div>
+        )}
+
+        <section
+          className="learning-chapter-strip"
+          aria-label="Path chapters"
+        >
+          <div className="learning-chapter-heading">
+            <span className="dashboard-kicker">CHAPTERS</span>
+            <span>
+              {readCount} / {lessons.length}{" "}
+              {revision ? "reviewed this visit" : "read"}
+            </span>
+          </div>
+
+          <nav className="learning-chapter-list" aria-label="Lessons">
+            {lessons.map((item, index) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`learning-chapter-button${
+                  lesson.id === item.id ? " is-active" : ""
+                }`}
+                aria-current={lesson.id === item.id ? "step" : undefined}
+                onClick={() => {
+                  setActiveId(item.id);
+                  setNotice("");
+                }}
+              >
+                <span className="learning-chapter-number">
+                  {completed.includes(item.id) ? (
+                    <Check size={14} aria-hidden="true" />
+                  ) : (
+                    String(index + 1).padStart(2, "0")
+                  )}
+                </span>
+                {item.title}
+              </button>
+            ))}
+          </nav>
+        </section>
+
+        <section className="hero">
+          <div>
+            <span className="eyebrow accent">
+              CHAPTER {String(lessonIndex + 1).padStart(2, "0")} / GET CURIOUS
+            </span>
+            <h1>{lesson.title}</h1>
+            <p>{lesson.description}</p>
+            <div className="lesson-meta">
+              <span>Beginner friendly</span>
+              <span>{lesson.minutes} min</span>
+              <span className="accent">+{lesson.xp} reading XP</span>
+            </div>
+          </div>
+          <div className="hero-art" aria-hidden="true">
+            <div className="orbit orbit-one" />
+            <div className="orbit orbit-two" />
+            <div className="hero-terminal">
+              <Terminal size={46} />
+            </div>
+            <span className="orbit-dot" />
+          </div>
+        </section>
+
+        <div className="content-layout">
+          <article className="lesson-content" aria-label={lesson.title}>
+            {lesson.blocks.map((block) => (
+              <LessonBlock
+                key={`${lesson.id}:${block.id}`}
+                lessonId={lesson.id}
+                block={block}
+                progress={progress}
+                revision={revision}
+              />
+            ))}
+
+            <footer className="completion-card">
+              <div>
+                <h3>
+                  {revision
+                    ? isRead
+                      ? "A useful refresher."
+                      : "Ready to mark this reviewed?"
+                    : isRead
+                      ? "Another small win."
+                      : "Ready to call this a win?"}
+                </h3>
+                <p>
+                  {revision
+                    ? "Revision progress is local to this visit."
+                    : "Mark your reading progress when you feel comfortable."}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="primary-button"
+                disabled={isRead || saving}
+                onClick={markAsRead}
+              >
+                {isRead ? (
+                  <Check size={17} aria-hidden="true" />
+                ) : (
+                  <ArrowUpRight size={17} aria-hidden="true" />
+                )}
+                {saving
+                  ? "Saving..."
+                  : revision
+                    ? isRead
+                      ? "Reviewed"
+                      : "Mark as reviewed"
+                    : isRead
+                      ? "Lesson read"
+                      : "Mark as read"}
+              </button>
+              <p className="save-notice" role="status">
+                {notice}
+              </p>
+            </footer>
+
+            {!revision && (
+              <details className="learning-import">
+                <summary>Previously learned on this browser?</summary>
+                <p>
+                  Import reading progress saved by the earlier version of Cyber
+                  Box.
+                </p>
+                <button
+                  type="button"
+                  onClick={importOldReading}
+                  className="secondary-button"
+                >
+                  Import old progress
+                </button>
+              </details>
+            )}
+          </article>
+
+          <aside className="mission-card">
+            <span className="mission-icon">
+              <FlaskConical size={22} aria-hidden="true" />
+            </span>
+            <span className="eyebrow">THE GAME PLAN</span>
+            <h2>
+              Small steps.
+              <br />
+              Real skills.
+            </h2>
+            <p>By the end of this chapter, you will be able to:</p>
+            <ol>
+              {lesson.objectives.map((objective) => (
+                <li key={objective}>{objective}</li>
+              ))}
+            </ol>
+            <div className="mission-note">
+              No timer. No pressure.
+              <br /> You can come back as often as you like.
+            </div>
+          </aside>
+        </div>
+      </div>
+    </WorkspaceShell>
+  );
+}
+
+--- END FILE: src/components/LearningPage.tsx ---
+
+```
+
+## PROMPT 3: Batch 2 Instructions
+```text
+Please implement **Batch 2: Learning Paths & In-Lesson UI**.
+
+Here are the requirements:
+
+### 📦 BATCH 2: Learning Paths & In-Lesson Experience
+1. **Learning Paths Page Revamp (`src/app/paths/page.tsx`)**
+   - Use `getPathProgress()` from `src/lib/path-progress.ts` to get accurate points/XP instead of hardcoding it.
+   - Add category groups (e.g., "Linux foundations", "Web Pentesting"). Group the paths by category in the UI.
+   - Show unified points (mentioning how many points come specifically from the path's homework, reading, and labs).
+   - Add an "expected days to finish" or time estimate.
+   - Apply the new premium UI styling from `workspace.css` here to match the Dashboard.
+2. **Inside the Lesson (The New Inner Sidebar in `src/components/LearningPage.tsx`)**
+   - Create a dedicated *inner* sidebar layout for the `LearningPage`. Remove the old horizontal `.learning-chapter-strip` entirely.
+   - Include a "Back to Learning Paths" button at the very top of this inner sidebar.
+   - Below it, render a vertical Index of chapters/lessons with their titles and individual points.
+   - **Color-coded states for the sidebar chapters:** 
+     - *Completed:* One color.
+     - *Completed Reading but Unfinished Labs:* Show a yellow dot next to the name. Hovering over the dot must show a tooltip: "This lesson has unfinished labs".
+     - *Ongoing / Current:* Highlighted clearly.
+     - *Unvisited:* Locked color. Users cannot click to navigate to unvisited lessons, but they CAN click to jump back to any completed or ongoing lesson.
+3. **Lesson Footer Navigation (`src/components/LearningPage.tsx`)**
+   - At the bottom of the lesson content, add a premium bottom-navigation bar: "Go to Next Lesson", or if it's the last lesson, "Finish Path".
+   - Clicking "Finish Path" should route the user back to the Learning Paths screen.
+4. **Lab Terminal UI Tweaks (`src/components/LabTerminal.tsx` & `src/app/globals.css`)**
+   - Fix the annoying scrollbar bug that sometimes appears on the right side of the xterm.js terminals (ensure `overflow: hidden` on the terminal screen wrapper in CSS/inline styles).
+   - Above or near the terminal, clearly display how many points the lab is worth (currently 50 XP).
+   - Redesign the "HINT" text/toggle (`<details>` in `LabBlock`) to look much more integrated, modern, and premium.
+
+Provide the complete code for the files you modify. Do NOT proceed to Batch 3 yet. Provide your response as clearly marked file blocks.
+```

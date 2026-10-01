@@ -1,14 +1,29 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useTransition,
+  type FormEvent,
+} from "react";
 import Link from "next/link";
 import {
+  ArrowLeft,
+  ArrowRight,
   ArrowUpRight,
+  BookOpen,
   Check,
+  ChevronDown,
   ChevronRight,
+  Clock3,
   FlaskConical,
+  Lightbulb,
+  LockKeyhole,
   RotateCcw,
   Terminal,
+  Trophy,
 } from "lucide-react";
 
 import { type Lesson, type ContentBlock } from "@/content/lessons";
@@ -20,11 +35,69 @@ import {
   completeLab,
   importReadingProgress,
 } from "@/app/actions/progress";
+import "@/app/batch-two.css";
+
+// Display-only value matching the existing completeLab Server Action.
+// Scoring remains server-controlled.
+const LAB_POINTS = 50;
 
 type ReadingBlock = Exclude<ContentBlock, { type: "homework" }>;
 type ReadingLesson = Omit<Lesson, "blocks"> & {
   blocks: ReadingBlock[];
 };
+
+type LearningPageProps = {
+  lessons: ReadingLesson[];
+  progress: Progress;
+  initialLessonId: string;
+  revision?: boolean;
+  pathTitle: string;
+};
+
+function getLabs(lesson: ReadingLesson) {
+  return lesson.blocks.filter(
+    (block): block is Extract<ContentBlock, { type: "lab" }> =>
+      block.type === "lab",
+  );
+}
+
+function hasStartedLesson(lesson: ReadingLesson, progress: Progress) {
+  return (
+    progress.readingIds.includes(lesson.id) ||
+    getLabs(lesson).some((block) =>
+      progress.labIds.includes(`${lesson.id}:${block.id}`),
+    )
+  );
+}
+
+function getInitialActiveId({
+  lessons,
+  progress,
+  initialLessonId,
+  revision,
+}: LearningPageProps) {
+  if (revision) {
+    return (
+      lessons.find((lesson) => lesson.id === initialLessonId)?.id ??
+      lessons[0]?.id ??
+      ""
+    );
+  }
+
+  const firstUnread = lessons.find(
+    (lesson) => !progress.readingIds.includes(lesson.id),
+  );
+  const requested = lessons.find((lesson) => lesson.id === initialLessonId);
+
+  // A deep link should not bypass the sequential reading entry point.
+  if (
+    requested &&
+    (requested.id === firstUnread?.id || hasStartedLesson(requested, progress))
+  ) {
+    return requested.id;
+  }
+  return firstUnread?.id ?? lessons[0]?.id ?? "";
+}
 
 function Quiz({
   block,
@@ -41,10 +114,10 @@ function Quiz({
       <div className="quiz-options">
         {block.options.map((option, index) => (
           <button
-            key={option}
+            key={`${block.id}:${index}`}
             type="button"
-            className={`quiz-option ${
-              selected === index ? "selected" : ""
+            className={`quiz-option${
+              selected === index ? " selected" : ""
             }`}
             aria-pressed={selected === index}
             onClick={() => setSelected(index)}
@@ -86,8 +159,13 @@ function LabBlock({
   const [error, setError] = useState(false);
   const [submitting, startSubmitting] = useTransition();
 
+  const inputId = useId();
+  const errorId = useId();
+
   function submitFlag(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) return;
+
     startSubmitting(async () => {
       try {
         const result = await completeLab(lessonId, block.id, flagInput);
@@ -104,36 +182,24 @@ function LabBlock({
 
   if (isCompleted && !retrying) {
     return (
-      <section
-        className="lab-card"
-        style={{
-          padding: "16px 20px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "12px",
-          background: "#152119",
-          borderColor: "#344738",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-          }}
-        >
-          <Check size={20} color="#b8f777" aria-hidden="true" />
-          <strong style={{ color: "#b8f777" }}>
-            Practice Completed
-          </strong>
+      <section className="lab-card lesson-lab-complete">
+        <div className="lesson-lab-complete-heading">
+          <span className="lesson-lab-complete-icon" aria-hidden="true">
+            <Check size={20} />
+          </span>
+          <div>
+            <strong>Practice completed</strong>
+            <p>
+              {block.title} · {LAB_POINTS} lab points earned
+            </p>
+          </div>
         </div>
         <button
           type="button"
           className="secondary-button"
           onClick={() => setRetrying(true)}
-          style={{ fontSize: "12px", padding: "4px 10px", height: "auto" }}
         >
+          <RotateCcw size={14} aria-hidden="true" />
           Reattempt
         </button>
       </section>
@@ -141,72 +207,71 @@ function LabBlock({
   }
 
   return (
-    <section className="lab-card">
+    <section className="lab-card lesson-lab-card">
       <LabTerminal labId={block.labId} title={block.title} />
       <div className="lab-instructions">
         <span className="eyebrow">YOUR MISSION</span>
         <p>{block.objective}</p>
-        <form
-          onSubmit={submitFlag}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            marginTop: "16px",
-            marginBottom: "16px",
-          }}
-        >
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+
+        {isCompleted && (
+          <p className="lesson-lab-reattempt-note">
+            You have already earned these lab points. Reattempting does not award
+            them again.
+          </p>
+        )}
+
+        <form className="lesson-lab-form" onSubmit={submitFlag}>
+          <label htmlFor={inputId}>Completion code</label>
+          <div className="lesson-lab-form-row">
             <input
+              id={inputId}
               type="text"
               value={flagInput}
               onChange={(event) => {
                 setFlagInput(event.target.value);
                 setError(false);
               }}
-              placeholder="Enter completion code..."
-              aria-label="Lab completion code"
+              placeholder="Enter your completion code"
               disabled={submitting}
-              style={{
-                flex: "1 1 180px",
-                minWidth: 0,
-                padding: "8px 12px",
-                borderRadius: "6px",
-                border: error ? "1px solid #ff8b8b" : "1px solid var(--border)",
-                background: "#090f13",
-                color: "var(--text)",
-              }}
+              aria-invalid={error || undefined}
+              aria-describedby={error ? errorId : undefined}
+              autoComplete="off"
+              spellCheck={false}
             />
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !flagInput.trim()}
               className="primary-button"
-              style={{ height: "auto", padding: "8px 16px" }}
             >
-              {submitting ? "Checking..." : "Submit"}
+              {submitting ? "Checking..." : "Submit code"}
+              {!submitting && <ArrowRight size={15} aria-hidden="true" />}
             </button>
           </div>
           {error && (
-            <span
-              role="alert"
-              style={{ color: "#ff8b8b", fontSize: "12px", marginLeft: "4px" }}
-            >
+            <p id={errorId} className="lesson-lab-error" role="alert">
               Incorrect answer or submission could not finish.
-            </span>
+            </p>
           )}
         </form>
 
-        <details>
-          <summary
-            style={{
-              fontSize: "16px",
-              fontWeight: "bold",
-              textTransform: "uppercase",
-            }}
-          >
-            HINT
+        <details className="lesson-hint">
+          <summary>
+            <span className="lesson-hint-icon" aria-hidden="true">
+              <Lightbulb size={17} />
+            </span>
+            <span className="lesson-hint-copy">
+              <strong>Need a nudge?</strong>
+              <span>Reveal a hint without leaving your practice.</span>
+            </span>
+            <ChevronDown
+              className="lesson-hint-chevron"
+              size={17}
+              aria-hidden="true"
+            />
           </summary>
-          <p style={{ marginTop: "10px" }}>{block.hint}</p>
+          <div className="lesson-hint-body">
+            <p>{block.hint}</p>
+          </div>
         </details>
       </div>
     </section>
@@ -269,35 +334,91 @@ function LessonBlock({
   }
 }
 
-export default function LearningPage({
-  lessons,
-  progress,
-  initialLessonId,
-  revision = false,
-  pathTitle,
-}: {
-  lessons: ReadingLesson[];
-  progress: Progress;
-  initialLessonId: string;
-  revision?: boolean;
-  pathTitle: string;
-}) {
-  const [activeId, setActiveId] = useState(initialLessonId);
+export default function LearningPage(props: LearningPageProps) {
+  const {
+    lessons,
+    progress,
+    revision = false,
+    pathTitle,
+  } = props;
+
+  const [activeId, setActiveId] = useState(() => getInitialActiveId(props));
+  const [visitedIds, setVisitedIds] = useState<string[]>(() => {
+    const initialId = getInitialActiveId(props);
+    return initialId ? [initialId] : [];
+  });
   const [notice, setNotice] = useState("");
   const [revisionReading, setRevisionReading] = useState<string[]>([]);
+  const [savedThisVisit, setSavedThisVisit] = useState<string[]>([]);
   const [saving, startSaving] = useTransition();
+  const [importing, startImporting] = useTransition();
 
-  const completed = revision ? revisionReading : progress.readingIds;
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const previousActiveId = useRef(activeId);
+  const sidebarId = useId();
+
+  // Only update this local overlay after a successful server action.
+  const savedReading = new Set([
+    ...progress.readingIds,
+    ...savedThisVisit,
+  ]);
+  const completedReading = revision ? new Set(revisionReading) : savedReading;
+  const completedLabs = new Set(progress.labIds);
+
   const lesson = lessons.find((item) => item.id === activeId) ?? lessons[0];
-  const lessonIndex = lessons.findIndex((item) => item.id === lesson.id);
+  const lessonIndex = lesson
+    ? lessons.findIndex((item) => item.id === lesson.id)
+    : -1;
 
-  const isRead = completed.includes(lesson.id);
-  const readCount = lessons.filter((item) => completed.includes(item.id)).length;
+  const nextLesson = lessons[lessonIndex + 1];
+  const previousLesson = lessons[lessonIndex - 1];
+
+  const isRead = lesson ? completedReading.has(lesson.id) : false;
+  const readCount = lessons.filter((item) =>
+    completedReading.has(item.id),
+  ).length;
+
+  const firstUnread = lessons.find(
+    (item) => !completedReading.has(item.id),
+  );
+
+  const accessibleIds = new Set(visitedIds);
+  for (const item of lessons) {
+    if (
+      completedReading.has(item.id) ||
+      hasStartedLesson(item, progress)
+    ) {
+      accessibleIds.add(item.id);
+    }
+  }
+  if (firstUnread) accessibleIds.add(firstUnread.id);
+  if (lesson) accessibleIds.add(lesson.id);
+
+  useEffect(() => {
+    if (previousActiveId.current === activeId) return;
+    previousActiveId.current = activeId;
+    headingRef.current?.focus({ preventScroll: true });
+    headingRef.current?.scrollIntoView({
+      block: "start",
+      behavior: "auto",
+    });
+  }, [activeId]);
+
+  function openLesson(id: string) {
+    setVisitedIds((current) =>
+      current.includes(id) ? current : [...current, id],
+    );
+    setActiveId(id);
+    setNotice("");
+  }
 
   function markAsRead() {
+    if (!lesson || isRead || saving) return;
+    const lessonId = lesson.id;
+
     if (revision) {
       setRevisionReading((current) =>
-        current.includes(lesson.id) ? current : [...current, lesson.id],
+        current.includes(lessonId) ? current : [...current, lessonId],
       );
       setNotice("Reviewed for this visit. Your saved XP is unchanged.");
       return;
@@ -305,7 +426,10 @@ export default function LearningPage({
 
     startSaving(async () => {
       try {
-        await markReadingComplete(lesson.id);
+        await markReadingComplete(lessonId);
+        setSavedThisVisit((current) =>
+          current.includes(lessonId) ? current : [...current, lessonId],
+        );
         setNotice("Reading progress saved.");
       } catch {
         setNotice("Progress could not be saved. Please try again.");
@@ -313,112 +437,270 @@ export default function LearningPage({
     });
   }
 
-  async function importOldReading() {
-    try {
-      const raw = window.localStorage.getItem("cipher-lab:reading-progress:v1") ?? "[]";
-      await importReadingProgress(raw);
-      setNotice("Existing reading progress imported.");
-    } catch {
-      setNotice("Reading progress could not be imported.");
-    }
+  function importOldReading() {
+    if (importing) return;
+    startImporting(async () => {
+      try {
+        const raw =
+          window.localStorage.getItem("cipher-lab:reading-progress:v1") ?? "[]";
+        await importReadingProgress(raw);
+        setNotice("Existing reading progress imported.");
+      } catch {
+        setNotice("Reading progress could not be imported.");
+      }
+    });
   }
+
+  if (!lesson) {
+    return (
+      <WorkspaceShell current="/paths">
+        <section className="dashboard-empty lesson-empty">
+          <BookOpen size={28} aria-hidden="true" />
+          <h1>No chapters available yet.</h1>
+          <p>This learning path is still being prepared.</p>
+          <Link href="/paths" className="primary-button">
+            <ArrowLeft size={16} aria-hidden="true" />
+            Back to Learning Paths
+          </Link>
+        </section>
+      </WorkspaceShell>
+    );
+  }
+
+  const lessonLabs = getLabs(lesson);
+  const remainingLabCount = lessonLabs.filter(
+    (block) => !completedLabs.has(`${lesson.id}:${block.id}`),
+  ).length;
 
   return (
     <WorkspaceShell current="/paths">
-      <div className="learning-workspace">
-        <header className="topbar">
-          <div className="breadcrumb">
-            <Link href="/paths">Learning paths</Link>
-            <ChevronRight size={14} aria-hidden="true" />
-            <span>{pathTitle}</span>
-          </div>
-          <span className="pill">SELF-PACED</span>
-        </header>
-
-        {revision && (
-          <div className="revision-banner" role="note">
-            <RotateCcw size={20} aria-hidden="true" />
-            <div>
-              <strong>Revision mode</strong>
-              <p>
-                A fresh reading pass for this visit. Your saved XP and previous
-                completions are unchanged. Reloading starts this local pass
-                over.
-              </p>
-            </div>
-            <Link href="/dashboard" className="secondary-button">
-              Exit revision
-            </Link>
-          </div>
-        )}
-
-        <section
-          className="learning-chapter-strip"
-          aria-label="Path chapters"
+      <div className="lesson-workspace">
+        <aside
+          className="lesson-index"
+          aria-label={`${pathTitle} chapter index`}
         >
-          <div className="learning-chapter-heading">
-            <span className="dashboard-kicker">CHAPTERS</span>
-            <span>
-              {readCount} / {lessons.length}{" "}
+          <Link href="/paths" className="lesson-index-back">
+            <ArrowLeft size={16} aria-hidden="true" />
+            Back to Learning Paths
+          </Link>
+
+          <div className="lesson-index-heading">
+            <span className="dashboard-kicker">
+              {revision ? "REVISION INDEX" : "YOUR PATH"}
+            </span>
+            <h2>{pathTitle}</h2>
+            <p>
+              {readCount} of {lessons.length} chapters{" "}
               {revision ? "reviewed this visit" : "read"}
-            </span>
+            </p>
+            <progress
+              value={readCount}
+              max={lessons.length || 1}
+              aria-label={`${readCount} of ${lessons.length} chapters ${
+                revision ? "reviewed this visit" : "read"
+              }`}
+            />
           </div>
 
-          <nav className="learning-chapter-list" aria-label="Lessons">
-            {lessons.map((item, index) => (
-              <button
-                key={item.id}
-                type="button"
-                className={`learning-chapter-button${
-                  lesson.id === item.id ? " is-active" : ""
-                }`}
-                aria-current={lesson.id === item.id ? "step" : undefined}
-                onClick={() => {
-                  setActiveId(item.id);
-                  setNotice("");
-                }}
-              >
-                <span className="learning-chapter-number">
-                  {completed.includes(item.id) ? (
-                    <Check size={14} aria-hidden="true" />
-                  ) : (
-                    String(index + 1).padStart(2, "0")
-                  )}
-                </span>
-                {item.title}
-              </button>
-            ))}
+          <nav className="lesson-index-navigation" aria-label="Chapters">
+            <ol className="lesson-index-list">
+              {lessons.map((item, index) => {
+                const labs = getLabs(item);
+                const readingDone = completedReading.has(item.id);
+                const unfinishedLabs = labs.some(
+                  (block) => !completedLabs.has(`${item.id}:${block.id}`),
+                );
+                const fullyComplete = readingDone && !unfinishedLabs;
+                const showWarning = readingDone && unfinishedLabs;
+                const current = lesson.id === item.id;
+                const locked = !accessibleIds.has(item.id);
+
+                const lessonPoints = item.xp + labs.length * LAB_POINTS;
+                const tooltipId = `${sidebarId}-lab-warning-${index}`;
+
+                const stateLabel = fullyComplete
+                  ? revision
+                    ? "Reviewed"
+                    : "Completed"
+                  : showWarning
+                    ? "Reading complete"
+                    : current
+                      ? "Current lesson"
+                      : locked
+                        ? "Locked"
+                        : "In progress";
+
+                const stateClass = fullyComplete
+                  ? " is-complete"
+                  : showWarning
+                    ? " has-unfinished-labs"
+                    : locked
+                      ? " is-locked"
+                      : " is-ongoing";
+
+                return (
+                  <li
+                    key={item.id}
+                    className={`lesson-index-item${stateClass}${
+                      current ? " is-current" : ""
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      className="lesson-index-button"
+                      disabled={locked || saving}
+                      aria-current={current ? "step" : undefined}
+                      aria-label={`${index + 1}. ${item.title}. ${lessonPoints} reading and lab points. ${stateLabel}${
+                        current && stateLabel !== "Current lesson"
+                          ? ". Current lesson"
+                          : ""
+                      }`}
+                      onClick={() => openLesson(item.id)}
+                    >
+                      <span
+                        className="lesson-index-number"
+                        aria-hidden="true"
+                      >
+                        {locked ? (
+                          <LockKeyhole size={14} />
+                        ) : fullyComplete ? (
+                          <Check size={15} />
+                        ) : (
+                          String(index + 1).padStart(2, "0")
+                        )}
+                      </span>
+                      <span className="lesson-index-copy">
+                        <strong>{item.title}</strong>
+                        <span>
+                          {lessonPoints} pts <span aria-hidden="true"> · </span>
+                          {stateLabel}
+                        </span>
+                      </span>
+                    </button>
+
+                    {showWarning && (
+                      <span
+                        className="lesson-index-warning"
+                        tabIndex={0}
+                        aria-label="Unfinished labs"
+                        aria-describedby={tooltipId}
+                      >
+                        <span
+                          className="lesson-index-warning-dot"
+                          aria-hidden="true"
+                        />
+                        <span
+                          id={tooltipId}
+                          role="tooltip"
+                          className="lesson-index-tooltip"
+                        >
+                          This lesson has unfinished labs
+                        </span>
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
           </nav>
-        </section>
 
-        <section className="hero">
-          <div>
-            <span className="eyebrow accent">
-              CHAPTER {String(lessonIndex + 1).padStart(2, "0")} / GET CURIOUS
+          <div className="lesson-index-note">
+            <LockKeyhole size={15} aria-hidden="true" />
+            <p>
+              Mark the current reading complete to unlock the next chapter. You can
+              return to unfinished labs later.
+            </p>
+          </div>
+          <p className="lesson-index-points-note">
+            Chapter points include reading and labs. Homework points are tracked
+            separately on the Homework screen.
+          </p>
+        </aside>
+
+        <div className="lesson-stage">
+          <header className="lesson-breadcrumb-bar">
+            <nav className="breadcrumb" aria-label="Breadcrumb">
+              <Link href="/paths">Learning paths</Link>
+              <ChevronRight size={14} aria-hidden="true" />
+              <span>{pathTitle}</span>
+            </nav>
+            <span className="pill">SELF-PACED</span>
+          </header>
+
+          {revision && (
+            <div className="revision-banner" role="note">
+              <RotateCcw size={20} aria-hidden="true" />
+              <div>
+                <strong>Revision mode</strong>
+                <p>
+                  A fresh reading pass for this visit. Your saved XP and previous
+                  completions are unchanged. Reloading starts this local pass
+                  over.
+                </p>
+              </div>
+              <Link href="/paths" className="secondary-button">
+                Exit revision
+              </Link>
+            </div>
+          )}
+
+          <header className="lesson-hero">
+            <span className="dashboard-kicker">
+              CHAPTER {String(lessonIndex + 1).padStart(2, "0")} OF{" "}
+              {String(lessons.length).padStart(2, "0")}
             </span>
-            <h1>{lesson.title}</h1>
+            <h1 ref={headingRef} tabIndex={-1}>
+              {lesson.title}
+            </h1>
             <p>{lesson.description}</p>
-            <div className="lesson-meta">
-              <span>Beginner friendly</span>
-              <span>{lesson.minutes} min</span>
-              <span className="accent">+{lesson.xp} reading XP</span>
+            <div className="lesson-hero-meta">
+              <span>
+                <BookOpen size={14} aria-hidden="true" />
+                Beginner friendly
+              </span>
+              <span>
+                <Clock3 size={14} aria-hidden="true" />
+                {lesson.minutes} min reading
+              </span>
+              <span>
+                <Trophy size={14} aria-hidden="true" />
+                {lesson.xp} reading pts
+              </span>
+              {lessonLabs.length > 0 && (
+                <span>
+                  <Terminal size={14} aria-hidden="true" />
+                  {lessonLabs.length * LAB_POINTS} lab pts
+                </span>
+              )}
             </div>
-          </div>
-          <div className="hero-art" aria-hidden="true">
-            <div className="orbit orbit-one" />
-            <div className="orbit orbit-two" />
-            <div className="hero-terminal">
-              <Terminal size={46} />
-            </div>
-            <span className="orbit-dot" />
-          </div>
-        </section>
+          </header>
 
-        <div className="content-layout">
-          <article className="lesson-content" aria-label={lesson.title}>
+          <aside className="lesson-plan" aria-label="Chapter objectives">
+            <div className="lesson-plan-heading">
+              <span className="lesson-plan-icon" aria-hidden="true">
+                <FlaskConical size={20} />
+              </span>
+              <div>
+                <span className="dashboard-kicker">THE GAME PLAN</span>
+                <h2>Small steps. Real skills.</h2>
+              </div>
+            </div>
+            <ol>
+              {lesson.objectives.map((objective, index) => (
+                <li key={`${lesson.id}:objective:${index}`}>
+                  {objective}
+                </li>
+              ))}
+            </ol>
+          </aside>
+
+          <article
+            className="lesson-content lesson-reading-content"
+            aria-label={lesson.title}
+          >
             {lesson.blocks.map((block) => (
               <LessonBlock
-                key={`${lesson.id}:${block.id}`}
+                key={`${lesson.id}:${block.id}:${revision ? "revision" : "learn"}`}
                 lessonId={lesson.id}
                 block={block}
                 progress={progress}
@@ -426,9 +708,9 @@ export default function LearningPage({
               />
             ))}
 
-            <footer className="completion-card">
+            <section className="completion-card lesson-reading-completion">
               <div>
-                <h3>
+                <h2>
                   {revision
                     ? isRead
                       ? "A useful refresher."
@@ -436,7 +718,7 @@ export default function LearningPage({
                     : isRead
                       ? "Another small win."
                       : "Ready to call this a win?"}
-                </h3>
+                </h2>
                 <p>
                   {revision
                     ? "Revision progress is local to this visit."
@@ -465,13 +747,13 @@ export default function LearningPage({
                       ? "Lesson read"
                       : "Mark as read"}
               </button>
-              <p className="save-notice" role="status">
-                {notice}
-              </p>
-            </footer>
+            </section>
+            <p className="save-notice lesson-save-notice" role="status">
+              {notice}
+            </p>
 
             {!revision && (
-              <details className="learning-import">
+              <details className="learning-import lesson-progress-import">
                 <summary>Previously learned on this browser?</summary>
                 <p>
                   Import reading progress saved by the earlier version of Cyber
@@ -480,35 +762,76 @@ export default function LearningPage({
                 <button
                   type="button"
                   onClick={importOldReading}
+                  disabled={importing}
                   className="secondary-button"
                 >
-                  Import old progress
+                  {importing ? "Importing..." : "Import old progress"}
                 </button>
               </details>
             )}
-          </article>
 
-          <aside className="mission-card">
-            <span className="mission-icon">
-              <FlaskConical size={22} aria-hidden="true" />
-            </span>
-            <span className="eyebrow">THE GAME PLAN</span>
-            <h2>
-              Small steps.
-              <br />
-              Real skills.
-            </h2>
-            <p>By the end of this chapter, you will be able to:</p>
-            <ol>
-              {lesson.objectives.map((objective) => (
-                <li key={objective}>{objective}</li>
-              ))}
-            </ol>
-            <div className="mission-note">
-              No timer. No pressure.
-              <br /> You can come back as often as you like.
-            </div>
-          </aside>
+            <footer className="lesson-bottom-navigation">
+              <div className="lesson-bottom-copy">
+                <span className="dashboard-kicker">
+                  {nextLesson ? "KEEP YOUR MOMENTUM" : "LAST CHAPTER"}
+                </span>
+                <h2>
+                  {nextLesson ? nextLesson.title : "Bring it all together."}
+                </h2>
+                <p>
+                  {!isRead
+                    ? revision
+                      ? "Mark this chapter reviewed to continue."
+                      : "Mark this chapter as read to continue."
+                    : remainingLabCount > 0
+                      ? `${remainingLabCount} ${
+                          remainingLabCount === 1 ? "lab is" : "labs are"
+                        } still unfinished. You can return to practice later.`
+                      : nextLesson
+                        ? "Your next discovery is one chapter away."
+                        : "Return to Learning Paths to see your points and remaining practice."}
+                </p>
+              </div>
+
+              <nav
+                className="lesson-bottom-actions"
+                aria-label="Lesson navigation"
+              >
+                {previousLesson && accessibleIds.has(previousLesson.id) && (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={saving}
+                    onClick={() => openLesson(previousLesson.id)}
+                  >
+                    <ArrowLeft size={16} aria-hidden="true" />
+                    Previous
+                  </button>
+                )}
+                {nextLesson ? (
+                  <button
+                    type="button"
+                    className="primary-button"
+                    disabled={!isRead || saving}
+                    onClick={() => openLesson(nextLesson.id)}
+                  >
+                    Go to Next Lesson
+                    <ArrowRight size={16} aria-hidden="true" />
+                  </button>
+                ) : isRead && !saving ? (
+                  <Link href="/paths" className="primary-button">
+                    Finish Path
+                    <Check size={16} aria-hidden="true" />
+                  </Link>
+                ) : (
+                  <button type="button" className="primary-button" disabled>
+                    Finish Path
+                    <Check size={16} aria-hidden="true" />
+                  </button>
+                )}
+              </nav>
+            </footer>
+          </article>
         </div>
       </div>
     </WorkspaceShell>
