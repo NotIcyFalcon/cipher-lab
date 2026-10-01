@@ -1175,8 +1175,9 @@
   font-size: 13px;
 }
 
+.ctf-flag-input-wrap > input:focus,
 .ctf-flag-input-wrap > input:focus-visible {
-  outline-offset: 2px;
+  outline: none;
 }
 
 .ctf-flag-input-wrap > input::placeholder {
