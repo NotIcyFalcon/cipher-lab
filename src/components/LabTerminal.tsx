@@ -14,9 +14,10 @@ import "@/app/batch-two.css";
 type Props = {
   labId: string;
   title: string;
+  variant?: "lab" | "ctf";
 };
 
-export default function LabTerminal({ labId, title }: Props) {
+export default function LabTerminal({ labId, title, variant = "lab" }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [accessCode, setAccessCode] = useState<string | undefined>();
   const [request, setRequest] = useState<{ code: string } | null>(null);
@@ -283,18 +284,13 @@ export default function LabTerminal({ labId, title }: Props) {
             <TerminalIcon size={19} />
           </span>
           <div>
-            <span className="lab-terminal-kicker">HANDS-ON PRACTICE</span>
+            <span className="lab-terminal-kicker">{variant === "ctf" ? "TARGET ENVIRONMENT" : "HANDS-ON PRACTICE"}</span>
             <strong className="lab-terminal-title">{title}</strong>
           </div>
         </div>
 
         <div className="lab-terminal-actions">
-          <span className="lab-terminal-points">
-            <Trophy size={13} aria-hidden="true" /> 50 XP
-            <span className="lab-terminal-points-description">
-              {" "}· lab points
-            </span>
-          </span>
+          {variant === "lab" && (<span className="lab-terminal-points"><Trophy size={13} aria-hidden="true" /> 50 XP<span className="lab-terminal-points-description"> - lab points</span></span>)}
 
           {busy ? (
             <button

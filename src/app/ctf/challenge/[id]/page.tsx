@@ -128,10 +128,7 @@ export default async function CTFChallengePage({
           </p>
 
           <div className="ctf-lab">
-            <LabTerminal
-              labId={challenge.labId}
-              title={challenge.title}
-            />
+            <LabTerminal labId={challenge.labId} title={challenge.title} variant="ctf" />
           </div>
         </section>
       )}
@@ -156,6 +153,7 @@ export default async function CTFChallengePage({
     </div>
   );
 }
+
 
 
 
