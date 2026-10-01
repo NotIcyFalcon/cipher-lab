@@ -1,18 +1,19 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { BookOpen, Box, LayoutDashboard } from "lucide-react";
+import { BookOpen, Box, Flag, LayoutDashboard } from "lucide-react";
 
 const navigation = [
   { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { href: "/paths", label: "Learning paths", Icon: BookOpen },
   { href: "/homework", label: "Homework", Icon: Box },
+  { href: "/ctf", label: "CTF", Icon: Flag },
 ];
 
 export default function WorkspaceShell({
   current,
   children,
 }: {
-  current: "/dashboard" | "/paths";
+  current: "/dashboard" | "/paths" | "/homework" | "/ctf";
   children: ReactNode;
 }) {
   return (
@@ -56,7 +57,13 @@ export default function WorkspaceShell({
         <header className="topbar">
           <div className="breadcrumb">
             <span>
-              {current === "/dashboard" ? "Dashboard" : "Learning paths"}
+              {current === "/dashboard"
+                ? "Dashboard"
+                : current === "/paths"
+                  ? "Learning paths"
+                  : current === "/homework"
+                    ? "Homework"
+                    : "CTF"}
             </span>
           </div>
         </header>

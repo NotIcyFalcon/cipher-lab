@@ -41,8 +41,10 @@ export type Progress = {
   readingXp: number;
   labsXp: number;
   homeworkXp: number;
+  ctfXp: number;
   totalXp: number;
   readingIds: string[];
   labIds: string[];
   homeworkBest: Record<string, number>;
+  ctfIds: string[];
 };

@@ -7,6 +7,24 @@ import type {
   SubmissionSummary,
 } from "@/lib/progress-types";
 
+export function getCTFProgress(
+  userId: string,
+): Pick<Progress, "ctfXp" | "ctfIds"> {
+  const rows = getDb()
+    .prepare(`
+      SELECT challenge_id AS challengeId, xp
+      FROM ctf_completions
+      WHERE user_id = ?
+      ORDER BY completed_at, challenge_id
+    `)
+    .all(userId) as Array<{ challengeId: string; xp: number }>;
+
+  return {
+    ctfXp: rows.reduce((total, row) => total + row.xp, 0),
+    ctfIds: rows.map((row) => row.challengeId),
+  };
+}
+
 export function getProgress(userId: string): Progress {
   const db = getDb();
 
@@ -15,12 +33,13 @@ export function getProgress(userId: string): Progress {
       reading_xp AS readingXp,
       labs_xp AS labsXp,
       homework_xp AS homeworkXp,
-      reading_xp + labs_xp + homework_xp AS totalXp
+      ctf_xp AS ctfXp,
+      reading_xp + labs_xp + homework_xp + ctf_xp AS totalXp
     FROM user_xp
     WHERE user_id = ?
   `).get(userId) as Pick<
     Progress,
-    "readingXp" | "labsXp" | "homeworkXp" | "totalXp"
+    "readingXp" | "labsXp" | "homeworkXp" | "ctfXp" | "totalXp"
   > | undefined;
 
   if (!totals) throw new Error("User not found");
@@ -43,6 +62,8 @@ export function getProgress(userId: string): Progress {
     WHERE user_id = ?
   `).all(userId) as { id: string; xp: number }[];
 
+  const ctf = getCTFProgress(userId);
+
   return {
     ...totals,
     readingIds: reading.map((item) => item.id),
@@ -50,6 +71,7 @@ export function getProgress(userId: string): Progress {
     homeworkBest: Object.fromEntries(
       homework.map((item) => [item.id, item.xp]),
     ),
+    ...ctf,
   };
 }
 
