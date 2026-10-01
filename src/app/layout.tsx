@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "@xterm/xterm/css/xterm.css";
 import "./globals.css";
+import "./workspace.css";
 
 export const metadata: Metadata = {
   title: "Cyber Box — Learn by doing",

@@ -8,14 +8,23 @@ export type HomeworkDefinition = HomeworkBlock & {
   chapterId: string;
 };
 
-export const homeworkChapters = lessons.map((lesson) => ({
-  id: lesson.id,
-  title: lesson.title,
-  description: lesson.description,
-  questions: lesson.blocks.filter(
-    (block): block is HomeworkBlock => block.type === "homework",
-  ),
-}));
+export const homeworkChapters = lessons
+  .map((lesson) => {
+    const questions = lesson.blocks
+      .filter((block): block is HomeworkBlock => block.type === "homework")
+      .map((block) => ({
+        ...block,
+        totalTests: block.testCases.length,
+      }));
+
+    return {
+      id: lesson.id,
+      title: lesson.title,
+      description: lesson.description,
+      questions,
+    };
+  })
+  .filter((chapter) => chapter.questions.length > 0);
 
 const questionsById = new Map<string, HomeworkDefinition>();
 
@@ -45,9 +54,7 @@ export function findHomework(homeworkId: string) {
   return questionsById.get(homeworkId);
 }
 
-export function publicQuestion(
-  question: HomeworkBlock,
-): HomeworkQuestion {
+export function publicQuestion(question: HomeworkBlock): HomeworkQuestion {
   return {
     homeworkId: question.homeworkId,
     title: question.title || "Assignment",

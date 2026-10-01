@@ -3,7 +3,6 @@ import { lessons } from "@/content/lessons";
 export const paths = [...new Set(lessons.map((lesson) => lesson.category))]
   .map((category) => {
     const items = lessons.filter((lesson) => lesson.category === category);
-
     return {
       id: category,
       title: category,
@@ -17,7 +16,15 @@ export const paths = [...new Set(lessons.map((lesson) => lesson.category))]
     };
   });
 
-export function pathHref(_id: string) {
-  // For now, all paths go to the main learning environment
-  return `/`;
+export function pathHref(id: string) {
+  const params = new URLSearchParams({ path: id });
+  return `/?${params.toString()}`;
+}
+
+export function pathRevisionHref(id: string) {
+  const params = new URLSearchParams({
+    path: id,
+    revise: "1",
+  });
+  return `/?${params.toString()}`;
 }
