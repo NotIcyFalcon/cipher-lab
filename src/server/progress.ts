@@ -1,4 +1,5 @@
 import "server-only";
+
 import { getDb } from "@/server/db";
 import type {
   HistoryPage,
@@ -12,7 +13,9 @@ export function getCTFProgress(
 ): Pick<Progress, "ctfXp" | "ctfIds"> {
   const rows = getDb()
     .prepare(`
-      SELECT challenge_id AS challengeId, xp
+      SELECT
+        challenge_id AS challengeId,
+        awarded_xp AS xp
       FROM ctf_completions
       WHERE user_id = ?
       ORDER BY completed_at, challenge_id
@@ -28,39 +31,49 @@ export function getCTFProgress(
 export function getProgress(userId: string): Progress {
   const db = getDb();
 
-  const totals = db.prepare(`
-    SELECT
-      reading_xp AS readingXp,
-      labs_xp AS labsXp,
-      homework_xp AS homeworkXp,
-      ctf_xp AS ctfXp,
-      reading_xp + labs_xp + homework_xp + ctf_xp AS totalXp
-    FROM user_xp
-    WHERE user_id = ?
-  `).get(userId) as Pick<
-    Progress,
-    "readingXp" | "labsXp" | "homeworkXp" | "ctfXp" | "totalXp"
-  > | undefined;
+  const totals = db
+    .prepare(`
+      SELECT
+        reading_xp AS readingXp,
+        labs_xp AS labsXp,
+        homework_xp AS homeworkXp,
+        ctf_xp AS ctfXp,
+        reading_xp + labs_xp + homework_xp + ctf_xp AS totalXp
+      FROM user_xp
+      WHERE user_id = ?
+    `)
+    .get(userId) as
+    | Pick<
+        Progress,
+        "readingXp" | "labsXp" | "homeworkXp" | "ctfXp" | "totalXp"
+      >
+    | undefined;
 
   if (!totals) throw new Error("User not found");
 
-  const reading = db.prepare(`
-    SELECT lesson_id AS id
-    FROM reading_progress
-    WHERE user_id = ?
-  `).all(userId) as { id: string }[];
+  const reading = db
+    .prepare(`
+      SELECT lesson_id AS id
+      FROM reading_progress
+      WHERE user_id = ?
+    `)
+    .all(userId) as { id: string }[];
 
-  const labs = db.prepare(`
-    SELECT challenge_id AS id
-    FROM lab_completions
-    WHERE user_id = ?
-  `).all(userId) as { id: string }[];
+  const labs = db
+    .prepare(`
+      SELECT challenge_id AS id
+      FROM lab_completions
+      WHERE user_id = ?
+    `)
+    .all(userId) as { id: string }[];
 
-  const homework = db.prepare(`
-    SELECT homework_id AS id, best_xp AS xp
-    FROM homework_best
-    WHERE user_id = ?
-  `).all(userId) as { id: string; xp: number }[];
+  const homework = db
+    .prepare(`
+      SELECT homework_id AS id, best_xp AS xp
+      FROM homework_best
+      WHERE user_id = ?
+    `)
+    .all(userId) as { id: string; xp: number }[];
 
   const ctf = getCTFProgress(userId);
 
@@ -89,22 +102,20 @@ export function getSubmission(
   userId: string,
   submissionId: number,
 ): Submission | null {
-  const row = getDb().prepare(`
-    SELECT
-      ${summaryColumns},
-      homework_id AS homeworkId,
-      filename,
-      code,
-      results_json AS resultsJson,
-      error
-    FROM homework_submissions
-    WHERE id = ? AND user_id = ?
-  `).get(submissionId, userId) as
-    | (
-        Omit<Submission, "results"> & {
-          resultsJson: string;
-        }
-      )
+  const row = getDb()
+    .prepare(`
+      SELECT
+        ${summaryColumns},
+        homework_id AS homeworkId,
+        filename,
+        code,
+        results_json AS resultsJson,
+        error
+      FROM homework_submissions
+      WHERE id = ? AND user_id = ?
+    `)
+    .get(submissionId, userId) as
+    | (Omit<Submission, "results"> & { resultsJson: string })
     | undefined;
 
   if (!row) return null;
@@ -122,15 +133,17 @@ export function getHistory(
   homeworkId: string,
   beforeId = Number.MAX_SAFE_INTEGER,
 ): HistoryPage {
-  const rows = getDb().prepare(`
-    SELECT ${summaryColumns}
-    FROM homework_submissions
-    WHERE user_id = ?
-      AND homework_id = ?
-      AND id < ?
-    ORDER BY id DESC
-    LIMIT 11
-  `).all(userId, homeworkId, beforeId) as SubmissionSummary[];
+  const rows = getDb()
+    .prepare(`
+      SELECT ${summaryColumns}
+      FROM homework_submissions
+      WHERE user_id = ?
+        AND homework_id = ?
+        AND id < ?
+      ORDER BY id DESC
+      LIMIT 11
+    `)
+    .all(userId, homeworkId, beforeId) as SubmissionSummary[];
 
   const items = rows.slice(0, 10);
 
