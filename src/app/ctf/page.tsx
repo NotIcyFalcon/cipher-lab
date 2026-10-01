@@ -217,7 +217,7 @@ export default async function CTFPage() {
                       <p>
                         {category.basePoints} base XP
                         {category.penaltyXp > 0 &&
-                          ` · ${category.penaltyXp} XP in hint penalties`}
+                          ` - ${category.penaltyXp} XP in hint penalties`}
                       </p>
                     </div>
 
@@ -256,3 +256,4 @@ export default async function CTFPage() {
     </div>
   );
 }
+

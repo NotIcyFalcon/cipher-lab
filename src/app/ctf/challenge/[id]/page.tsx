@@ -87,7 +87,7 @@ export default async function CTFChallengePage({
           </strong>
           <p>
             {challenge.points} base
-            {state.penaltyXp > 0 && ` · −${state.penaltyXp} hints`}
+            {state.penaltyXp > 0 && ` - ${state.penaltyXp} XP (hints)`}
           </p>
         </div>
       </header>
@@ -156,3 +156,6 @@ export default async function CTFChallengePage({
     </div>
   );
 }
+
+
+
