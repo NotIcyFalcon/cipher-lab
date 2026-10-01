@@ -47,3 +47,6 @@ gateway/.env
 
 # Production deployment settings
 .env
+# AI Context Files
+PROJECT_HANDOFF.md
+CHAT_HISTORY.md
