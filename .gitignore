@@ -50,3 +50,9 @@ gateway/.env
 # AI Context Files
 PROJECT_HANDOFF.md
 CHAT_HISTORY.md
+
+# AI Assistant Data
+.ai/
+
+# Local Database
+data/
