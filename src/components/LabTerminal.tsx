@@ -15,9 +15,18 @@ type Props = {
   labId: string;
   title: string;
   variant?: "lab" | "ctf";
+  kicker?: string;
+  points?: number | null;
 };
 
-export default function LabTerminal({ labId, title, variant = "lab" }: Props) {
+export default function LabTerminal({ 
+  labId, 
+  title, 
+  variant = "lab",
+  kicker,
+  points,
+}: Props) {
+  const displayPoints = points !== undefined ? points : (variant === "lab" ? 50 : null);
   const hostRef = useRef<HTMLDivElement>(null);
   const [accessCode, setAccessCode] = useState<string | undefined>();
   const [request, setRequest] = useState<{ code: string } | null>(null);
@@ -284,13 +293,22 @@ export default function LabTerminal({ labId, title, variant = "lab" }: Props) {
             <TerminalIcon size={19} />
           </span>
           <div>
-            <span className="lab-terminal-kicker">{variant === "ctf" ? "TARGET ENVIRONMENT" : "HANDS-ON PRACTICE"}</span>
+            <span className="lab-terminal-kicker">
+              {kicker ?? (variant === "ctf" ? "TARGET ENVIRONMENT" : "HANDS-ON PRACTICE")}
+            </span>
             <strong className="lab-terminal-title">{title}</strong>
           </div>
         </div>
 
         <div className="lab-terminal-actions">
-          {variant === "lab" && (<span className="lab-terminal-points"><Trophy size={13} aria-hidden="true" /> 50 XP<span className="lab-terminal-points-description"> - lab points</span></span>)}
+          {displayPoints !== null && (
+            <span className="lab-terminal-points">
+              <Trophy size={13} aria-hidden="true" /> {displayPoints} XP
+              <span className="lab-terminal-points-description">
+                {" "} - lab points
+              </span>
+            </span>
+          )}
 
           {busy ? (
             <button

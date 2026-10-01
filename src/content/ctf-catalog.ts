@@ -62,8 +62,7 @@ export const ctfCategories: readonly CTFCategoryDefinition[] = [
           {
             id: "whiterose-dns",
             title: "A message in the records",
-            points: 100,
-            description: `An analyst recovered these DNS TXT records from a fictional training environment:
+            points: 100, labId: "linux-basics", description: `An analyst recovered these DNS TXT records from a fictional training environment:
 
 whiterose.invalid. TXT "v=spf1 -all"
 relay.whiterose.invalid. TXT "verification=relay-seven"
@@ -348,3 +347,4 @@ export function findCTFCategory(id: string) {
 export function findCTFChallenge(id: string) {
   return challengeById.get(id);
 }
+
