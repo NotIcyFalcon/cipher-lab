@@ -29,24 +29,29 @@ export default async function CTFPage() {
     { challenges: 0, completed: 0, earned: 0, achievable: 0 },
   );
 
+  // Group categories by their difficulty as a simple grouping mechanism,
+  // similar to how Learning Paths groups by category.
+  const groups = new Map<string, typeof categories>();
+  for (const category of categories) {
+    const key = category.id;
+    const group = groups.get(key) ?? [];
+    group.push(category);
+    groups.set(key, group);
+  }
+
   return (
     <div className="ctf-page b5-ctf">
       <header className="ctf-hero">
         <div className="ctf-hero-copy">
           <span className="ctf-kicker">
             <span className="ctf-signal-dot" aria-hidden="true" />
-            CYBER BOX / CAPTURE THE FLAG
+            CAPTURE THE FLAG
           </span>
           <h1>
             Follow the signal.
             <br />
             <span>Capture the flag.</span>
           </h1>
-          <p>
-            Choose a topic, explore its story universes, and take on the
-            challenges inside. Every clue is another chance to build your
-            investigator&apos;s mindset.
-          </p>
 
           <div className="ctf-hero-tags">
             <span>
@@ -69,9 +74,6 @@ export default async function CTFPage() {
             <Radar size={49} strokeWidth={1.2} />
           </span>
           <span className="ctf-radar-node" />
-          <span className="ctf-radar-caption">
-            DISCOVER / DECODE / CAPTURE
-          </span>
         </div>
       </header>
 
@@ -79,231 +81,186 @@ export default async function CTFPage() {
         <div>
           <dt>
             <Compass size={15} aria-hidden="true" />
-            Topics to explore
+            Topics
           </dt>
           <dd>{categories.length}</dd>
-          <p>Choose your next field of investigation</p>
         </div>
         <div>
           <dt>
             <CheckCircle2 size={15} aria-hidden="true" />
-            Challenges completed
+            Completed
           </dt>
           <dd>
             {totals.completed} <span>/ {totals.challenges}</span>
           </dd>
-          <p>Completed challenges remain open for practice</p>
         </div>
         <div>
           <dt>
             <Trophy size={15} aria-hidden="true" />
-            Your CTF XP
+            CTF XP
           </dt>
           <dd>
             {totals.earned} <span>/ {totals.achievable}</span>
           </dd>
-          <p>Earned / best achievable after hint penalties</p>
         </div>
       </dl>
 
-      <section aria-labelledby="ctf-topics-title">
-        <div className="ctf-section-heading">
-          <div>
-            <span className="ctf-kicker">SELECT A TOPIC</span>
-            <h2 id="ctf-topics-title">Different fields. One mindset.</h2>
-          </div>
-          <span className="ctf-index-label">
-            {String(categories.length).padStart(2, "0")} TOPICS
-          </span>
+      {categories.length === 0 ? (
+        <div className="ctf-empty">
+          <Radar size={32} aria-hidden="true" />
+          <h3>No topics yet.</h3>
         </div>
+      ) : (
+        categories.map((category, groupIndex) => {
+          const Icon =
+            category.id === "networking"
+              ? Network
+              : category.id === "osint"
+                ? Globe2
+                : category.id === "general" ? Flag : Boxes;
 
-        {categories.length === 0 ? (
-          <div className="ctf-empty">
-            <Radar size={32} aria-hidden="true" />
-            <h3>No topics on the radar yet.</h3>
-            <p>New CTF topics will appear here.</p>
-          </div>
-        ) : (
-          <ul className="ctf-category-grid">
-            {categories.map((category, index) => {
-              const Icon =
-                category.id === "networking"
-                  ? Network
-                  : category.id === "osint"
-                    ? Globe2
-                    : category.id === "general" ? Flag : Boxes;
+          const complete =
+            category.challengeCount > 0 &&
+            category.completedCount === category.challengeCount;
 
-              const complete =
-                category.challengeCount > 0 &&
-                category.completedCount === category.challengeCount;
+          const percentage =
+            category.achievableXp > 0
+              ? Math.round(
+                  (category.earnedXp / category.achievableXp) * 100,
+                )
+              : complete ? 100 : 0;
 
-              const percentage =
-                category.achievableXp > 0
-                  ? Math.round(
-                      (category.earnedXp / category.achievableXp) * 100,
-                    )
-                  : complete ? 100 : 0;
+          let challengeNumber = 0;
 
-              let challengeNumber = 0;
+          return (
+            <section
+              key={category.id}
+              className="paths-category b5-ctf-category"
+              aria-labelledby={`ctf-category-${groupIndex}`}
+            >
+              <div className="dashboard-section-heading">
+                <div>
+                  <span className="dashboard-kicker">EXPLORE A CATEGORY</span>
+                  <h2 id={`ctf-category-${groupIndex}`}>{category.name}</h2>
+                </div>
+                <span className="paths-category-count">
+                  {category.challengeCount}{" "}
+                  {category.challengeCount === 1 ? "challenge" : "challenges"}
+                </span>
+              </div>
 
-              return (
-                <li key={category.id}>
-                  <article
-                    className={`ctf-category-card b5-ctf-card${
-                      complete ? " is-complete" : ""
-                    }`}
-                  >
-                    <div className="ctf-card-top">
-                      <span className="ctf-category-icon" aria-hidden="true">
-                        <Icon size={25} strokeWidth={1.6} />
-                      </span>
-                      <span className="ctf-card-coordinate">
-                        TOPIC / {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <span className="ctf-difficulty">
-                        {category.difficulty}
-                      </span>
-                    </div>
-
-                    <div className="ctf-card-body">
-                      <h3>
-                        <Link
-                          href={`/ctf/${encodeURIComponent(category.id)}`}
-                          className="b5-ctf-card-link"
-                          aria-label={`Explore ${category.name}: ${category.challengeCount} challenges`}
-                        >
-                          {category.name}
-                        </Link>
-                      </h3>
-                      <p>{category.description}</p>
-
-                      <div className="ctf-card-counts">
-                        <span>
-                          {category.universes.length}{" "}
-                          {category.universes.length === 1
-                            ? "universe"
-                            : "universes"}
+              <ul className="ctf-category-grid">
+                {category.universes.map((universe) => (
+                  <li key={universe.id}>
+                    <article
+                      className={`ctf-category-card b5-ctf-card${
+                        complete ? " is-complete" : ""
+                      }`}
+                    >
+                      <div className="ctf-card-top">
+                        <span className="ctf-category-icon" aria-hidden="true">
+                          <Icon size={22} strokeWidth={1.6} />
                         </span>
-                        <span>{category.challengeCount} challenges</span>
-                        <span>{category.completedCount} completed</span>
+                        <span className="ctf-difficulty">
+                          {category.difficulty}
+                        </span>
                       </div>
 
-                      <div className="b5-ctf-challenges">
-                        <span className="ctf-small-label">
-                          CHALLENGES IN THIS TOPIC
-                        </span>
-
-                        {category.universes.map((universe) => (
-                          <div
-                            key={universe.id}
-                            className="b5-ctf-universe-preview"
+                      <div className="ctf-card-body">
+                        <h3>
+                          <Link
+                            href={`/ctf/${encodeURIComponent(category.id)}`}
+                            className="b5-ctf-card-link"
                           >
-                            <h4>{universe.name}</h4>
-                            <ul>
-                              {universe.challenges.map((challenge) => {
-                                challengeNumber += 1;
+                            {universe.name}
+                          </Link>
+                        </h3>
 
-                                return (
-                                  <li key={challenge.id}>
-                                    <span
-                                      className="b5-ctf-challenge-status"
-                                      aria-hidden="true"
-                                    >
-                                      {challenge.completed ? (
-                                        <CheckCircle2 size={15} />
-                                      ) : (
-                                        <Flag size={15} />
-                                      )}
-                                    </span>
-                                    <span>
-                                      <strong>
-                                        {category.name}{" "}
-                                        {String(challengeNumber).padStart(2, "0")}
-                                      </strong>
-                                      <span>{challenge.title}</span>
-                                      <small>
-                                        {challenge.completed
-                                          ? "Completed"
-                                          : "Ready to explore"}
-                                        {" · "}
-                                        {challenge.points} base XP
-                                      </small>
-                                    </span>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          </div>
-                        ))}
+                        <div className="ctf-card-counts">
+                          <span>
+                            {universe.challenges.length}{" "}
+                            {universe.challenges.length === 1
+                              ? "challenge"
+                              : "challenges"}
+                          </span>
+                          <span>
+                            {universe.challenges.filter((c) => c.completed).length} completed
+                          </span>
+                        </div>
+
+                        <div className="b5-ctf-challenges">
+                          <ul>
+                            {universe.challenges.map((challenge) => {
+                              challengeNumber += 1;
+
+                              return (
+                                <li key={challenge.id}>
+                                  <span
+                                    className="b5-ctf-challenge-status"
+                                    aria-hidden="true"
+                                  >
+                                    {challenge.completed ? (
+                                      <CheckCircle2 size={14} />
+                                    ) : (
+                                      <Flag size={14} />
+                                    )}
+                                  </span>
+                                  <span>
+                                    <strong>{challenge.title}</strong>
+                                    <small>
+                                      {challenge.completed
+                                        ? "Completed"
+                                        : "Ready"}
+                                      {" · "}
+                                      {challenge.points} XP
+                                    </small>
+                                  </span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
                       </div>
 
-                      <div className="ctf-suggested b5-ctf-suggested">
-                        <span className="ctf-small-label">
-                          SUGGESTED LEARNING
+                      <div className="ctf-card-progress">
+                        <div>
+                          <span>Earned / achievable</span>
+                          <strong>
+                            {category.earnedXp}
+                            <span> / {category.achievableXp} XP</span>
+                          </strong>
+                        </div>
+                        <progress
+                          value={percentage}
+                          max={100}
+                          aria-label={`${category.name}: ${category.earnedXp} of ${category.achievableXp} XP`}
+                        />
+                      </div>
+
+                      <footer className="ctf-card-footer">
+                        <span className={complete ? "ctf-text-success" : ""}>
+                          {complete
+                            ? "ALL CAPTURED"
+                            : `${category.completedCount}/${category.challengeCount}`}
                         </span>
-                        <ul>
-                          {category.suggestedPaths.map((path) => (
-                            <li key={`${path.href}-${path.name}`}>
-                              <Link href={path.href}>
-                                {path.name}
-                                <ArrowRight size={12} aria-hidden="true" />
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div className="ctf-card-progress">
-                      <div>
-                        <span>Earned / achievable</span>
-                        <strong>
-                          {category.earnedXp}
-                          <span> / {category.achievableXp} XP</span>
-                        </strong>
-                      </div>
-                      <progress
-                        value={percentage}
-                        max={100}
-                        aria-label={`${category.name}: ${category.earnedXp} of ${category.achievableXp} achievable XP earned`}
-                      />
-                      <p>
-                        {category.basePoints} base XP
-                        {category.penaltyXp > 0 &&
-                          ` - ${category.penaltyXp} XP in hint penalties`}
-                      </p>
-                    </div>
-
-                    <footer className="ctf-card-footer">
-                      <span className={complete ? "ctf-text-success" : ""}>
-                        {complete
-                          ? "ALL CHALLENGES CAPTURED"
-                          : "YOUR NEXT DISCOVERY"}
-                      </span>
-                      <span className="ctf-text-link" aria-hidden="true">
-                        Explore topic
-                        <ArrowRight size={15} />
-                      </span>
-                    </footer>
-                  </article>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+                        <span className="ctf-text-link" aria-hidden="true">
+                          Explore
+                          <ArrowRight size={15} />
+                        </span>
+                      </footer>
+                    </article>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })
+      )}
 
       <aside className="ctf-rules-note">
         <ShieldCheck size={21} aria-hidden="true" />
         <div>
-          <strong>
-            Intelligence has a cost. Your progress has permanence.
-          </strong>
-          <p>
-            Hints reduce the available XP for their challenge. Successful
-            captures are recorded once, and re-attempts never duplicate
-            rewards. CTF XP is separate from learning-path points.
-          </p>
+          <strong>Hints reduce available XP. Captures are recorded once.</strong>
         </div>
       </aside>
     </div>

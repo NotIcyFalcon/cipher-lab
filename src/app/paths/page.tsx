@@ -66,11 +66,7 @@ export default async function PathsPage() {
         <header className="paths-heading">
           <div>
             <span className="dashboard-kicker">YOUR LEARNING LIBRARY</span>
-            <h1>Build your next skill.</h1>
-            <p>
-              Follow a focused path, put the ideas into practice, and collect points
-              as you learn.
-            </p>
+            <h1>Learning Paths</h1>
           </div>
           <span className="paths-heading-icon" aria-hidden="true">
             <Layers3 size={34} />
@@ -102,11 +98,6 @@ export default async function PathsPage() {
             </dd>
           </div>
         </dl>
-
-        <p className="paths-summary-note">
-          Path points combine reading XP, lab XP, and homework scores. CTF points
-          are separate.
-        </p>
 
         {groups.size > 0 ? (
           Array.from(groups.entries()).map(([category, categoryPaths], index) => (
@@ -181,8 +172,7 @@ export default async function PathsPage() {
                           </h3>
                           <p>
                             {stats.lessonCount}{" "}
-                            {stats.lessonCount === 1 ? "chapter" : "chapters"} to
-                            build understanding and practice at your own pace.
+                            {stats.lessonCount === 1 ? "chapter" : "chapters"}
                           </p>
 
                           <div className="paths-course-tags">
@@ -193,10 +183,7 @@ export default async function PathsPage() {
                               {formatLessonDuration(stats.minutes)} reading
                             </span>
                           </div>
-                          <p className="paths-time-note">
-                            Estimated reading time. Labs and homework may take
-                            longer.
-                          </p>
+
 
                           <dl
                             className="paths-points-breakdown"
@@ -284,8 +271,7 @@ export default async function PathsPage() {
         ) : (
           <section className="dashboard-empty">
             <FolderOpen size={30} aria-hidden="true" />
-            <h2>Your next adventure is on its way.</h2>
-            <p>New learning paths will appear here.</p>
+            <h2>No learning paths yet.</h2>
           </section>
         )}
       </div>

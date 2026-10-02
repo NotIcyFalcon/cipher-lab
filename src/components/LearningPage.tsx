@@ -716,8 +716,8 @@ export default function LearningPage(props: LearningPageProps) {
                 <FlaskConical size={20} />
               </span>
               <div>
-                <span className="dashboard-kicker">THE GAME PLAN</span>
-                <h2>Small steps. Real skills.</h2>
+                <span className="dashboard-kicker">OBJECTIVES</span>
+                <h2>What you will learn</h2>
               </div>
             </div>
             <ol>
@@ -750,17 +750,12 @@ export default function LearningPage(props: LearningPageProps) {
                 <h2>
                   {revision
                     ? isRead
-                      ? "A useful refresher."
+                      ? "Revision complete."
                       : "Ready to mark this reviewed?"
                     : isRead
-                      ? "Another small win."
-                      : "Ready to call this a win?"}
+                      ? "Reading complete."
+                      : "Finished reading?"}
                 </h2>
-                <p>
-                  {revision
-                    ? "Revision progress is local to this visit."
-                    : "Mark your reading progress when you feel comfortable."}
-                </p>
               </div>
 
               <button

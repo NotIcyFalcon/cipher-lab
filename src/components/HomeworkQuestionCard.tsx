@@ -597,15 +597,28 @@ export default function HomeworkQuestionCard({
                         <div className="hw-test-body">
                           <div className="hw-output-grid">
                             <OutputPanel
-                              title={result.assertionType === "file" ? "Expected Result" : "Expected Output"}
+                              title="Expected Output"
                               output={result.expectedOutput}
                             />
                             <OutputPanel
-                              title="Actual output"
+                              title="Actual Output"
                               output={result.actualOutput}
                               tone={result.passed ? "pass" : "fail"}
                             />
                           </div>
+                          {result.assertionType === "file" && (
+                            <div className="hw-output-grid" style={{ marginTop: 10 }}>
+                              <OutputPanel
+                                title="Expected Result"
+                                output={result.expectedOutput}
+                              />
+                              <OutputPanel
+                                title="Actual Result"
+                                output={result.actualOutput}
+                                tone={result.passed ? "pass" : "fail"}
+                              />
+                            </div>
+                          )}
 
                           {typeof result.error === "string" &&
                             result.error !== "" && (

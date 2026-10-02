@@ -153,8 +153,7 @@ function FieldRadar({ fields }: { fields: ProfileField[] }) {
       </svg>
 
       <figcaption>
-        Each point is progress you earned. An unexplored field is an
-        invitation, not a weakness.
+        Progress by topic.
       </figcaption>
     </figure>
   );
@@ -205,28 +204,23 @@ export default async function ProfilePage() {
           </div>
 
           <div className="b5-profile-intro">
-            <span className="dashboard-kicker">YOUR PERSONAL BASE CAMP</span>
-            <h1>Look at you building, Ronak.</h1>
-            <p>
-              Every chapter you read, every script you try, and every clue
-              you investigate is a step forward. You do not need to know
-              everything to belong here.
-            </p>
+            <span className="dashboard-kicker">PROFILE</span>
+            <h1>Ronak</h1>
 
             <div className="b5-profile-chips">
               <span>
                 <Sparkles size={15} aria-hidden="true" />
-                Level {data.level} explorer
+                Level {data.level}
               </span>
               <span>
-                <Heart size={15} aria-hidden="true" />
-                Your pace. Your progress.
+                <Trophy size={15} aria-hidden="true" />
+                {number(data.totalXp)} XP
               </span>
             </div>
           </div>
 
           <Link href="/paths" className="primary-button">
-            Find my next small win
+            Continue learning
             <ArrowRight size={16} aria-hidden="true" />
           </Link>
         </header>
@@ -238,7 +232,6 @@ export default async function ProfilePage() {
               Total XP
             </dt>
             <dd>{number(data.totalXp)}</dd>
-            <p>Reading, labs, homework, and captured flags.</p>
           </div>
 
           <div>
@@ -247,10 +240,6 @@ export default async function ProfilePage() {
               Homework submissions
             </dt>
             <dd>{number(data.recentSubmissionCount)}</dd>
-            <p>
-              Last 28 UTC days · {data.weeklyAverage.toFixed(1)} per week
-              on average.
-            </p>
           </div>
 
           <div>
@@ -259,28 +248,25 @@ export default async function ProfilePage() {
               Active practice days
             </dt>
             <dd>{data.activeDays}<span> / 28</span></dd>
-            <p>Days with a homework submission. Rest days are welcome.</p>
           </div>
 
           <div>
             <dt>
               <Lightbulb size={18} aria-hidden="true" />
-              Points lost to hints
+              Hint penalties
             </dt>
             <dd>{number(data.hintPenaltyXp)}</dd>
-            <p>Guidance used, not potential lost. Asking for help is a skill.</p>
           </div>
         </dl>
 
         <section className="b5-level-panel" aria-labelledby="profile-level-title">
           <div>
-            <span className="dashboard-kicker">ONE STEP AT A TIME</span>
+            <span className="dashboard-kicker">LEVEL PROGRESS</span>
             <h2 id="profile-level-title">
-              Level {data.level}: keep your curiosity close.
+              Level {data.level}
             </h2>
             <p>
-              {number(data.nextLevelRemaining)} XP to your next level.
-              Each level is 500 XP—a celebration, never a deadline.
+              {number(data.nextLevelRemaining)} XP to next level.
             </p>
           </div>
           <div className="b5-level-progress">
@@ -301,7 +287,7 @@ export default async function ProfilePage() {
             <div className="b5-profile-panel-heading">
               <div>
                 <span className="dashboard-kicker">YOUR EXPLORATION MAP</span>
-                <h2 id="field-map-title">Watch your world expand.</h2>
+                <h2 id="field-map-title">Field Map</h2>
               </div>
               <Radar size={24} aria-hidden="true" />
             </div>
@@ -325,11 +311,7 @@ export default async function ProfilePage() {
               ))}
             </ol>
 
-            <p className="b5-profile-note">
-              This map shows catalog points earned, not a judgment of
-              ability. Learning-path points include reading, labs, and
-              homework. CTF availability reflects hint penalties.
-            </p>
+
           </section>
 
           <section
@@ -338,16 +320,16 @@ export default async function ProfilePage() {
           >
             <div className="b5-profile-panel-heading">
               <div>
-                <span className="dashboard-kicker">SHOWING UP COUNTS</span>
-                <h2 id="profile-activity-title">Your practice rhythm.</h2>
+                <span className="dashboard-kicker">ACTIVITY</span>
+                <h2 id="profile-activity-title">Submission History</h2>
               </div>
               <CalendarDays size={24} aria-hidden="true" />
             </div>
 
             <p className="b5-panel-intro">
               {data.recentSubmissionCount > 0
-                ? `You made ${number(data.recentSubmissionCount)} homework submissions in the last 28 days. Each attempt gave you something to learn from.`
-                : "Your next attempt can be the first mark on this map. Start small; there is no catching up to do."}
+                ? `${number(data.recentSubmissionCount)} submissions in the last 28 days.`
+                : "No submissions in the last 28 days."}
             </p>
 
             <div className="b5-activity-heading">
@@ -413,21 +395,7 @@ export default async function ProfilePage() {
               </div>
             </dl>
 
-            <p className="b5-profile-note">
-              Counts include pending, graded, and errored submissions:
-              this is a record of attempts, not a pass-rate score. Dates
-              use UTC.
-            </p>
-
-            <div className="b5-profile-kind-note">
-              <Heart size={19} aria-hidden="true" />
-              <p>
-                A quiet day does not erase what you have learned. Come
-                back when you are ready; your progress will be here.
-              </p>
-            </div>
-
-            <Link href="/homework" className="dashboard-text-link">
+            <Link href="/homework" className="dashboard-text-link" style={{ marginTop: 20 }}>
               Try a practice mission
               <ArrowRight size={16} aria-hidden="true" />
             </Link>

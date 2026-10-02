@@ -77,7 +77,6 @@ export default function WorkspaceShell({
 
       <footer className="workspace-footer">
         <span>Cyber Box</span>
-        <span>Build understanding. Put it into practice.</span>
       </footer>
     </div>
   );

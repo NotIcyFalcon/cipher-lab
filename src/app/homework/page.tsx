@@ -113,12 +113,8 @@ export default async function HomeworkPage({
         <div>
           <span className="dashboard-kicker">YOUR PRACTICE WORKSPACE</span>
           <h1>
-            {selectedPath ? `${selectedPath.title} homework` : "Make it work."}
+            {selectedPath ? `${selectedPath.title} homework` : "Homework"}
           </h1>
-          <p>
-            Your learning topics, now in practice. Write a solution, learn
-            from the feedback, and build on your best score.
-          </p>
         </div>
         <span className="paths-heading-icon" aria-hidden="true">
           <FileCode2 size={34} />
@@ -171,12 +167,7 @@ export default async function HomeworkPage({
           <LockKeyhole size={18} />
         </span>
         <div>
-          <strong>Same topics. Your next step in each chapter.</strong>
-          <p>
-            Complete a chapter&apos;s reading to unlock its homework.
-            Labs are not required. Only your best score for each question
-            contributes XP.
-          </p>
+          <strong>Complete a chapter&apos;s reading to unlock its homework.</strong>
         </div>
       </div>
 
@@ -191,7 +182,6 @@ export default async function HomeworkPage({
               <div>
                 <span className="dashboard-kicker">TOPIC</span>
                 <h2 id={`homework-topic-${groupIndex}`}>{path.title}</h2>
-                <p>Reading and practice belong to the same learning journey.</p>
               </div>
               <span className="paths-category-count">
                 {topicEntries.length}{" "}
@@ -341,8 +331,7 @@ export default async function HomeworkPage({
       ) : (
         <section className="dashboard-empty">
           <FileCode2 size={30} aria-hidden="true" />
-          <h2>Your next practice mission is on its way.</h2>
-          <p>Homework topics will appear here as content is added.</p>
+          <h2>No homework yet.</h2>
         </section>
       )}
     </div>

@@ -81,15 +81,7 @@ export default async function DashboardPage() {
           <div>
             <span className="dashboard-kicker">YOUR LEARNING WORKSPACE</span>
             <h1 id="dashboard-title">Welcome back, Ronak.</h1>
-            <p>
-              Build your foundations. Practice with purpose. Make your next
-              discovery.
-            </p>
           </div>
-          <span className="dashboard-account-note">
-            <span aria-hidden="true" />
-            Account-backed progress
-          </span>
         </section>
 
         <dl className="dashboard-stats" aria-label="Learning overview">
@@ -99,7 +91,6 @@ export default async function DashboardPage() {
               Total earned XP
             </dt>
             <dd className="accent">{number(progress.totalXp)}</dd>
-            <p>Across learning, labs, homework, and CTF</p>
           </div>
 
           <div className="dashboard-stat">
@@ -110,7 +101,6 @@ export default async function DashboardPage() {
             <dd>
               {readCount} <span> / {lessons.length}</span>
             </dd>
-            <p>Small steps toward stronger foundations</p>
           </div>
 
           <div className="dashboard-stat">
@@ -119,7 +109,6 @@ export default async function DashboardPage() {
               Certificates
             </dt>
             <dd>{certificates.length}</dd>
-            <p>Learning paths with all reading completed</p>
           </div>
 
           <div className="dashboard-stat">
@@ -128,7 +117,6 @@ export default async function DashboardPage() {
               CTF challenges solved
             </dt>
             <dd>{progress.ctfIds.length}</dd>
-            <p>{number(progress.ctfXp)} XP earned through investigation</p>
           </div>
         </dl>
 
@@ -150,8 +138,8 @@ export default async function DashboardPage() {
               </h2>
               <p>
                 {next
-                  ? `${next.summary.readingCount} of ${next.summary.lessonCount} lessons read. Continue at your own pace—your progress stays with you.`
-                  : "Revisit a completed path, improve your homework score, or put your skills to work in a CTF."}
+                  ? `${next.summary.readingCount} of ${next.summary.lessonCount} lessons read.`
+                  : "All paths completed."}
               </p>
 
               <Link
@@ -182,7 +170,7 @@ export default async function DashboardPage() {
             <div className="dashboard-section-heading compact">
               <div>
                 <span className="dashboard-kicker">YOUR PROGRESS MIX</span>
-                <h2 id="xp-title">Every skill counts.</h2>
+                <h2 id="xp-title">XP Breakdown</h2>
               </div>
               <Trophy size={20} aria-hidden="true" />
             </div>
@@ -201,10 +189,6 @@ export default async function DashboardPage() {
                 </div>
               ))}
             </dl>
-
-            <p className="dashboard-panel-note">
-              Homework contributes your best score, not repeated submissions.
-            </p>
           </section>
         </div>
 
@@ -216,7 +200,6 @@ export default async function DashboardPage() {
             <div>
               <span className="dashboard-kicker">BUILD YOUR FOUNDATION</span>
               <h2 id="dashboard-paths-title">Your learning paths</h2>
-              <p>Guided lessons, hands-on practice, and a clear sense of progress.</p>
             </div>
             <Link href="/paths" className="dashboard-text-link">
               View all paths
@@ -320,15 +303,9 @@ export default async function DashboardPage() {
           ) : (
             <div className="dashboard-empty">
               <BookOpen size={26} aria-hidden="true" />
-              <h3>Your next chapter is on its way.</h3>
-              <p>New learning paths will appear here as content is added.</p>
+              <h3>No learning paths yet.</h3>
             </div>
           )}
-
-          <p className="dashboard-footnote">
-            Time estimates cover lesson content. Allow extra time for labs and
-            homework.
-          </p>
         </section>
 
         <div className="dashboard-bottom-grid">
@@ -403,22 +380,13 @@ export default async function DashboardPage() {
                 <span className="dashboard-certificate-seal" aria-hidden="true">
                   <Award size={28} />
                 </span>
-                <h3>A place for your first milestone.</h3>
-                <p>
-                  Finish every reading lesson in a path to earn its completion
-                  certificate.
-                </p>
+                <h3>No certificates yet.</h3>
                 <Link href="/paths" className="dashboard-text-link">
-                  Find your starting point
+                  View learning paths
                   <ArrowRight size={15} aria-hidden="true" />
                 </Link>
               </div>
             )}
-
-            <p className="dashboard-panel-note">
-              Revision starts a fresh local reading pass. Your saved XP, completed
-              labs, and homework scores stay intact.
-            </p>
           </section>
 
           <section
@@ -428,7 +396,7 @@ export default async function DashboardPage() {
             <div className="dashboard-section-heading compact">
               <div>
                 <span className="dashboard-kicker">LEARN BY DOING</span>
-                <h2 id="practice-title">Put it into practice.</h2>
+                <h2 id="practice-title">Practice</h2>
               </div>
             </div>
 
@@ -453,18 +421,10 @@ export default async function DashboardPage() {
                 </span>
                 <span>
                   <strong>Capture the Flag</strong>
-                  <small>Follow clues. Investigate. Find the answer.</small>
+                  <small>Capture the Flag challenges</small>
                 </span>
                 <ArrowUpRight size={18} aria-hidden="true" />
               </Link>
-            </div>
-
-            <div className="dashboard-learning-note">
-              <BookOpen size={18} aria-hidden="true" />
-              <p>
-                Understanding comes before speed. Revisit a lesson whenever you
-                need a clearer picture.
-              </p>
             </div>
           </section>
         </div>
