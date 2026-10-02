@@ -66,6 +66,11 @@ function text(
   max = 200,
   required = true,
 ): string {
+  if (value === undefined || value === null) {
+    if (!required) return "";
+    throw new InputError(`${label} is required.`);
+  }
+
   if (typeof value !== "string") {
     throw new InputError(`${label} must be text.`);
   }
@@ -89,6 +94,11 @@ function multiline(
   max = 50_000,
   required = false,
 ): string {
+  if (value === undefined || value === null) {
+    if (!required) return "";
+    throw new InputError(`${label} is required.`);
+  }
+
   if (typeof value !== "string") {
     throw new InputError(`${label} must be text.`);
   }
@@ -679,8 +689,12 @@ export async function deleteCreatorAction(
         }
 
         const chapters = db
-          .prepare("SELECT content_json FROM chapters")
-          .all() as { content_json: string }[];
+          .prepare(`
+            SELECT c.content_json, c.title, p.title as pathTitle
+            FROM chapters c
+            JOIN learning_paths p ON c.path_id = p.id
+          `)
+          .all() as { content_json: string; title: string; pathTitle: string }[];
 
         for (const chapter of chapters) {
           let blocks: unknown;
@@ -689,13 +703,13 @@ export async function deleteCreatorAction(
             blocks = JSON.parse(chapter.content_json);
           } catch {
             throw new InputError(
-              "A chapter contains invalid JSON. Repair it before deleting labs.",
+              `The chapter "${chapter.title}" contains invalid JSON. Repair it before deleting labs.`,
             );
           }
 
           if (!Array.isArray(blocks)) {
             throw new InputError(
-              "A chapter uses an unsupported content format. Review it before deleting labs.",
+              `The chapter "${chapter.title}" uses an unsupported content format. Review it before deleting labs.`,
             );
           }
 
@@ -708,7 +722,7 @@ export async function deleteCreatorAction(
 
           if (used) {
             throw new InputError(
-              "Remove this lab from chapter blocks before deleting it.",
+              `Remove this lab from the chapter "${chapter.title}" in learning path "${chapter.pathTitle}" before deleting it.`,
             );
           }
         }
