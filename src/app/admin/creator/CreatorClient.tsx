@@ -879,12 +879,11 @@ function DraftFields({
             onChange={(type) =>
               onChange({
                 ...draft,
-                type: type as "path" | "homework" | "ctf",
+                type: type as "path" | "ctf",
               })
             }
           >
             <option value="path">Learning paths</option>
-            <option value="homework">Homework</option>
             <option value="ctf">CTF</option>
           </SelectField>
 
@@ -897,8 +896,7 @@ function DraftFields({
           />
 
           <p className="creator-help">
-            Homework belongs to a learning path. Paths may be organized under
-            Learning Path or Homework topics. CTF challenges require CTF topics.
+            Homework automatically uses its learning path's topic. Paths must be organized under Learning Path topics. CTF challenges require CTF topics.
           </p>
         </>
       );
@@ -1059,28 +1057,11 @@ function DraftFields({
             }
           />
 
-          <div className="creator-two-columns">
-            <NumberField
-              label="Total Base XP"
-              value={draft.total_base_xp}
-              onChange={(total_base_xp) =>
-                onChange({ ...draft, total_base_xp })
-              }
-            />
-            <LabSelect
-              labs={data.labs}
-              value={draft.lab_id}
-              onChange={(lab_id) => onChange({ ...draft, lab_id })}
-            />
-          </div>
-
-          <TextField
-            label="Expected result description"
-            value={draft.expected_result_description}
-            multiline
-            maxLength={50_000}
-            onChange={(expected_result_description) =>
-              onChange({ ...draft, expected_result_description })
+          <NumberField
+            label="Total Base XP"
+            value={draft.total_base_xp}
+            onChange={(total_base_xp) =>
+              onChange({ ...draft, total_base_xp })
             }
           />
 
