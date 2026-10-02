@@ -74,7 +74,7 @@ export default async function LoginPage({
             <span>Username</span>
             <input
               name="username"
-              placeholder="Username"
+              defaultValue="Ronak"
               autoComplete="username"
               maxLength={32}
               required
