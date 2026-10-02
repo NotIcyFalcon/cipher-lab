@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Box, UserRound, Settings } from "lucide-react";
+import { Box, UserRound, Settings, NotebookPen } from "lucide-react";
 
 const navigation = [
   { href: "/dashboard", label: "Dashboard" },
@@ -20,7 +20,9 @@ export default function WorkspaceShell({
   children: ReactNode;
 }) {
   const isAdmin = userId === "admin";
-  
+  const creatorActive =
+    current === "/admin/creator" || current.startsWith("/admin/creator/");
+
   return (
     <div className="workspace-frame">
       <a href="#main-content" className="skip-link">
@@ -55,8 +57,23 @@ export default function WorkspaceShell({
                 {label}
               </Link>
             ))}
+
+            {isAdmin && (
+              <Link
+                href="/admin/creator"
+                className={`workspace-nav-link${
+                  creatorActive ? " is-active" : ""
+                }`}
+                aria-current={creatorActive ? "page" : undefined}
+              >
+                <span className="icon-label">
+                  <NotebookPen size={15} aria-hidden="true" />
+                  Creator
+                </span>
+              </Link>
+            )}
           </nav>
-          
+
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             {isAdmin && (
               <Link
@@ -65,8 +82,15 @@ export default function WorkspaceShell({
                   current === "/admin/settings" ? " is-active" : ""
                 }`}
                 aria-label="Admin settings"
-                aria-current={current === "/admin/settings" ? "page" : undefined}
-                style={{ background: current === "/admin/settings" ? "var(--color-bg-elevated)" : "transparent" }}
+                aria-current={
+                  current === "/admin/settings" ? "page" : undefined
+                }
+                style={{
+                  background:
+                    current === "/admin/settings"
+                      ? "var(--color-bg-elevated)"
+                      : "transparent",
+                }}
               >
                 <span className="workspace-profile-icon">
                   <Settings size={17} aria-hidden="true" />

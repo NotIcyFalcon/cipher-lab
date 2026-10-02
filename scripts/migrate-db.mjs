@@ -19,9 +19,13 @@ const migrations = [
     version: 4,
     file: new URL("../migrations/004_admin_user.sql", import.meta.url),
   },
+  {
+    version: 5,
+    file: new URL("../migrations/005_homework_base_xp.sql", import.meta.url),
+  },
 ];
 
-const latestVersion = 4;
+const latestVersion = 5;
 
 const databasePath = resolve(
   process.env.DATABASE_PATH || "./data/cyberbox.sqlite",
