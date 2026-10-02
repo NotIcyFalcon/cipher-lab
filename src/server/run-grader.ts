@@ -95,8 +95,9 @@ export async function runGrader(
       try {
         const adminRes = await execAsync(`bash solution.sh`, { cwd: adminDir, timeout: 15000 });
         expectedOutput = adminRes.stdout.trim();
-      } catch (e: any) {
-        expectedOutput = (e.stdout || "").trim();
+      } catch (e: unknown) {
+        const err = e as { stdout?: string };
+        expectedOutput = (err.stdout || "").trim();
       }
       await fs.rm(adminScriptPath, { force: true });
       const adminState = await getFolderState(adminDir);
@@ -109,9 +110,10 @@ export async function runGrader(
         const studentRes = await execAsync(`bash student.sh`, { cwd: studentDir, timeout: 15000 });
         actualOutput = studentRes.stdout.trim();
         stderr = studentRes.stderr.trim();
-      } catch (e: any) {
-        actualOutput = (e.stdout || "").trim();
-        stderr = (e.stderr || e.message || "").trim();
+      } catch (e: unknown) {
+        const err = e as { stdout?: string; stderr?: string; message?: string };
+        actualOutput = (err.stdout || "").trim();
+        stderr = (err.stderr || err.message || "").trim();
       }
       await fs.rm(studentScriptPath, { force: true });
       const studentState = await getFolderState(studentDir);
@@ -122,8 +124,9 @@ export async function runGrader(
       if (passed) {
         awardedXp += test.xpReward;
       }
-    } catch (e: any) {
-      errorMsg = e.message;
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      errorMsg = err.message || "Unknown error";
       passed = false;
     } finally {
       await fs.rm(baseDir, { recursive: true, force: true }).catch(() => {});
