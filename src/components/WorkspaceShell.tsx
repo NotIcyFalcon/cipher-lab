@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Box, UserRound } from "lucide-react";
+import { Box, UserRound, Settings } from "lucide-react";
 
 const navigation = [
   { href: "/dashboard", label: "Dashboard" },
@@ -8,17 +8,19 @@ const navigation = [
   { href: "/homework", label: "Homework" },
   { href: "/ctf", label: "CTF" },
   { href: "/profile", label: "Profile" },
-] as const;
-
-type WorkspaceRoute = (typeof navigation)[number]["href"];
+];
 
 export default function WorkspaceShell({
   current,
+  userId,
   children,
 }: {
-  current: WorkspaceRoute;
+  current: string;
+  userId: string;
   children: ReactNode;
 }) {
+  const isAdmin = userId === "admin";
+  
   return (
     <div className="workspace-frame">
       <a href="#main-content" className="skip-link">
@@ -54,20 +56,39 @@ export default function WorkspaceShell({
               </Link>
             ))}
           </nav>
+          
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {isAdmin && (
+              <Link
+                href="/admin/settings"
+                className={`workspace-profile${
+                  current === "/admin/settings" ? " is-active" : ""
+                }`}
+                aria-label="Admin settings"
+                aria-current={current === "/admin/settings" ? "page" : undefined}
+                style={{ background: current === "/admin/settings" ? "var(--color-bg-elevated)" : "transparent" }}
+              >
+                <span className="workspace-profile-icon">
+                  <Settings size={17} aria-hidden="true" />
+                </span>
+                <span>Settings</span>
+              </Link>
+            )}
 
-          <Link
-            href="/profile"
-            className={`workspace-profile${
-              current === "/profile" ? " is-active" : ""
-            }`}
-            aria-label="Ronak's profile"
-            aria-current={current === "/profile" ? "page" : undefined}
-          >
-            <span className="workspace-profile-icon">
-              <UserRound size={17} aria-hidden="true" />
-            </span>
-            <span>Ronak</span>
-          </Link>
+            <Link
+              href="/profile"
+              className={`workspace-profile${
+                current === "/profile" ? " is-active" : ""
+              }`}
+              aria-label={`${userId}'s profile`}
+              aria-current={current === "/profile" ? "page" : undefined}
+            >
+              <span className="workspace-profile-icon">
+                <UserRound size={17} aria-hidden="true" />
+              </span>
+              <span style={{ textTransform: "capitalize" }}>{userId}</span>
+            </Link>
+          </div>
         </div>
       </header>
 

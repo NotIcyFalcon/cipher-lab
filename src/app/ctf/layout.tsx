@@ -21,10 +21,10 @@ export default async function CTFLayout({
 }: {
   children: ReactNode;
 }) {
-  await requireRonakId();
+  const userId = await requireRonakId();
 
   return (
-    <WorkspaceShell current="/ctf">
+    <WorkspaceShell current="/ctf" userId={userId}>
       <div className="ctf-root">{children}</div>
     </WorkspaceShell>
   );

@@ -11,9 +11,13 @@ const migrations = [
     version: 2,
     file: new URL("../migrations/002_ctf.sql", import.meta.url),
   },
+  {
+    version: 3,
+    file: new URL("../migrations/003_cms.sql", import.meta.url),
+  },
 ];
 
-const latestVersion = 2;
+const latestVersion = 3;
 
 const databasePath = resolve(
   process.env.DATABASE_PATH || "./data/cyberbox.sqlite",

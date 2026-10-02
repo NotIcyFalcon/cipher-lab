@@ -75,12 +75,12 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <WorkspaceShell current="/dashboard">
+    <WorkspaceShell current="/dashboard" userId={userId}>
       <div className="dashboard-page">
         <section className="dashboard-heading" aria-labelledby="dashboard-title">
           <div>
             <span className="dashboard-kicker">YOUR LEARNING WORKSPACE</span>
-            <h1 id="dashboard-title">Welcome back, Ronak.</h1>
+            <h1 id="dashboard-title" style={{ textTransform: "capitalize" }}>Welcome back, {userId}.</h1>
           </div>
         </section>
 

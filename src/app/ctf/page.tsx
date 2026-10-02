@@ -187,37 +187,24 @@ export default async function CTFPage() {
                             {universe.challenges.filter((c) => c.completed).length} completed
                           </span>
                         </div>
+                        
+                        <p style={{ marginTop: "15px", marginBottom: "20px", color: "var(--color-text-secondary)", fontSize: "14px", lineHeight: "1.5" }}>
+                          {universe.description}
+                        </p>
 
-                        <div className="b5-ctf-challenges">
-                          <ul>
-                            {universe.challenges.map((challenge) => {
-                              challengeNumber += 1;
-
-                              return (
-                                <li key={challenge.id}>
-                                  <span
-                                    className="b5-ctf-challenge-status"
-                                    aria-hidden="true"
-                                  >
-                                    {challenge.completed ? (
-                                      <CheckCircle2 size={14} />
-                                    ) : (
-                                      <Flag size={14} />
-                                    )}
-                                  </span>
-                                  <span>
-                                    <strong>{challenge.title}</strong>
-                                    <small>
-                                      {challenge.completed
-                                        ? "Completed"
-                                        : "Ready"}
-                                      {" · "}
-                                      {challenge.points} XP
-                                    </small>
-                                  </span>
-                                </li>
-                              );
-                            })}
+                        <div className="ctf-suggested b5-ctf-suggested">
+                          <span className="ctf-small-label" style={{ display: "block", fontSize: "11px", fontWeight: 600, letterSpacing: "0.5px", color: "var(--color-text-tertiary)", marginBottom: "10px", marginTop: "5px" }}>
+                            SUGGESTED LEARNING
+                          </span>
+                          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
+                            {category.suggestedPaths.map((path) => (
+                              <li key={path.name}>
+                                <Link href={path.href} className="dashboard-text-link" style={{ fontSize: "13px" }}>
+                                  {path.name}
+                                  <ArrowRight size={14} aria-hidden="true" />
+                                </Link>
+                              </li>
+                            ))}
                           </ul>
                         </div>
                       </div>

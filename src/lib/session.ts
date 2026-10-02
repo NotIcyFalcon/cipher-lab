@@ -17,28 +17,31 @@ function signingKey() {
   return new TextEncoder().encode(secret);
 }
 
-export function createSession() {
+export function createSession(userId: "ronak" | "admin" = "ronak") {
   return new SignJWT({})
     .setProtectedHeader({ alg: "HS256" })
-    .setSubject("Ronak")
+    .setSubject(userId)
     .setIssuer("cyber-box")
     .setIssuedAt()
     .setExpirationTime(Math.floor(Date.now() / 1000) + SESSION_SECONDS)
     .sign(signingKey());
 }
 
-export async function verifySession(token?: string): Promise<boolean> {
-  if (!token) return false;
+export async function verifySession(token?: string): Promise<"ronak" | "admin" | null> {
+  if (!token) return null;
 
   try {
-    await jwtVerify(token, signingKey(), {
+    const { payload } = await jwtVerify(token, signingKey(), {
       algorithms: ["HS256"],
-      subject: "Ronak",
       issuer: "cyber-box",
-      requiredClaims: ["exp"],
+      requiredClaims: ["exp", "sub"],
     });
-    return true;
+    
+    if (payload.sub === "ronak" || payload.sub === "admin") {
+      return payload.sub as "ronak" | "admin";
+    }
+    return null;
   } catch {
-    return false;
+    return null;
   }
 }

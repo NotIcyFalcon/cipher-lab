@@ -61,6 +61,7 @@ export default async function Page({
       initialLessonId={initialLessonId}
       revision={revision}
       pathTitle={selectedPath.title}
+      userId={userId}
     />
   );
 }

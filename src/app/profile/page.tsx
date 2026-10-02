@@ -196,7 +196,7 @@ export default async function ProfilePage() {
   ];
 
   return (
-    <WorkspaceShell current="/profile">
+    <WorkspaceShell current="/profile" userId={userId}>
       <div className="b5-profile-page">
         <header className="b5-profile-hero">
           <div className="b5-profile-avatar" aria-hidden="true">
@@ -205,7 +205,7 @@ export default async function ProfilePage() {
 
           <div className="b5-profile-intro">
             <span className="dashboard-kicker">PROFILE</span>
-            <h1>Ronak</h1>
+            <h1 style={{ textTransform: "capitalize" }}>{userId}</h1>
 
             <div className="b5-profile-chips">
               <span>

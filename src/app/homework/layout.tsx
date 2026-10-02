@@ -10,10 +10,10 @@ export default async function HomeworkLayout({
 }: {
   children: ReactNode;
 }) {
-  await requireRonakId();
+  const userId = await requireRonakId();
 
   return (
-    <WorkspaceShell current="/homework">
+    <WorkspaceShell current="/homework" userId={userId}>
       {children}
     </WorkspaceShell>
   );

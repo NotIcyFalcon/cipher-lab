@@ -53,6 +53,7 @@ type LearningPageProps = {
   initialLessonId: string;
   revision?: boolean;
   pathTitle: string;
+  userId: string;
 };
 
 function getLabs(lesson: ReadingLesson) {
@@ -395,7 +396,7 @@ function LessonBlock({
 }
 
 export default function LearningPage(props: LearningPageProps) {
-  const { lessons, progress, revision = false, pathTitle } = props;
+  const { lessons, progress, revision = false, pathTitle, userId } = props;
 
   const [activeId, setActiveId] = useState(() => getInitialActiveId(props));
   const [visitedIds, setVisitedIds] = useState<string[]>(() => {
@@ -495,7 +496,7 @@ export default function LearningPage(props: LearningPageProps) {
 
   if (!lesson) {
     return (
-      <WorkspaceShell current="/paths">
+      <WorkspaceShell current="/paths" userId={userId}>
         <section className="dashboard-empty lesson-empty">
           <BookOpen size={28} aria-hidden="true" />
           <h1>No chapters available yet.</h1>
@@ -515,7 +516,7 @@ export default function LearningPage(props: LearningPageProps) {
   ).length;
 
   return (
-    <WorkspaceShell current="/paths">
+    <WorkspaceShell current="/paths" userId={userId}>
       <div className="lesson-workspace b5-learning">
         <aside
           className="lesson-index"

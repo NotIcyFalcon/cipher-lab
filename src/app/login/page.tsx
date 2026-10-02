@@ -12,21 +12,33 @@ async function login(formData: FormData) {
   "use server";
 
   const password = formData.get("password");
-  const hash = process.env.RONAK_PASSWORD_HASH;
-
-  if (!hash) throw new Error("Configure RONAK_PASSWORD_HASH.");
-
-  if (
-    formData.get("username") !== "Ronak" ||
-    typeof password !== "string" ||
-    !password ||
-    bcrypt.truncates(password) ||
-    !(await bcrypt.compare(password, hash))
-  ) {
+  const username = formData.get("username");
+  
+  if (typeof password !== "string" || !password || bcrypt.truncates(password)) {
     redirect("/login?error=1");
   }
 
-  (await cookies()).set(SESSION_COOKIE, await createSession(), {
+  let userId: "ronak" | "admin" | null = null;
+
+  if (username === "Ronak" || username === "ronak") {
+    const hash = process.env.RONAK_PASSWORD_HASH;
+    if (!hash) throw new Error("Configure RONAK_PASSWORD_HASH.");
+    if (await bcrypt.compare(password, hash)) {
+      userId = "ronak";
+    }
+  } else if (username === "Admin" || username === "admin") {
+    const hash = process.env.ADMIN_PASSWORD_HASH;
+    if (!hash) throw new Error("Configure ADMIN_PASSWORD_HASH.");
+    if (await bcrypt.compare(password, hash)) {
+      userId = "admin";
+    }
+  }
+
+  if (!userId) {
+    redirect("/login?error=1");
+  }
+
+  (await cookies()).set(SESSION_COOKIE, await createSession(userId), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -54,7 +66,7 @@ export default async function LoginPage({
           <span>Cyber <span className="accent">Box</span></span>
         </div>
 
-        <h1 id="login-title">Welcome back, Ronak.</h1>
+        <h1 id="login-title">Welcome back.</h1>
         <p>A box made to learn Cyber Sec.</p>
 
         <form action={login} className="login-form">
@@ -62,7 +74,7 @@ export default async function LoginPage({
             <span>Username</span>
             <input
               name="username"
-              defaultValue="Ronak"
+              placeholder="Username"
               autoComplete="username"
               maxLength={32}
               required

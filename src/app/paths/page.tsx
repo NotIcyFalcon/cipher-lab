@@ -61,7 +61,7 @@ export default async function PathsPage() {
   );
 
   return (
-    <WorkspaceShell current="/paths">
+    <WorkspaceShell current="/paths" userId={userId}>
       <div className="paths-page">
         <header className="paths-heading">
           <div>
