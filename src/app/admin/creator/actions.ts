@@ -669,9 +669,8 @@ export async function deleteCreatorAction(
         // references live inside JSON. Reject deletion while in use.
         const relational = db.prepare(`
           SELECT
-            (SELECT COUNT(*) FROM homework WHERE lab_id = ?) +
             (SELECT COUNT(*) FROM ctf_challenges WHERE lab_id = ?) AS count
-        `).get(id, id) as { count: number };
+        `).get(id) as { count: number };
 
         if (relational.count > 0) {
           throw new InputError(

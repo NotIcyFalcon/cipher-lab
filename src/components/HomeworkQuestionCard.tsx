@@ -606,15 +606,15 @@ export default function HomeworkQuestionCard({
                               tone={result.passed ? "pass" : "fail"}
                             />
                           </div>
-                          {result.assertionType === "file" && (
+                          {result.assertionType === "folder" && (
                             <div className="hw-output-grid" style={{ marginTop: 10 }}>
                               <OutputPanel
                                 title="Expected Result"
-                                output={result.expectedOutput}
+                                output={String(result.expectedFolder || "No file changes.")}
                               />
                               <OutputPanel
                                 title="Actual Result"
-                                output={result.actualOutput}
+                                output={String(result.actualFolder || "No file changes.")}
                                 tone={result.passed ? "pass" : "fail"}
                               />
                             </div>
