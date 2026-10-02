@@ -244,6 +244,8 @@ export type LabDraft = {
   id: string;
   name: string;
   default_user: string;
+  base_image: string;
+  snapshot_image: string;
   whitelist_enabled: boolean;
   command_blacklist: string;
   command_whitelist: string;
