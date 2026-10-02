@@ -465,17 +465,27 @@ def execute(job):
         os.mkdir(STATE, 0o700)
         clone_state(ROOT + "/work", STATE)
 
-        # Reference execution gets a fresh copy of that exact setup state.
-        new_jail(STATE)
-        reference = run_script(job["standardSolution"])
+        precomputed = "expectedOutput" in test and "expectedFolder" in test
+        reference_ok = True
 
-        if not reference["ok"]:
-            raise ConfigurationError("Reference solution failed.")
+        if not precomputed:
+            # Reference execution gets a fresh copy of that exact setup state.
+            new_jail(STATE)
+            reference = run_script(job["standardSolution"])
 
-        try:
-            expected_tree = snapshot(ROOT + "/work")
-        except TreeError as error:
-            raise ConfigurationError(str(error))
+            if not reference["ok"]:
+                raise ConfigurationError("Reference solution failed.")
+
+            try:
+                expected_tree = snapshot(ROOT + "/work")
+            except TreeError as error:
+                raise ConfigurationError(str(error))
+            
+            expected_output_str = diagnostic(reference["stdout"])
+            expected_folder_str = describe(initial, expected_tree)
+        else:
+            expected_output_str = test["expectedOutput"]
+            expected_folder_str = test["expectedFolder"]
 
         # Student execution gets an independent fresh copy.
         new_jail(STATE)
@@ -489,12 +499,15 @@ def execute(job):
         except TreeError as error:
             folder_error = str(error)
 
+        actual_output_str = diagnostic(student["stdout"])
+        actual_folder_str = describe(initial, actual_tree) if actual_tree is not None else folder_error
+
         passed = (
-            reference["ok"]
+            reference_ok
             and student["ok"]
             and actual_tree is not None
-            and reference["stdout"] == student["stdout"]
-            and expected_tree == actual_tree
+            and expected_output_str == actual_output_str
+            and expected_folder_str == actual_folder_str
         )
 
         if passed:
@@ -505,16 +518,12 @@ def execute(job):
         result = {
             "id": test["id"],
             "passed": passed,
-            "expectedOutput": "" if hidden else diagnostic(reference["stdout"]),
-            "actualOutput": "" if hidden else diagnostic(student["stdout"]),
-            "stderr": "" if hidden else diagnostic(student["stderr"]),
-            "expectedFolder": "" if hidden else describe(initial, expected_tree),
-            "actualFolder": "" if hidden else (
-                describe(initial, actual_tree)
-                if actual_tree is not None
-                else folder_error
-            ),
-            "error": "" if hidden else (
+            "expectedOutput": expected_output_str,
+            "actualOutput": actual_output_str,
+            "stderr": diagnostic(student["stderr"]),
+            "expectedFolder": expected_folder_str,
+            "actualFolder": actual_folder_str,
+            "error": (
                 student["error"]
                 or folder_error
                 or (
@@ -523,6 +532,7 @@ def execute(job):
                     else ""
                 )
             )[:300],
+
         }
 
         results.append(result)

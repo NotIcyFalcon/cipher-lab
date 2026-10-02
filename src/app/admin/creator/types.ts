@@ -42,6 +42,7 @@ export type LabRow = {
   default_user: string;
   whitelist_enabled: number;
   command_blacklist_json: string | null;
+  setup_script: string | null;
 };
 
 export type HomeworkRow = {
@@ -60,6 +61,8 @@ export type TestCaseRow = {
   setup_script: string | null;
   xp_reward: number;
   is_hidden: number;
+  expected_output: string | null;
+  expected_folder: string | null;
 };
 
 export type CtfRow = {
@@ -135,6 +138,8 @@ export type TestDraft = {
   setup_script: string;
   xp_reward: number;
   is_hidden: boolean;
+  expected_output?: string | null;
+  expected_folder?: string | null;
 };
 
 export type HintDraft = {
@@ -193,6 +198,7 @@ export type LabDraft = {
   default_user: string;
   whitelist_enabled: boolean;
   command_blacklist: string;
+  setup_script: string;
 };
 
 export type CreatorDraft =

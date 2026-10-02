@@ -34,17 +34,17 @@ export default async function CTFChallengePage({
     <div className="ctf-page ctf-challenge-page">
       <nav className="ctf-route-bar" aria-label="CTF navigation">
         <Link
-          href={`/ctf/${ctf.id}`}
+          href={`/ctf/${category.id}`}
           className="ctf-button ctf-button-quiet"
         >
           <ArrowLeft size={15} aria-hidden="true" />
-          Back to {ctf.name}
+          Back to {category.name}
         </Link>
 
         <div className="ctf-breadcrumb">
           <Link href="/ctf">CTF</Link>
           <ChevronRight size={13} aria-hidden="true" />
-          <Link href={`/ctf/${ctf.id}`}>{ctf.name}</Link>
+          <Link href={`/ctf/${category.id}`}>{category.name}</Link>
           <ChevronRight size={13} aria-hidden="true" />
           <span aria-current="page">Mission</span>
         </div>
@@ -56,10 +56,10 @@ export default async function CTFChallengePage({
           <h1>{challenge.title}</h1>
 
           <div className="ctf-challenge-meta">
-            <span className="ctf-difficulty">{ctf.difficulty || category.name}</span>
+            <span className="ctf-difficulty">{challenge.difficulty || category.name}</span>
             <span>
               <Flag size={13} aria-hidden="true" />
-              {ctf.name}
+              {category.name}
             </span>
             {challenge.labId && (
               <span>

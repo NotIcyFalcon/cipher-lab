@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/server/db";
 import { requireUserId } from "@/server/current-user";
+import { runGrader } from "@/server/run-grader";
 import {
   creatorSections,
   type ActionState,
@@ -415,6 +416,8 @@ function saveHomework(db: Db, id: string, input: Record<string, unknown>) {
       setup_script: multiline(test.setup_script, "Test case setup script"),
       xp_reward: integer(test.xp_reward, "Test case XP"),
       is_hidden: boolean(test.is_hidden, "Hidden test case") ? 1 : 0,
+      expected_output: typeof test.expected_output === "string" ? test.expected_output : null,
+      expected_folder: typeof test.expected_folder === "string" ? test.expected_folder : null,
     };
   });
 
@@ -495,6 +498,7 @@ function saveLab(db: Db, id: string, input: Record<string, unknown>) {
       ? 1
       : 0,
     command_blacklist_json: JSON.stringify(blacklist),
+    setup_script: multiline(input.setup_script, "Setup script", 50_000),
   });
 }
 
@@ -531,6 +535,42 @@ export async function saveCreatorAction(
     const entity = choice(input.entity, creatorSections, "editor");
     const suppliedId = text(input.id, "Record ID", 128, false);
     const id = suppliedId || randomUUID();
+
+    if (entity === "homework") {
+      const tests = list(input.tests, "Test cases", 100);
+      const standardSolution = multiline(input.standard_solution_script, "Standard solution script");
+      const baseXp = integer(input.total_base_xp, "Total Base XP");
+      const totalPoints = baseXp + tests.reduce((sum: number, t) => sum + integer(object(t).xp_reward, "Test case XP"), 0);
+
+      const mappedTests = tests.map((t) => {
+        const test = object(t);
+        return {
+          id: identifier(test.id, "Test case ID"),
+          setupScript: multiline(test.setup_script, "Test case setup script"),
+          xpReward: integer(test.xp_reward, "Test case XP"),
+          hidden: boolean(test.is_hidden, "Hidden test case"),
+        };
+      });
+
+      // Pre-compute expected values by sending the standard solution as both the answer and standardSolution
+      const graderResult = await runGrader({
+        homeworkId: id,
+        pathId: "",
+        title: "",
+        objective: "",
+        baseXp,
+        totalPoints,
+        standardSolution,
+        testCases: mappedTests,
+      }, standardSolution);
+
+      graderResult.results.forEach((result, idx) => {
+        const test = object(tests[idx]);
+        test.expected_output = result.expectedOutput;
+        test.expected_folder = result.expectedFolder;
+      });
+    }
+
     const db = getDb();
 
     db.transaction(() => {

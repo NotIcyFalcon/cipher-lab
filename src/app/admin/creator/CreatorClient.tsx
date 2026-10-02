@@ -250,6 +250,7 @@ function makeDraft(
         command_blacklist: blacklistText(
           row?.command_blacklist_json ?? null,
         ),
+        setup_script: row?.setup_script ?? "",
       };
     }
   }
@@ -1395,8 +1396,19 @@ function DraftFields({
             }
           />
 
+          <TextField
+            label="Setup script"
+            value={draft.setup_script}
+            multiline
+            code
+            rows={10}
+            maxLength={50_000}
+            placeholder="#!/usr/bin/env bash\n# Commands to set up the lab environment"
+            onChange={(setup_script) => onChange({ ...draft, setup_script })}
+          />
+
           <p className="creator-help">
-            This registers lab metadata only. Image creation, container
+            This registers lab metadata. Image creation, container
             initialization, and command-policy enforcement belong to the lab
             runtime batch.
           </p>

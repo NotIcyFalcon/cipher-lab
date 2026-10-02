@@ -16,6 +16,8 @@ const testSchema = z.object({
   setupScript: scriptSchema,
   xpReward: z.number().int().min(0).max(1_000_000),
   hidden: z.boolean(),
+  expectedOutput: z.string().nullable().optional(),
+  expectedFolder: z.string().nullable().optional(),
 });
 
 const definitionSchema = z.object({
@@ -54,7 +56,9 @@ export function findHomework(homeworkId: string): HomeworkDefinition | undefined
       id,
       setup_script AS setupScript,
       xp_reward AS xpReward,
-      is_hidden AS hidden
+      is_hidden AS hidden,
+      expected_output AS expectedOutput,
+      expected_folder AS expectedFolder
     FROM homework_test_cases
     WHERE homework_id = ?
     ORDER BY sequence_order, id
@@ -63,6 +67,8 @@ export function findHomework(homeworkId: string): HomeworkDefinition | undefined
     setupScript: string;
     xpReward: number;
     hidden: number;
+    expectedOutput: string | null;
+    expectedFolder: string | null;
   }>;
 
   const parsed = definitionSchema.safeParse({

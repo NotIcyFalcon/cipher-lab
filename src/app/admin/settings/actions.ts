@@ -15,7 +15,7 @@ export async function resetProgressAction(targetUserId: string) {
     db.prepare("DELETE FROM lab_completions WHERE user_id = ?").run(targetUserId);
     db.prepare("DELETE FROM homework_submissions WHERE user_id = ?").run(targetUserId);
     db.prepare("DELETE FROM ctf_completions WHERE user_id = ?").run(targetUserId);
-    db.prepare("DELETE FROM ctf_hint_unlocks WHERE user_id = ?").run(targetUserId);
+    db.prepare("DELETE FROM ctf_hint_purchases WHERE user_id = ?").run(targetUserId);
   });
 
   reset();
@@ -36,8 +36,8 @@ export async function deleteRecordAction(table: string, user_id: string, record_
     db.prepare("DELETE FROM homework_submissions WHERE id = ? AND user_id = ?").run(record_id, user_id);
   } else if (table === "ctf_completions") {
     db.prepare("DELETE FROM ctf_completions WHERE user_id = ? AND challenge_id = ?").run(user_id, record_id);
-  } else if (table === "ctf_hint_unlocks") {
-    db.prepare("DELETE FROM ctf_hint_unlocks WHERE user_id = ? AND hint_id = ?").run(user_id, record_id);
+  } else if (table === "ctf_hint_purchases") {
+    db.prepare("DELETE FROM ctf_hint_purchases WHERE user_id = ? AND hint_id = ?").run(user_id, record_id);
   } else {
     throw new Error("Invalid table");
   }

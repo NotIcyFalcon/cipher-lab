@@ -29,7 +29,7 @@ export default async function AdminSettingsPage() {
   const reading = db.prepare("SELECT user_id, lesson_id, completed_at as created_at FROM reading_progress WHERE user_id = 'ronak'").all() as ReadingRow[];
   const homework = db.prepare("SELECT id, homework_id, status, created_at FROM homework_submissions WHERE user_id = 'ronak'").all() as HomeworkRow[];
   const ctf = db.prepare("SELECT user_id, challenge_id, completed_at FROM ctf_completions WHERE user_id = 'ronak'").all() as CtfRow[];
-  const hints = db.prepare("SELECT user_id, hint_id, unlocked_at FROM ctf_hint_unlocks WHERE user_id = 'ronak'").all() as HintRow[];
+  const hints = db.prepare("SELECT user_id, hint_id, unlocked_at FROM ctf_hint_purchases WHERE user_id = 'ronak'").all() as HintRow[];
 
   return (
     <WorkspaceShell current="/admin/settings" userId={userId}>
@@ -103,7 +103,7 @@ export default async function AdminSettingsPage() {
               {hints.map(h => (
                 <li key={h.hint_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", background: "var(--color-bg-elevated)", borderRadius: "6px" }}>
                   <span>{h.hint_id}</span>
-                  <form action={deleteRecordAction.bind(null, "ctf_hint_unlocks", "ronak", h.hint_id)}>
+                  <form action={deleteRecordAction.bind(null, "ctf_hint_purchases", "ronak", h.hint_id)}>
                     <button style={{ color: "var(--color-danger)", cursor: "pointer", background: "none", border: "none" }}><Trash2 size={16} /></button>
                   </form>
                 </li>
