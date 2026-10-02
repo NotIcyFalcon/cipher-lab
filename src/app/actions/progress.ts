@@ -48,16 +48,23 @@ export async function completeLab(
     JSON.parse(process.env.CYBERBOX_LAB_FLAGS_JSON || "{}"),
   );
 
-  const expected = flags[challengeId];
-
-  if (!expected) {
-    return { ok: false, error: "This lab has no completion code configured." };
-  }
-
   const hash = (value: string) =>
     createHash("sha256").update(value.trim().toLowerCase()).digest();
 
-  if (!timingSafeEqual(hash(flag), hash(expected))) {
+  let isCorrect = false;
+
+  if (block.completionCodeHash) {
+    const submittedHash = hash(flag).toString("hex");
+    isCorrect = submittedHash === block.completionCodeHash.toLowerCase();
+  } else {
+    const expected = flags[challengeId];
+    if (!expected) {
+      return { ok: false, error: "This lab has no completion code configured." };
+    }
+    isCorrect = timingSafeEqual(hash(flag), hash(expected));
+  }
+
+  if (!isCorrect) {
     return { ok: false, error: "Incorrect answer." };
   }
 

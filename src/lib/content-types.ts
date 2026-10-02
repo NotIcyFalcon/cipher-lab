@@ -33,6 +33,7 @@ export const blockSchema = z.discriminatedUnion("type", [
     objective: text,
     hint: text,
     points: points.default(50),
+    completionCodeHash: text.optional(),
   }),
   z.object({
     id,

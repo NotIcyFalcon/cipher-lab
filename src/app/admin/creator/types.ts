@@ -151,6 +151,7 @@ export type EditorBlock =
       objective: string;
       hint: string;
       points: number;
+      completionCodeHash?: string;
     };
 
 export type ChapterDraft = {

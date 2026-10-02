@@ -263,7 +263,7 @@ function LabBlock({
 
   return (
     <section className="lab-card lesson-lab-card">
-      <LabTerminal labId={block.labId} title={block.title} />
+      <LabTerminal labId={block.labId} title={block.title} points={block.points} />
 
       <div className="lab-instructions">
         <span className="eyebrow">YOUR MISSION</span>

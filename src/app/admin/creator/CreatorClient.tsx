@@ -104,6 +104,7 @@ function initialBlocks(json: string): EditorBlock[] {
           objective: stringField("objective"),
           hint: stringField("hint"),
           points: learningLabPoints(block.points),
+          completionCodeHash: typeof block.completionCodeHash === "string" ? block.completionCodeHash : "",
         };
 
       case "quiz": {
@@ -588,6 +589,7 @@ function createBlock(type: "note" | "code" | "quiz" | "lab"): EditorBlock {
         objective: "",
         hint: "",
         points: 50,
+        completionCodeHash: "",
       };
   }
 }
@@ -783,6 +785,12 @@ function BlockFields({
             multiline
             maxLength={10_000}
             onChange={(hint) => onChange({ ...block, hint })}
+          />
+          <TextField
+            label="Completion Correct Code Hash"
+            value={block.completionCodeHash ?? ""}
+            placeholder="Pre-hashed SHA-256 code to verify completion"
+            onChange={(completionCodeHash) => onChange({ ...block, completionCodeHash })}
           />
         </>
       );
