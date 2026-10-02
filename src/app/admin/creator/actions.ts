@@ -23,6 +23,8 @@ type Table =
   | "chapters"
   | "homework"
   | "homework_test_cases"
+  | "ctfs"
+  | "ctf_universes"
   | "ctf_challenges"
   | "ctf_hints"
   | "labs";
@@ -34,6 +36,8 @@ const tables: Record<CreatorSection, Table> = {
   topics: "topics",
   paths: "learning_paths",
   homework: "homework",
+  ctfs: "ctfs",
+  universes: "ctf_universes",
   ctf: "ctf_challenges",
   labs: "labs",
 };
@@ -333,6 +337,7 @@ function parseBlocks(db: Db, value: unknown): EditorBlock[] {
           title: text(block.title, "Lab block title"),
           objective: multiline(block.objective, "Lab objective", 10_000, true),
           hint: multiline(block.hint, "Lab hint", 10_000),
+          points: integer(block.points, "Lab points"),
         };
     }
   });
@@ -430,6 +435,7 @@ function saveHomework(db: Db, id: string, input: Record<string, unknown>) {
       50_000,
       true,
     ),
+    setup_script: multiline(input.setup_script, "Global setup script", 50_000),
     total_base_xp: integer(input.total_base_xp, "Total Base XP"),
     lab_id: optionalLab(db, input.lab_id),
     expected_result_description: multiline(
@@ -443,6 +449,26 @@ function saveHomework(db: Db, id: string, input: Record<string, unknown>) {
   });
 
   syncChildren(db, "homework_test_cases", "homework_id", id, tests);
+}
+
+function saveCtfDefinition(db: Db, id: string, input: Record<string, unknown>) {
+  writeRow(db, "ctfs", {
+    id,
+    topic_id: requireTopic(db, input.topic_id, ["ctf"]),
+    name: text(input.name, "CTF definition name"),
+    description: multiline(input.description, "CTF description", 10_000),
+    difficulty: text(input.difficulty, "Difficulty", 80, false),
+    suggested_paths_json: "[]",
+  });
+}
+
+function saveCtfUniverse(db: Db, id: string, input: Record<string, unknown>) {
+  writeRow(db, "ctf_universes", {
+    id,
+    ctf_id: parentId(db, "ctfs", input.ctf_id, "CTF definition"),
+    name: text(input.name, "Universe name"),
+    description: multiline(input.description, "Universe description", 10_000),
+  });
 }
 
 function saveCtf(db: Db, id: string, input: Record<string, unknown>) {
@@ -460,7 +486,7 @@ function saveCtf(db: Db, id: string, input: Record<string, unknown>) {
 
   writeRow(db, "ctf_challenges", {
     id,
-    topic_id: requireTopic(db, input.topic_id, ["ctf"]),
+    universe_id: parentId(db, "ctf_universes", input.universe_id, "CTF universe"),
     title: text(input.title, "Challenge title"),
     description: multiline(input.description, "Challenge description"),
     points: integer(input.points, "Base points"),
@@ -487,7 +513,8 @@ function saveLab(db: Db, id: string, input: Record<string, unknown>) {
 
   writeRow(db, "labs", {
     id,
-    base_image: text(input.base_image, "Base image", 500),
+    name: text(input.name, "Lab name", 200),
+    base_image: text(input.base_image, "Base image", 500, false) || "",
     snapshot_image:
       text(input.snapshot_image, "Snapshot image", 500, false) || null,
     default_user: text(input.default_user, "Default user", 100),
@@ -587,6 +614,12 @@ export async function saveCreatorAction(
           break;
         case "homework":
           saveHomework(db, id, input);
+          break;
+        case "ctfs":
+          saveCtfDefinition(db, id, input);
+          break;
+        case "universes":
+          saveCtfUniverse(db, id, input);
           break;
         case "ctf":
           saveCtf(db, id, input);

@@ -13,6 +13,8 @@ import {
   type HomeworkRow,
   type TestCaseRow,
   type CtfRow,
+  type CtfUniverseRow,
+  type CtfChallengeRow,
   type HintRow,
 } from "../types";
 
@@ -71,8 +73,16 @@ export default async function CreatorSectionPage({
       .all() as TestCaseRow[],
 
     challenges: db
-      .prepare("SELECT * FROM ctf_challenges ORDER BY title COLLATE NOCASE")
+      .prepare("SELECT * FROM ctf_challenges ORDER BY sequence_order, id")
+      .all() as CtfChallengeRow[],
+
+    ctfs: db
+      .prepare("SELECT * FROM ctfs ORDER BY sequence_order, id")
       .all() as CtfRow[],
+
+    universes: db
+      .prepare("SELECT * FROM ctf_universes ORDER BY sequence_order, id")
+      .all() as CtfUniverseRow[],
 
     hints: db
       .prepare("SELECT * FROM ctf_hints ORDER BY challenge_id, sequence_order, id")
@@ -85,6 +95,8 @@ export default async function CreatorSectionPage({
     topics: data.topics,
     paths: data.paths,
     homework: data.homework,
+    ctfs: data.ctfs,
+    universes: data.universes,
     ctf: data.challenges,
     labs: data.labs,
   }[section];

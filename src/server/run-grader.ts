@@ -73,6 +73,7 @@ export async function runGrader(
       body: JSON.stringify({
         homeworkId: question.homeworkId,
         scriptContent: script,
+        globalSetupScript: question.setupScript || "",
         standardSolution: question.standardSolution,
         baseXp: question.baseXp,
         totalPoints: question.totalPoints,

@@ -7,9 +7,9 @@ import {
   CheckCircle2,
   ChevronRight,
   Flag,
-  Layers3,
   Orbit,
   Trophy,
+  Layers3
 } from "lucide-react";
 
 import { getCTFCatalogProgress } from "@/server/ctf";
@@ -24,14 +24,7 @@ export default async function CTFCategoryPage({
   const { category: categoryId } = await params;
 
   const topics = getCTFCatalogProgress(userId);
-  let category = null;
-  for (const t of topics) {
-    const found = t.ctfs.find((c: any) => c.id === categoryId);
-    if (found) {
-      category = found;
-      break;
-    }
-  }
+  const category = topics.find((t: any) => t.id === categoryId);
 
   if (!category) notFound();
 
@@ -55,7 +48,6 @@ export default async function CTFCategoryPage({
           <span className="ctf-kicker">OPERATION FIELD / {category.id}</span>
           <h1>{category.name}</h1>
           <p>{category.description}</p>
-          <span className="ctf-difficulty">{category.difficulty}</span>
         </div>
         <span className="ctf-heading-symbol" aria-hidden="true">
           <Orbit size={48} strokeWidth={1.25} />
@@ -82,7 +74,7 @@ export default async function CTFCategoryPage({
             {category.earnedXp} <span>/ {category.achievableXp}</span>
           </dd>
           <p>
-            Earned / achievable · {category.basePoints} base XP
+            Earned / achievable
           </p>
         </div>
       </dl>
@@ -95,59 +87,72 @@ export default async function CTFCategoryPage({
         </div>
       ) : (
         <div className="ctf-universe-list">
-          <section
-            className="ctf-universe"
-            aria-labelledby={`topic-challenges`}
-          >
-            <div className="ctf-universe-heading">
-              <div className="ctf-universe-copy">
-                <span className="ctf-kicker">AVAILABLE MISSIONS</span>
-                <h2 id={`topic-challenges`}>Challenges</h2>
-              </div>
-              <span className="ctf-universe-completion">
-                {category.completedCount}/{category.challengeCount} captured
-              </span>
-            </div>
-            <ul className="ctf-mission-grid">
-              {category.ctfs.map((challenge: any) => (
-                <li key={challenge.id}>
-                  <Link
-                    href={`/ctf/challenge/${challenge.id}`}
-                    className={`ctf-mission-link${
-                      challenge.state.completed ? " is-complete" : ""
-                    }`}
-                    aria-label={`${challenge.title}, ${
-                      challenge.state.completed
-                        ? `completed, ${challenge.state.awardedXp} XP earned, re-attempt`
-                        : `${challenge.state.achievableXp} XP available`
-                    }`}
-                  >
-                    <span className="ctf-mission-mark" aria-hidden="true">
-                      {challenge.state.completed ? (
-                        <CheckCircle2 size={19} />
-                      ) : (
-                        <Flag size={19} />
-                      )}
+          {category.ctfs.map((ctf: any) => (
+            <div key={ctf.id} className="ctf-definition-block">
+              <header className="ctf-definition-heading" style={{ marginTop: "40px", marginBottom: "20px" }}>
+                <h2 style={{ fontSize: "24px", color: "white" }}>{ctf.name}</h2>
+                <p style={{ color: "var(--color-text-secondary)" }}>{ctf.description}</p>
+              </header>
+
+              {ctf.universes.map((universe: any) => (
+                <section
+                  key={universe.id}
+                  className="ctf-universe"
+                  style={{ marginBottom: "30px" }}
+                  aria-labelledby={`universe-${universe.id}`}
+                >
+                  <div className="ctf-universe-heading">
+                    <div className="ctf-universe-copy">
+                      <span className="ctf-kicker">UNIVERSE: {universe.name.toUpperCase()}</span>
+                      <h3 id={`universe-${universe.id}`} style={{ fontSize: "18px" }}>{universe.description || "Challenges"}</h3>
+                    </div>
+                    <span className="ctf-universe-completion">
+                      {universe.completedCount}/{universe.challengeCount} captured
                     </span>
-                    <strong>{challenge.title}</strong>
-                    <span className="ctf-mission-points">
-                      {challenge.state.completed
-                        ? challenge.state.awardedXp
-                        : challenge.state.achievableXp}
-                      <small>
-                        {challenge.state.completed ? "XP EARNED" : "XP"}
-                      </small>
-                    </span>
-                    <ArrowRight
-                      className="ctf-mission-arrow"
-                      size={16}
-                      aria-hidden="true"
-                    />
-                  </Link>
-                </li>
+                  </div>
+                  <ul className="ctf-mission-grid">
+                    {universe.challenges.map((challenge: any) => (
+                      <li key={challenge.id}>
+                        <Link
+                          href={`/ctf/challenge/${challenge.id}`}
+                          className={`ctf-mission-link${
+                            challenge.state.completed ? " is-complete" : ""
+                          }`}
+                          aria-label={`${challenge.title}, ${
+                            challenge.state.completed
+                              ? `completed, ${challenge.state.awardedXp} XP earned, re-attempt`
+                              : `${challenge.state.achievableXp} XP available`
+                          }`}
+                        >
+                          <span className="ctf-mission-mark" aria-hidden="true">
+                            {challenge.state.completed ? (
+                              <CheckCircle2 size={19} />
+                            ) : (
+                              <Flag size={19} />
+                            )}
+                          </span>
+                          <strong>{challenge.title}</strong>
+                          <span className="ctf-mission-points">
+                            {challenge.state.completed
+                              ? challenge.state.awardedXp
+                              : challenge.state.achievableXp}
+                            <small>
+                              {challenge.state.completed ? "XP EARNED" : "XP"}
+                            </small>
+                          </span>
+                          <ArrowRight
+                            className="ctf-mission-arrow"
+                            size={16}
+                            aria-hidden="true"
+                          />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               ))}
-            </ul>
-          </section>
+            </div>
+          ))}
         </div>
       )}
 

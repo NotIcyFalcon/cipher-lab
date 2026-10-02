@@ -2,6 +2,8 @@ export const creatorSections = [
   "topics",
   "paths",
   "homework",
+  "ctfs",
+  "universes",
   "ctf",
   "labs",
 ] as const;
@@ -37,6 +39,7 @@ export type ChapterRow = {
 
 export type LabRow = {
   id: string;
+  name: string;
   base_image: string;
   snapshot_image: string | null;
   default_user: string;
@@ -49,6 +52,7 @@ export type HomeworkRow = {
   id: string;
   path_id: string;
   question_markdown: string;
+  setup_script: string | null;
   expected_result_description: string | null;
   standard_solution_script: string | null;
   total_base_xp: number;
@@ -68,6 +72,24 @@ export type TestCaseRow = {
 export type CtfRow = {
   id: string;
   topic_id: string;
+  name: string;
+  description: string | null;
+  difficulty: string | null;
+  suggested_paths_json: string;
+  sequence_order: number;
+};
+
+export type CtfUniverseRow = {
+  id: string;
+  ctf_id: string;
+  name: string;
+  description: string | null;
+  sequence_order: number;
+};
+
+export type CtfChallengeRow = {
+  id: string;
+  universe_id: string;
   title: string;
   description: string | null;
   points: number;
@@ -90,7 +112,9 @@ export type CreatorData = {
   labs: LabRow[];
   homework: HomeworkRow[];
   tests: TestCaseRow[];
-  challenges: CtfRow[];
+  ctfs: CtfRow[];
+  universes: CtfUniverseRow[];
+  challenges: CtfChallengeRow[];
   hints: HintRow[];
 };
 
@@ -123,6 +147,7 @@ export type EditorBlock =
       title: string;
       objective: string;
       hint: string;
+      points: number;
     };
 
 export type ChapterDraft = {
@@ -171,6 +196,7 @@ export type HomeworkDraft = {
   id: string;
   path_id: string;
   question_markdown: string;
+  setup_script: string;
   total_base_xp: number;
   lab_id: string;
   expected_result_description: string;
@@ -178,10 +204,28 @@ export type HomeworkDraft = {
   tests: TestDraft[];
 };
 
+export type CtfDefinitionDraft = {
+  entity: "ctfs";
+  id: string;
+  topic_id: string;
+  name: string;
+  description: string;
+  difficulty: string;
+  suggested_path_ids: string[];
+};
+
+export type CtfUniverseDraft = {
+  entity: "universes";
+  id: string;
+  ctf_id: string;
+  name: string;
+  description: string;
+};
+
 export type CtfDraft = {
   entity: "ctf";
   id: string;
-  topic_id: string;
+  universe_id: string;
   title: string;
   description: string;
   points: number;
@@ -193,8 +237,7 @@ export type CtfDraft = {
 export type LabDraft = {
   entity: "labs";
   id: string;
-  base_image: string;
-  snapshot_image: string;
+  name: string;
   default_user: string;
   whitelist_enabled: boolean;
   command_blacklist: string;
@@ -205,6 +248,8 @@ export type CreatorDraft =
   | TopicDraft
   | PathDraft
   | HomeworkDraft
+  | CtfDefinitionDraft
+  | CtfUniverseDraft
   | CtfDraft
   | LabDraft;
 

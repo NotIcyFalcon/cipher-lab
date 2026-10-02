@@ -9,6 +9,12 @@ import Link from "next/link";
 import { Plus, Save, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { saveCreatorAction, deleteCreatorAction } from "./actions";
 import {
+  DEFAULT_COMMAND_BLACKLIST,
+  DEFAULT_LAB_POINTS,
+  DEFAULT_LAB_USER,
+  learningLabPoints,
+} from "@/lib/creator-defaults";
+import {
   creatorSections,
   type ActionState,
   type CreatorData,
@@ -23,6 +29,8 @@ const labels: Record<CreatorSection, string> = {
   topics: "Topics",
   paths: "Learning Paths",
   homework: "Homework",
+  ctfs: "CTFs",
+  universes: "CTF Universes",
   ctf: "CTF Challenges",
   labs: "Labs",
 };
@@ -31,6 +39,8 @@ const singular: Record<CreatorSection, string> = {
   topics: "Topic",
   paths: "Learning Path",
   homework: "Homework",
+  ctfs: "CTF",
+  universes: "CTF Universe",
   ctf: "CTF Challenge",
   labs: "Lab",
 };
@@ -94,6 +104,7 @@ function initialBlocks(json: string): EditorBlock[] {
           title: stringField("title"),
           objective: stringField("objective"),
           hint: stringField("hint"),
+          points: learningLabPoints(block.points),
         };
 
       case "quiz": {
@@ -135,8 +146,17 @@ function initialBlocks(json: string): EditorBlock[] {
   return blocks;
 }
 
+function stringArray(json: string | null): string[] {
+  if (!json) return [];
+  const value: unknown = JSON.parse(json);
+  if (!Array.isArray(value) || !value.every((item) => typeof item === "string")) {
+    throw new Error("Expected a JSON array of strings.");
+  }
+  return value;
+}
+
 function blacklistText(json: string | null): string {
-  if (!json) return "";
+  if (!json) return DEFAULT_COMMAND_BLACKLIST.join("\n");
 
   const value: unknown = JSON.parse(json);
 
@@ -200,6 +220,7 @@ function makeDraft(
         id: row?.id ?? "",
         path_id: row?.path_id ?? pathId,
         question_markdown: row?.question_markdown ?? "",
+        setup_script: row?.setup_script ?? "",
         total_base_xp: row?.total_base_xp ?? 0,
         lab_id: row?.lab_id ?? "",
         expected_result_description: row?.expected_result_description ?? "",
@@ -215,13 +236,37 @@ function makeDraft(
       };
     }
 
+    case "ctfs": {
+      const row = data.ctfs.find((item) => item.id === editId);
+      return {
+        entity: "ctfs",
+        id: row?.id ?? "",
+        topic_id: row?.topic_id ?? topicId,
+        name: row?.name ?? "",
+        description: row?.description ?? "",
+        difficulty: row?.difficulty ?? "",
+        suggested_path_ids: stringArray(row?.suggested_paths_json ?? null),
+      };
+    }
+
+    case "universes": {
+      const row = data.universes.find((item) => item.id === editId);
+      return {
+        entity: "universes",
+        id: row?.id ?? "",
+        ctf_id: row?.ctf_id ?? "",
+        name: row?.name ?? "",
+        description: row?.description ?? "",
+      };
+    }
+
     case "ctf": {
       const row = data.challenges.find((item) => item.id === editId);
 
       return {
         entity: "ctf",
         id: row?.id ?? "",
-        topic_id: row?.topic_id ?? topicId,
+        universe_id: row?.universe_id ?? "",
         title: row?.title ?? "",
         description: row?.description ?? "",
         points: row?.points ?? 100,
@@ -243,10 +288,9 @@ function makeDraft(
       return {
         entity: "labs",
         id: row?.id ?? "",
-        base_image: row?.base_image ?? "",
-        snapshot_image: row?.snapshot_image ?? "",
-        default_user: row?.default_user ?? "student",
-        whitelist_enabled: row?.whitelist_enabled === 1,
+        name: row?.name ?? "",
+        default_user: row?.default_user ?? DEFAULT_LAB_USER,
+        whitelist_enabled: row ? row.whitelist_enabled === 1 : true,
         command_blacklist: blacklistText(
           row?.command_blacklist_json ?? null,
         ),
@@ -541,6 +585,7 @@ function createBlock(type: "note" | "code" | "quiz" | "lab"): EditorBlock {
         title: "Hands-on Lab",
         objective: "",
         hint: "",
+        points: 50,
       };
   }
 }
@@ -716,6 +761,11 @@ function BlockFields({
             value={block.labId}
             required
             onChange={(labId) => onChange({ ...block, labId })}
+          />
+          <NumberField
+            label="Base points"
+            value={block.points}
+            onChange={(points) => onChange({ ...block, points })}
           />
           <TextField
             label="Objective"
@@ -1207,14 +1257,14 @@ function DraftFields({
       );
     }
 
-    case "ctf":
+    case "ctfs":
       return (
         <>
           <TextField
-            label="Challenge title"
-            value={draft.title}
+            label="CTF definition name"
+            value={draft.name}
             required
-            onChange={(title) => onChange({ ...draft, title })}
+            onChange={(name) => onChange({ ...draft, name })}
           />
 
           <SelectField
@@ -1231,6 +1281,85 @@ function DraftFields({
                   {topic.name}
                 </option>
               ))}
+          </SelectField>
+
+          <TextField
+            label="Description"
+            value={draft.description}
+            multiline
+            rows={4}
+            maxLength={10_000}
+            onChange={(description) => onChange({ ...draft, description })}
+          />
+
+          <TextField
+            label="Difficulty"
+            value={draft.difficulty}
+            maxLength={80}
+            placeholder="Beginner, Intermediate, Advanced…"
+            onChange={(difficulty) => onChange({ ...draft, difficulty })}
+          />
+        </>
+      );
+
+    case "universes":
+      return (
+        <>
+          <TextField
+            label="Universe name"
+            value={draft.name}
+            required
+            onChange={(name) => onChange({ ...draft, name })}
+          />
+
+          <SelectField
+            label="CTF definition"
+            value={draft.ctf_id}
+            required
+            onChange={(ctf_id) => onChange({ ...draft, ctf_id })}
+          >
+            <option value="">Choose a CTF definition…</option>
+            {data.ctfs.map((ctf) => (
+              <option key={ctf.id} value={ctf.id}>
+                {ctf.name}
+              </option>
+            ))}
+          </SelectField>
+
+          <TextField
+            label="Description"
+            value={draft.description}
+            multiline
+            rows={4}
+            maxLength={10_000}
+            onChange={(description) => onChange({ ...draft, description })}
+          />
+        </>
+      );
+
+    case "ctf":
+      return (
+        <>
+          <TextField
+            label="Challenge title"
+            value={draft.title}
+            required
+            onChange={(title) => onChange({ ...draft, title })}
+          />
+
+          <SelectField
+            label="Universe"
+            value={draft.universe_id}
+            required
+            onChange={(universe_id) => onChange({ ...draft, universe_id })}
+          >
+            <option value="">Choose a universe…</option>
+            {data.universes.map((universe) => (
+              <option key={universe.id} value={universe.id}>
+                {universe.name} (CTF:{" "}
+                {data.ctfs.find((ctf) => ctf.id === universe.ctf_id)?.name})
+              </option>
+            ))}
           </SelectField>
 
           <TextField
@@ -1351,22 +1480,11 @@ function DraftFields({
       return (
         <>
           <TextField
-            label="Base image"
-            value={draft.base_image}
+            label="Lab name (for Creator reference)"
+            value={draft.name}
             required
-            maxLength={500}
-            placeholder="ubuntu:24.04"
-            onChange={(base_image) => onChange({ ...draft, base_image })}
-          />
-
-          <TextField
-            label="Existing snapshot image (optional)"
-            value={draft.snapshot_image}
-            maxLength={500}
-            placeholder="cyberbox/my-lab:snapshot"
-            onChange={(snapshot_image) =>
-              onChange({ ...draft, snapshot_image })
-            }
+            maxLength={200}
+            onChange={(name) => onChange({ ...draft, name })}
           />
 
           <TextField
@@ -1499,14 +1617,18 @@ function DeleteButton({
 
   const warning =
     section === "topics"
-      ? "Deleting this topic also deletes its paths, chapters, homework, challenges, test cases, and hints through cascading relationships."
+      ? "Deleting this topic also deletes its paths, chapters, homework, CTF definitions, universes, challenges, test cases, and hints through cascading relationships."
       : section === "paths"
         ? "Deleting this path also deletes its chapters, homework, and homework test cases."
         : section === "homework"
           ? "Deleting this homework also deletes its test cases."
-          : section === "ctf"
-            ? "Deleting this challenge also deletes its hints."
-            : "Labs can only be deleted when no CMS content uses them.";
+          : section === "ctfs"
+            ? "Deleting this CTF definition also deletes its universes, challenges, and hints."
+            : section === "universes"
+              ? "Deleting this universe also deletes its challenges and hints."
+              : section === "ctf"
+                ? "Deleting this challenge also deletes its hints."
+                : "Labs can only be deleted when no CMS content uses them.";
 
   return (
     <form
@@ -1572,6 +1694,30 @@ function catalogItems(section: CreatorSection, data: CreatorData) {
           .join(" · "),
       }));
 
+    case "ctfs":
+      return data.ctfs.map((ctf) => ({
+        id: ctf.id,
+        title: ctf.name,
+        detail: [
+          data.topics.find((topic) => topic.id === ctf.topic_id)?.name,
+          `${data.universes.filter((universe) => universe.ctf_id === ctf.id).length} universes`,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      }));
+
+    case "universes":
+      return data.universes.map((universe) => ({
+        id: universe.id,
+        title: universe.name,
+        detail: [
+          data.ctfs.find((ctf) => ctf.id === universe.ctf_id)?.name,
+          `${data.challenges.filter((challenge) => challenge.universe_id === universe.id).length} challenges`,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      }));
+
     case "ctf":
       return data.challenges.map((challenge) => ({
         id: challenge.id,
@@ -1582,7 +1728,7 @@ function catalogItems(section: CreatorSection, data: CreatorData) {
     case "labs":
       return data.labs.map((lab) => ({
         id: lab.id,
-        title: lab.base_image,
+        title: lab.name || "Unnamed lab",
         detail: `${lab.default_user} · ${lab.id.slice(0, 8)}`,
       }));
   }

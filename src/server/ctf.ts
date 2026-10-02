@@ -32,41 +32,63 @@ export function getCTFCatalogProgress(userId: string) {
   const account = readCTFAccountData(userId);
 
   const topics = db.prepare("SELECT * FROM topics WHERE type = 'ctf' ORDER BY sequence_order, id").all() as any[];
+  const ctfs = db.prepare("SELECT * FROM ctfs ORDER BY sequence_order, id").all() as any[];
+  const universes = db.prepare("SELECT * FROM ctf_universes ORDER BY sequence_order, id").all() as any[];
   const challenges = db.prepare("SELECT * FROM ctf_challenges ORDER BY sequence_order, id").all() as any[];
   const hints = db.prepare("SELECT * FROM ctf_hints ORDER BY sequence_order, id").all() as any[];
 
   return topics.map(topic => {
-    const topicChallenges = challenges.filter(c => c.topic_id === topic.id).map(challenge => {
-      const chints = hints.filter(h => h.challenge_id === challenge.id);
-      const unlockedHints = account.hints.get(challenge.id) || new Set();
-      const completed = account.completions.has(challenge.id);
-      const awardedXp = account.completions.get(challenge.id) ?? null;
+    const topicCtfs = ctfs.filter(c => c.topic_id === topic.id).map(ctf => {
+      const ctfUniverses = universes.filter(u => u.ctf_id === ctf.id).map(universe => {
+        const universeChallenges = challenges.filter(c => c.universe_id === universe.id).map(challenge => {
+          const chints = hints.filter(h => h.challenge_id === challenge.id);
+          const unlockedHints = account.hints.get(challenge.id) || new Set();
+          const completed = account.completions.has(challenge.id);
+          const awardedXp = account.completions.get(challenge.id) ?? null;
 
-      const penaltyXp = chints.reduce((sum, h) => sum + (unlockedHints.has(h.id) ? h.penalty : 0), 0);
-      
-      const state: CTFChallengeState = {
-        completed,
-        awardedXp,
-        basePoints: challenge.points,
-        penaltyXp,
-        achievableXp: completed ? awardedXp! : Math.max(0, challenge.points - penaltyXp),
-        hints: chints.map((hint, index) => ({
-          index,
-          penalty: hint.penalty,
-          unlocked: unlockedHints.has(hint.id),
-          text: unlockedHints.has(hint.id) ? hint.text : null,
-        }))
-      };
+          const penaltyXp = chints.reduce((sum, h) => sum + (unlockedHints.has(h.id) ? h.penalty : 0), 0);
+          
+          const state: CTFChallengeState = {
+            completed,
+            awardedXp,
+            basePoints: challenge.points,
+            penaltyXp,
+            achievableXp: completed ? awardedXp! : Math.max(0, challenge.points - penaltyXp),
+            hints: chints.map((hint, index) => ({
+              index,
+              penalty: hint.penalty,
+              unlocked: unlockedHints.has(hint.id),
+              text: unlockedHints.has(hint.id) ? hint.text : null,
+            }))
+          };
+
+          return {
+            ...challenge,
+            name: challenge.title, // keeping standard interface
+            state
+          };
+        });
+
+        return {
+          ...universe,
+          challenges: universeChallenges,
+          challengeCount: universeChallenges.length,
+          completedCount: universeChallenges.filter(c => c.state.completed).length,
+          earnedXp: universeChallenges.reduce((sum, c) => sum + (c.state.awardedXp ?? 0), 0),
+          achievableXp: universeChallenges.reduce((sum, c) => sum + c.state.achievableXp, 0),
+          penaltyXp: universeChallenges.reduce((sum, c) => sum + c.state.penaltyXp, 0),
+        };
+      });
 
       return {
-        ...challenge,
-        name: challenge.title,
-        challengeCount: 1,
-        completedCount: completed ? 1 : 0,
-        earnedXp: awardedXp ?? 0,
-        achievableXp: state.achievableXp,
-        suggestedPaths: [],
-        state
+        ...ctf,
+        suggestedPaths: JSON.parse(ctf.suggested_paths_json || '[]'),
+        universes: ctfUniverses,
+        challengeCount: ctfUniverses.reduce((sum, u) => sum + u.challengeCount, 0),
+        completedCount: ctfUniverses.reduce((sum, u) => sum + u.completedCount, 0),
+        earnedXp: ctfUniverses.reduce((sum, u) => sum + u.earnedXp, 0),
+        achievableXp: ctfUniverses.reduce((sum, u) => sum + u.achievableXp, 0),
+        penaltyXp: ctfUniverses.reduce((sum, u) => sum + u.penaltyXp, 0),
       };
     });
 
@@ -74,12 +96,12 @@ export function getCTFCatalogProgress(userId: string) {
       id: topic.id,
       name: topic.name,
       description: topic.description,
-      ctfs: topicChallenges,
-      challengeCount: topicChallenges.length,
-      completedCount: topicChallenges.filter(c => c.state.completed).length,
-      earnedXp: topicChallenges.reduce((sum, c) => sum + (c.state.awardedXp ?? 0), 0),
-      achievableXp: topicChallenges.reduce((sum, c) => sum + c.state.achievableXp, 0),
-      penaltyXp: topicChallenges.reduce((sum, c) => sum + c.state.penaltyXp, 0),
+      ctfs: topicCtfs,
+      challengeCount: topicCtfs.reduce((sum, c) => sum + c.challengeCount, 0),
+      completedCount: topicCtfs.reduce((sum, c) => sum + c.completedCount, 0),
+      earnedXp: topicCtfs.reduce((sum, c) => sum + c.earnedXp, 0),
+      achievableXp: topicCtfs.reduce((sum, c) => sum + c.achievableXp, 0),
+      penaltyXp: topicCtfs.reduce((sum, c) => sum + c.penaltyXp, 0),
     };
   });
 }
@@ -91,15 +113,17 @@ export function getCTFChallenge(challengeId: string) {
   if (!challenge) return null;
   
   const hints = db.prepare("SELECT * FROM ctf_hints WHERE challenge_id = ? ORDER BY sequence_order, id").all(challengeId) as any[];
-  const topic = db.prepare("SELECT * FROM topics WHERE id = ?").get(challenge.topic_id) as any;
+  const universe = db.prepare("SELECT * FROM ctf_universes WHERE id = ?").get(challenge.universe_id) as any;
+  const ctf = db.prepare("SELECT * FROM ctfs WHERE id = ?").get(universe.ctf_id) as any;
+  const topic = db.prepare("SELECT * FROM topics WHERE id = ?").get(ctf.topic_id) as any;
 
   return {
     challenge: {
       ...challenge,
       hints
     },
-    universe: { id: "stub-universe", name: "Universe", description: "" }, // Stub for UI compatibility
-    ctf: { id: challenge.id, name: challenge.title, description: challenge.description, difficulty: challenge.difficulty }, // Stub for UI compatibility
+    universe,
+    ctf,
     category: topic 
   };
 }

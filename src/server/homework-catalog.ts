@@ -25,6 +25,7 @@ const definitionSchema = z.object({
   pathId: z.string().min(1).max(200),
   title: z.string(),
   objective: z.string(),
+  setupScript: z.union([scriptSchema, z.literal("")]).nullable().optional(),
   baseXp: z.number().int().min(0).max(1_000_000),
   standardSolution: scriptSchema.refine((value) => Boolean(value.trim())),
   testCases: z.array(testSchema).min(1).max(100),
@@ -43,6 +44,7 @@ export function findHomework(homeworkId: string): HomeworkDefinition | undefined
       path_id AS pathId,
       title,
       question_markdown AS objective,
+      setup_script AS setupScript,
       total_base_xp AS baseXp,
       standard_solution_script AS standardSolution
     FROM homework

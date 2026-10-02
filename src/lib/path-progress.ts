@@ -20,11 +20,11 @@ export function getPathProgress(path: LearningPath, progress: Progress) {
       if (block.type !== "lab") continue;
 
       labCount++;
-      labsAvailable += block.xp;
+      labsAvailable += block.points;
 
       if (completedLabs.has(`${lesson.id}:${block.id}`)) {
         completedLabCount++;
-        labsEarned += block.xp;
+        labsEarned += block.points;
       }
     }
   }
