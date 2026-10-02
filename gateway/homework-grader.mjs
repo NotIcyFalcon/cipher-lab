@@ -1,11 +1,9 @@
 import http from "node:http";
 import { randomUUID, timingSafeEqual } from "node:crypto";
+import { dockerAPI, decodeDockerOutput } from "./docker-api.mjs";
 
-const SCRIPT_LIMIT = 32 * 1024;
-const BODY_LIMIT = 256 * 1024;
-const OUTPUT_LIMIT = 64 * 1024;
-const JOB_TIMEOUT = 20_000;
-const MEMORY_LIMIT = 64 * 1024 * 1024;
+const BODY_LIMIT = 16 * 1024 * 1024;
+const JOB_MS = 900_000;
 
 class GradingError extends Error {
   constructor(message, status = 400) {
@@ -14,424 +12,143 @@ class GradingError extends Error {
   }
 }
 
-function normalizeOutput(value) {
-  // Preserve spaces and case; ignore line-ending format and final newlines.
-  return value.replace(/\r\n/g, "\n").replace(/\n+$/, "");
-}
-
-function decodeDockerOutput(buffer) {
-  const stdout = [];
-  const stderr = [];
-  let offset = 0;
-
-  while (offset < buffer.length) {
-    if (offset + 8 > buffer.length) {
-      throw new Error("Incomplete Docker output header.");
-    }
-
-    const stream = buffer[offset];
-    const length = buffer.readUInt32BE(offset + 4);
-    offset += 8;
-
-    if (offset + length > buffer.length || ![1, 2].includes(stream)) {
-      throw new Error("Invalid Docker output frame.");
-    }
-
-    const chunk = buffer.subarray(offset, offset + length);
-    (stream === 1 ? stdout : stderr).push(chunk);
-    offset += length;
-  }
-
-  return {
-    stdout: Buffer.concat(stdout).toString("utf8"),
-    stderr: Buffer.concat(stderr).toString("utf8"),
-  };
-}
-
-function validateSubmission(value) {
-  if (!value || typeof value !== "object") {
-    throw new GradingError("Invalid submission.");
-  }
-
-  const { scriptContent, homeworkId, totalPoints, testCases } = value;
-
-  if (
-    typeof scriptContent !== "string" ||
-    !scriptContent.trim() ||
-    scriptContent.includes("\0") ||
-    Buffer.byteLength(scriptContent, "utf8") > SCRIPT_LIMIT
-  ) {
-    throw new GradingError("Submit a nonempty UTF-8 script up to 32 KiB.");
-  }
-
-  if (
-    typeof homeworkId !== "string" ||
-    !/^[a-zA-Z0-9_-]{1,120}$/.test(homeworkId) ||
-    !Array.isArray(testCases) ||
-    testCases.length === 0 ||
-    testCases.length > 8 ||
-    !Number.isSafeInteger(totalPoints) ||
-    totalPoints <= 0 ||
-    totalPoints > 10_000 ||
-    totalPoints % testCases.length !== 0
-  ) {
-    throw new GradingError("Invalid homework configuration.");
-  }
-
-  const ids = new Set();
-
-  for (const test of testCases) {
-    if (
-      !test ||
-      typeof test.id !== "string" ||
-      !test.id ||
-      ids.has(test.id) ||
-      typeof test.title !== "string" ||
-      test.title.length > 200 ||
-      (
-        test.evaluationCommand !== undefined &&
-        (
-          typeof test.evaluationCommand !== "string" ||
-          !test.evaluationCommand.trim() ||
-          test.evaluationCommand.length > 4096
-        )
-      ) ||
-      (
-        test.expectedOutput !== undefined &&
-        (
-          typeof test.expectedOutput !== "string" ||
-          test.expectedOutput.length > 4096
-        )
-      ) ||
-      (
-        test.evaluationCommand === undefined &&
-        test.expectedOutput === undefined
-      )
-    ) {
-      throw new GradingError("Invalid homework test case.");
-    }
-
-    ids.add(test.id);
-  }
-}
-
 function authorized(header, token) {
-  const supplied = Buffer.from(
-    typeof header === "string" ? header : "",
-  );
+  const actual = Buffer.from(typeof header === "string" ? header : "");
   const expected = Buffer.from(`Bearer ${token}`);
 
-  return (
-    supplied.length === expected.length &&
-    timingSafeEqual(supplied, expected)
-  );
+  return actual.length === expected.length &&
+    timingSafeEqual(actual, expected);
 }
 
-async function readJson(req) {
+async function readJson(request) {
   const chunks = [];
   let size = 0;
 
-  for await (const chunk of req) {
+  for await (const chunk of request) {
     size += chunk.length;
-
     if (size > BODY_LIMIT) {
-      throw new GradingError("Submission is too large.", 413);
+      throw new GradingError("Payload too large.", 413);
     }
-
     chunks.push(chunk);
   }
 
   try {
     return JSON.parse(Buffer.concat(chunks).toString("utf8"));
   } catch {
-    throw new GradingError("Invalid JSON.");
+    throw new GradingError("Invalid JSON payload.", 400);
   }
 }
 
-export function startHomeworkGrader(dockerAPI, composeProject) {
-  const token = process.env.GRADER_INTERNAL_TOKEN;
-
-  if (!token || token.length < 32) {
-    throw new Error("Set GRADER_INTERNAL_TOKEN to a strong shared secret.");
-  }
-
-  const slotName = `${composeProject}-homework-grader`;
-  const slotPath = `/containers/${encodeURIComponent(slotName)}`;
+async function grade(job) {
+  const jobId = randomUUID();
+  const slotName = `cyberbox-homework-grader-${jobId}`;
   const image = process.env.GRADER_IMAGE ?? "cyberbox-homework:1";
 
-  async function removeContainer(id) {
-    const response = await dockerAPI(
-      "DELETE",
-      `/containers/${encodeURIComponent(id)}?force=true&v=true`,
-      null,
-      { timeoutMs: 5000 },
+  const payloadBuffer = Buffer.from(JSON.stringify(job), "utf8");
+  let containerId;
+
+  try {
+    const created = await dockerAPI(
+      "POST",
+      `/containers/create?name=${encodeURIComponent(slotName)}`,
+      {
+        Image: image,
+        User: "0:0",
+        WorkingDir: "/",
+        Cmd: ["python3", "/usr/local/lib/worker.py"],
+        Labels: {
+          "cyberbox.kind": "homework",
+          "cyberbox.job": jobId,
+        },
+        NetworkDisabled: true,
+        HostConfig: {
+          AutoRemove: true,
+          Init: true,
+          NetworkMode: "none",
+          ReadonlyRootfs: true,
+          CapDrop: ["ALL"],
+          SecurityOpt: ["no-new-privileges:true"],
+          Memory: 512 * 1024 * 1024,
+          MemorySwap: 512 * 1024 * 1024,
+          NanoCpus: 1_000_000_000,
+          PidsLimit: 128,
+          Tmpfs: {
+            "/tmp": "rw,noexec,nosuid,nodev,size=32m,mode=1777",
+            "/jails": "rw,noexec,nosuid,nodev,size=256m,mode=0700"
+          },
+          LogConfig: { Type: "none", Config: {} },
+          Binds: [],
+        },
+      },
+      { statuses: [201, 404, 409] }
     );
 
-    if (![204, 404].includes(response.status)) {
-      throw new Error(`Container cleanup failed: HTTP ${response.status}`);
+    if (created.status === 404) {
+      throw new GradingError("Grader image not found.", 500);
     }
-  }
-
-  async function grade(submission) {
-    validateSubmission(submission);
-
-    const { homeworkId, scriptContent, totalPoints, testCases } = submission;
-    const jobId = randomUUID();
-    const deadline = Date.now() + JOB_TIMEOUT;
-    let containerId;
-
-    async function api(method, path, body = null, options = {}) {
-      const remaining = deadline - Date.now();
-
-      if (remaining <= 0) {
-        throw new GradingError("Grading exceeded its time limit.", 422);
-      }
-
-      const {
-        statuses = [200],
-        timeoutMs = 3000,
-        raw = false,
-      } = options;
-
-      const response = await dockerAPI(method, path, body, {
-        raw,
-        timeoutMs: Math.min(timeoutMs, remaining),
-        maxBytes: raw ? OUTPUT_LIMIT : 1024 * 1024,
-      });
-
-      if (!statuses.includes(response.status)) {
-        throw new Error(`Docker operation failed: HTTP ${response.status}`);
-      }
-
-      return response;
+    if (created.status === 409) {
+      throw new GradingError("Grader slot conflict.", 503);
     }
+    containerId = created.data.Id;
 
-    async function exec(command, timeoutMs = 2000) {
-      const created = await api(
-        "POST",
-        `/containers/${containerId}/exec`,
-        {
-          User: "10001:10001",
-          WorkingDir: "/work",
-          AttachStdout: true,
-          AttachStderr: true,
-          AttachStdin: false,
-          Tty: false,
-          Cmd: command,
-        },
-        { statuses: [201] },
-      );
+    const tarHeader = Buffer.alloc(512);
+    tarHeader.write("job/input.json", 0, 100);
+    tarHeader.write("0000600 \0", 100, 8);
+    tarHeader.write("0000000 \0", 108, 8);
+    tarHeader.write("0000000 \0", 116, 8);
+    tarHeader.write(payloadBuffer.length.toString(8).padStart(11, "0") + " ", 124, 12);
+    tarHeader.write(Math.floor(Date.now() / 1000).toString(8).padStart(11, "0") + " ", 136, 12);
+    tarHeader.write("        ", 148, 8);
+    tarHeader.write("0", 156, 1);
+    tarHeader.write("ustar  \0", 257, 8);
+    
+    let chksum = 0;
+    for (let i = 0; i < 512; i++) chksum += tarHeader[i];
+    tarHeader.write(chksum.toString(8).padStart(6, "0") + "\0 ", 148, 8);
+    
+    const paddingLength = 512 - (payloadBuffer.length % 512);
+    const padding = paddingLength === 512 ? Buffer.alloc(0) : Buffer.alloc(paddingLength);
+    const tarArchive = Buffer.concat([tarHeader, payloadBuffer, padding, Buffer.alloc(1024)]);
 
-      const execId = created.data.Id;
+    await dockerAPI("PUT", `/containers/${containerId}/archive?path=/`, tarArchive, {
+      statuses: [200],
+    });
 
-      const response = await api(
-        "POST",
-        `/exec/${execId}/start`,
-        { Detach: false, Tty: false },
-        { raw: true, timeoutMs },
-      );
+    await dockerAPI("POST", `/containers/${containerId}/start`, null, {
+      statuses: [204, 304]
+    });
 
-      let inspected = await api("GET", `/exec/${execId}/json`);
+    const attach = await dockerAPI(
+      "POST",
+      `/containers/${containerId}/attach?stream=1&stdout=1&stderr=1`,
+      null,
+      { raw: true, timeoutMs: JOB_MS }
+    );
 
-      // Account for the short interval between stream closure and exit status.
-      while (inspected.data.Running) {
-        await new Promise((resolve) => setTimeout(resolve, 25));
-        inspected = await api("GET", `/exec/${execId}/json`);
-      }
-
-      if (!Number.isInteger(inspected.data.ExitCode)) {
-        throw new Error("Docker did not return an execution exit code.");
-      }
-
-      return {
-        ...decodeDockerOutput(response.data),
-        exitCode: inspected.data.ExitCode,
-      };
+    const wait = await dockerAPI("POST", `/containers/${containerId}/wait`, null, {
+      timeoutMs: JOB_MS + 5000,
+      statuses: [200]
+    });
+    
+    const output = decodeDockerOutput(attach.data);
+    
+    if (wait.data.StatusCode !== 0) {
+      console.error("[Homework grader] Worker failed:", wait.data.StatusCode, output.stderr.toString("utf8").slice(0, 500));
+      throw new GradingError("Grading infrastructure failed.", 500);
     }
-
-    const bash = (command) => [
-      "/bin/bash",
-      "--noprofile",
-      "--norc",
-      "-c",
-      command,
-    ];
-
-    try {
-      // Recover a container left in "created" state by a gateway crash.
-      const existing = await api("GET", `${slotPath}/json`, null, {
-        statuses: [200, 404],
-      });
-
-      if (existing.status === 200) {
-        const ours =
-          existing.data.Config?.Labels?.["cyberbox.kind"] === "homework";
-        const age = Date.now() - Date.parse(existing.data.Created);
-
-        if (!ours || !Number.isFinite(age) || age < 90_000) {
-          throw new GradingError(
-            "The grader is busy. Please try again shortly.",
-            503,
-          );
-        }
-
-        await removeContainer(existing.data.Id);
-      }
-
-      // Docker's unique container name provides a lock across requests/processes.
-      const created = await api(
-        "POST",
-        `/containers/create?name=${encodeURIComponent(slotName)}`,
-        {
-          Image: image,
-          User: "65534:65534",
-          WorkingDir: "/",
-          Cmd: ["/bin/sleep", "30"],
-          Env: [
-            "HOME=/work",
-            "PATH=/usr/local/bin:/usr/bin:/bin",
-            "LANG=C",
-            "LC_ALL=C",
-            "BASH_ENV=/dev/null",
-            "ENV=/dev/null",
-          ],
-          Labels: {
-            "cyberbox.kind": "homework",
-            "cyberbox.job": jobId,
-          },
-          NetworkDisabled: true,
-          HostConfig: {
-            AutoRemove: true,
-            Init: true,
-            NetworkMode: "none",
-            ReadonlyRootfs: true,
-            CapDrop: ["ALL"],
-            SecurityOpt: ["no-new-privileges:true"],
-            Memory: MEMORY_LIMIT,
-            MemorySwap: MEMORY_LIMIT,
-            NanoCpus: 500_000_000,
-            PidsLimit: 32,
-            ShmSize: 1024 * 1024,
-            Ulimits: [
-              { Name: "nofile", Soft: 128, Hard: 128 },
-              { Name: "core", Soft: 0, Hard: 0 },
-            ],
-            Tmpfs: {
-              "/work":
-                "rw,noexec,nosuid,nodev,size=16m,uid=10001,gid=10001,mode=0700",
-              "/tmp": "rw,noexec,nosuid,nodev,size=8m,mode=1777",
-            },
-            LogConfig: { Type: "none", Config: {} },
-          },
-        },
-        { statuses: [201, 409] },
-      );
-
-      if (created.status === 409) {
-        throw new GradingError(
-          "The grader is busy. Please try again shortly.",
-          503,
-        );
-      }
-
-      containerId = created.data.Id;
-
-      await api("POST", `/containers/${containerId}/start`, null, {
-        statuses: [204, 304],
-      });
-
-      // Pass script bytes as a positional argument, never as shell source.
-      const encoded = Buffer.from(scriptContent, "utf8").toString("base64");
-
-      const injected = await exec([
-        ...bash(
-          'printf "%s" "$1" | /bin/busybox base64 -d > /work/submission.sh',
-        ),
-        "inject",
-        encoded,
-      ]);
-
-      if (injected.exitCode !== 0) {
-        throw new Error("Could not inject the homework script.");
-      }
-
-      const script = await exec(
-        ["/bin/bash", "--noprofile", "--norc", "/work/submission.sh"],
-        5000,
-      );
-
-      // Stop leftover learner processes before inspecting side effects.
-      // The lifetime process has another UID and cannot be signaled by this UID.
-      await exec(bash("kill -KILL -1 2>/dev/null || true"));
-
-      const pointsPerTest = totalPoints / testCases.length;
-      const results = [];
-
-      for (const test of testCases) {
-        const check =
-          script.exitCode === 0 && test.evaluationCommand !== undefined
-            ? await exec(bash(test.evaluationCommand))
-            : script;
-
-        const passed =
-          script.exitCode === 0 &&
-          check.exitCode === 0 &&
-          (
-            test.expectedOutput === undefined ||
-            normalizeOutput(check.stdout) ===
-              normalizeOutput(test.expectedOutput)
-          );
-
-        results.push({
-          id: test.id,
-          title: test.title,
-          passed,
-          points: passed ? pointsPerTest : 0,
-          maxPoints: pointsPerTest,
-          actualOutput: check.stdout.slice(0, 2000),
-          stderr: check.stderr.slice(0, 2000),
-          exitCode: check.exitCode,
-        });
-      }
-
-      const passedTests = results.filter((test) => test.passed).length;
-
-      return {
-        ok: true,
-        homeworkId,
-        passedTests,
-        totalTests: testCases.length,
-        totalPoints,
-        awardedXp: passedTests * pointsPerTest,
-        scriptExitCode: script.exitCode,
-        scriptStderr: script.stderr.slice(0, 2000),
-        results,
-      };
-    } finally {
-      // Resolve by ownership label if create succeeded but its response was lost.
-      if (!containerId) {
-        const existing = await dockerAPI(
-          "GET",
-          `${slotPath}/json`,
-          null,
-          { timeoutMs: 5000 },
-        );
-
-        if (
-          existing.status === 200 &&
-          existing.data.Config?.Labels?.["cyberbox.job"] === jobId
-        ) {
-          containerId = existing.data.Id;
-        }
-      }
-
-      if (containerId) {
-        // Await cleanup before returning any score.
-        await removeContainer(containerId);
+    
+    return JSON.parse(output.stdout.toString("utf8"));
+  } finally {
+    if (containerId) {
+      try {
+        await dockerAPI("DELETE", `/containers/${containerId}?v=1&force=1`, null, { statuses: [204, 404] });
+      } catch (e) {
       }
     }
   }
+}
 
+export function createGrader(token) {
   const server = http.createServer(
     { requestTimeout: 10_000, headersTimeout: 5000 },
     async (req, res) => {
@@ -462,31 +179,25 @@ export function startHomeworkGrader(dockerAPI, composeProject) {
           return;
         }
 
-        if (
-          error.code === "DOCKER_TIMEOUT" ||
-          error.code === "DOCKER_OUTPUT_LIMIT"
-        ) {
-          send(422, {
-            ok: false,
-            error: "Grading exceeded its execution time or output limit.",
-          });
-          return;
-        }
-
         console.error("[Homework grader]", error);
         send(500, {
           ok: false,
           error: "The grader could not finish this submission. Please retry.",
         });
       }
-    },
+    }
   );
 
   server.listen(
     Number(process.env.GRADER_PORT ?? 3002),
     "0.0.0.0",
-    () => console.log("[Homework grader] Internal endpoint ready."),
+    () => console.log("[Homework grader] Internal endpoint ready.")
   );
 
   return server;
+}
+
+const token = process.env.GRADER_TOKEN || "test-token";
+if (process.env.NODE_ENV !== "test") {
+  createGrader(token);
 }

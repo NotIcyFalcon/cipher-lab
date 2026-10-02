@@ -1,162 +1,148 @@
 import "server-only";
 
-import {
-  ctfCategories,
-  type CTFChallengeDefinition,
-} from "@/content/ctf-catalog";
 import type { CTFChallengeState } from "@/lib/ctf-types";
 import { getDb } from "@/server/db";
 
-type CompletionRow = {
-  challengeId: string;
-  awardedXp: number;
-};
-
-type HintRow = {
-  challengeId: string;
-  hintIndex: number;
-};
-
-type CTFAccountData = {
-  completions: Map<string, number>;
-  hints: Map<string, Set<number>>;
-};
-
-function readCTFAccountData(userId: string): CTFAccountData {
+export function readCTFAccountData(userId: string) {
   const db = getDb();
-
   const completions = db
-    .prepare(`
-      SELECT
-        challenge_id AS challengeId,
-        awarded_xp AS awardedXp
-      FROM ctf_completions
-      WHERE user_id = ?
-    `)
-    .all(userId) as CompletionRow[];
+    .prepare("SELECT challenge_id, awarded_xp FROM ctf_completions WHERE user_id = ?")
+    .all(userId) as { challenge_id: string; awarded_xp: number }[];
 
   const unlocks = db
-    .prepare(`
-      SELECT
-        challenge_id AS challengeId,
-        hint_index AS hintIndex
-      FROM ctf_hint_unlocks
-      WHERE user_id = ?
-    `)
-    .all(userId) as HintRow[];
+    .prepare("SELECT challenge_id, hint_id FROM ctf_hint_purchases WHERE user_id = ?")
+    .all(userId) as { challenge_id: string; hint_id: string }[];
 
-  const hints = new Map<string, Set<number>>();
-
+  const hints = new Map<string, Set<string>>();
   for (const unlock of unlocks) {
-    const indexes = hints.get(unlock.challengeId) ?? new Set<number>();
-    indexes.add(unlock.hintIndex);
-    hints.set(unlock.challengeId, indexes);
+    const ids = hints.get(unlock.challenge_id) ?? new Set<string>();
+    ids.add(unlock.hint_id);
+    hints.set(unlock.challenge_id, ids);
   }
 
   return {
-    completions: new Map(
-      completions.map((row) => [row.challengeId, row.awardedXp]),
-    ),
+    completions: new Map(completions.map((row) => [row.challenge_id, row.awarded_xp])),
     hints,
   };
 }
 
-function calculateState(
-  challenge: CTFChallengeDefinition,
-  account: CTFAccountData,
-): CTFChallengeState {
-  const unlocked = account.hints.get(challenge.id) ?? new Set<number>();
-  const completed = account.completions.has(challenge.id);
-  const awardedXp = account.completions.get(challenge.id) ?? null;
+export function getCTFCatalogProgress(userId: string) {
+  const db = getDb();
+  const account = readCTFAccountData(userId);
 
-  const penaltyXp = challenge.hints.reduce(
-    (sum, hint, index) =>
-      sum + (unlocked.has(index) ? hint.penalty : 0),
-    0,
-  );
+  const topics = db.prepare("SELECT * FROM topics ORDER BY sequence_order, id").all() as any[];
+  const ctfs = db.prepare("SELECT * FROM ctfs ORDER BY sequence_order, id").all() as any[];
+  const universes = db.prepare("SELECT * FROM ctf_universes ORDER BY sequence_order, id").all() as any[];
+  const challenges = db.prepare("SELECT * FROM ctf_challenges ORDER BY sequence_order, id").all() as any[];
+  const hints = db.prepare("SELECT * FROM ctf_hints ORDER BY sequence_order, id").all() as any[];
+
+  return topics.map(topic => {
+    const topicCtfs = ctfs.filter(c => c.topic_id === topic.id).map(ctf => {
+      const ctfUniverses = universes.filter(u => u.ctf_id === ctf.id).map(universe => {
+        const universeChallenges = challenges.filter(c => c.universe_id === universe.id).map(challenge => {
+          const chints = hints.filter(h => h.challenge_id === challenge.id);
+          const unlockedHints = account.hints.get(challenge.id) || new Set();
+          const completed = account.completions.has(challenge.id);
+          const awardedXp = account.completions.get(challenge.id) ?? null;
+
+          const penaltyXp = chints.reduce((sum, h) => sum + (unlockedHints.has(h.id) ? h.penalty : 0), 0);
+          
+          const state: CTFChallengeState = {
+            completed,
+            awardedXp,
+            basePoints: challenge.points,
+            penaltyXp,
+            achievableXp: completed ? awardedXp! : Math.max(0, challenge.points - penaltyXp),
+            hints: chints.map((hint, index) => ({
+              index,
+              penalty: hint.penalty,
+              unlocked: unlockedHints.has(hint.id),
+              text: unlockedHints.has(hint.id) ? hint.text : null,
+            }))
+          };
+
+          return { ...challenge, state };
+        });
+
+        return { ...universe, challenges: universeChallenges };
+      });
+
+      const allCtfChallenges = ctfUniverses.flatMap(u => u.challenges);
+
+      return {
+        ...ctf,
+        suggestedPaths: [], // DB doesn't have suggestedPaths for CTF right now
+        universes: ctfUniverses,
+        challengeCount: allCtfChallenges.length,
+        completedCount: allCtfChallenges.filter(c => c.state.completed).length,
+        earnedXp: allCtfChallenges.reduce((sum, c) => sum + (c.state.awardedXp ?? 0), 0),
+        achievableXp: allCtfChallenges.reduce((sum, c) => sum + c.state.achievableXp, 0),
+        basePoints: allCtfChallenges.reduce((sum, c) => sum + c.points, 0),
+        penaltyXp: allCtfChallenges.reduce((sum, c) => sum + c.state.penaltyXp, 0),
+      };
+    });
+
+    const allTopicChallenges = topicCtfs.flatMap(c => c.universes.flatMap((u: any) => u.challenges));
+
+    return {
+      id: topic.id,
+      name: topic.name,
+      description: topic.description,
+      ctfs: topicCtfs,
+      challengeCount: allTopicChallenges.length,
+      completedCount: allTopicChallenges.filter(c => c.state.completed).length,
+      earnedXp: allTopicChallenges.reduce((sum, c) => sum + (c.state.awardedXp ?? 0), 0),
+      achievableXp: allTopicChallenges.reduce((sum, c) => sum + c.state.achievableXp, 0),
+      penaltyXp: allTopicChallenges.reduce((sum, c) => sum + c.state.penaltyXp, 0),
+    };
+  });
+}
+
+export function getCTFChallenge(challengeId: string) {
+  const db = getDb();
+  
+  const challenge = db.prepare("SELECT * FROM ctf_challenges WHERE id = ?").get(challengeId) as any;
+  if (!challenge) return null;
+  
+  const hints = db.prepare("SELECT * FROM ctf_hints WHERE challenge_id = ? ORDER BY sequence_order, id").all(challengeId) as any[];
+  const universe = db.prepare("SELECT * FROM ctf_universes WHERE id = ?").get(challenge.universe_id) as any;
+  const ctf = db.prepare("SELECT * FROM ctfs WHERE id = ?").get(universe.ctf_id) as any;
+  const topic = db.prepare("SELECT * FROM topics WHERE id = ?").get(ctf.topic_id) as any;
+
+  return {
+    challenge: {
+      ...challenge,
+      hints
+    },
+    universe,
+    ctf,
+    category: topic // the rest of the app calls it category
+  };
+}
+
+export function getCTFChallengeState(userId: string, challengeId: string): CTFChallengeState {
+  const account = readCTFAccountData(userId);
+  const db = getDb();
+  const challenge = db.prepare("SELECT * FROM ctf_challenges WHERE id = ?").get(challengeId) as any;
+  const hints = db.prepare("SELECT * FROM ctf_hints WHERE challenge_id = ? ORDER BY sequence_order, id").all(challengeId) as any[];
+
+  const unlockedHints = account.hints.get(challengeId) || new Set();
+  const completed = account.completions.has(challengeId);
+  const awardedXp = account.completions.get(challengeId) ?? null;
+
+  const penaltyXp = hints.reduce((sum, h) => sum + (unlockedHints.has(h.id) ? h.penalty : 0), 0);
 
   return {
     completed,
     awardedXp,
     basePoints: challenge.points,
     penaltyXp,
-    // A solved challenge retains its recorded score.
-    achievableXp: completed
-      ? awardedXp!
-      : Math.max(0, challenge.points - penaltyXp),
-    hints: challenge.hints.map((hint, index) => ({
+    achievableXp: completed ? awardedXp! : Math.max(0, challenge.points - penaltyXp),
+    hints: hints.map((hint, index) => ({
       index,
       penalty: hint.penalty,
-      unlocked: unlocked.has(index),
-      text: unlocked.has(index) ? hint.text : null,
-    })),
+      unlocked: unlockedHints.has(hint.id),
+      text: unlockedHints.has(hint.id) ? hint.text : null,
+    }))
   };
-}
-
-export function getCTFChallengeState(
-  userId: string,
-  challenge: CTFChallengeDefinition,
-): CTFChallengeState {
-  return calculateState(challenge, readCTFAccountData(userId));
-}
-
-/**
- * Explicit public projection. No flag or locked hint text is returned.
- */
-export function getCTFCatalogProgress(userId: string) {
-  const account = readCTFAccountData(userId);
-
-  return ctfCategories.map((category) => {
-    const universes = category.universes.map((universe) => ({
-      id: universe.id,
-      name: universe.name,
-      description: universe.description,
-      challenges: universe.challenges.map((challenge) => {
-        const state = calculateState(challenge, account);
-
-        return {
-          id: challenge.id,
-          title: challenge.title,
-          points: challenge.points,
-          completed: state.completed,
-          earnedXp: state.awardedXp ?? 0,
-          achievableXp: state.achievableXp,
-          penaltyXp: state.penaltyXp,
-        };
-      }),
-    }));
-
-    const challenges = universes.flatMap((universe) => universe.challenges);
-
-    return {
-      id: category.id,
-      name: category.name,
-      description: category.description,
-      difficulty: category.difficulty,
-      suggestedPaths: category.suggestedPaths.map((path) => ({
-        name: path.name,
-        href: path.href,
-      })),
-      universes,
-      challengeCount: challenges.length,
-      completedCount: challenges.filter((challenge) => challenge.completed)
-        .length,
-      earnedXp: challenges.reduce(
-        (sum, challenge) => sum + challenge.earnedXp,
-        0,
-      ),
-      achievableXp: challenges.reduce(
-        (sum, challenge) => sum + challenge.achievableXp,
-        0,
-      ),
-      basePoints: challenges.reduce(
-        (sum, challenge) => sum + challenge.points,
-        0,
-      ),
-      penaltyXp: challenges.reduce(
-        (sum, challenge) => sum + challenge.penaltyXp,
-        0,
-      ),
-    };
-  });
 }

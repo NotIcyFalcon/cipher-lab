@@ -1,6 +1,6 @@
 import "server-only";
 
-import { paths } from "@/content/paths";
+import { getPaths } from "@/server/catalog";
 import { getPathProgress } from "@/lib/path-progress";
 import { getDb } from "@/server/db";
 import { getProgress } from "@/server/progress";
@@ -50,6 +50,8 @@ function timestampMilliseconds(value: number): number | null {
 export function getProfileDashboard(userId: string, now = new Date()) {
   const progress = getProgress(userId);
   const ctfCategories = getCTFCatalogProgress(userId);
+
+  const paths = getPaths();
 
   const pathEntries = paths.map((path) => ({
     path,

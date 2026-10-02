@@ -27,7 +27,7 @@ import {
   X,
 } from "lucide-react";
 
-import type { Lesson, ContentBlock } from "@/content/lessons";
+import type { Lesson, ContentBlock } from "@/lib/content-types";
 import WorkspaceShell from "@/components/WorkspaceShell";
 import LabTerminal from "@/components/LabTerminal";
 import type { Progress } from "@/lib/progress-types";

@@ -11,7 +11,9 @@ import {
   Trophy,
 } from "lucide-react";
 import WorkspaceShell from "@/components/WorkspaceShell";
-import { paths, pathHref, pathRevisionHref } from "@/content/paths";
+import { pathHref, pathRevisionHref } from "@/lib/path-links";
+import type { LearningPath } from "@/lib/content-types";
+import { getPaths } from "@/server/catalog";
 import {
   formatLessonDuration,
   getPathProgress,
@@ -24,13 +26,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type PathEntry = {
-  path: (typeof paths)[number];
+  path: LearningPath;
   stats: ReturnType<typeof getPathProgress>;
 };
 
 export default async function PathsPage() {
   const userId = await requireRonakId();
   const progress = getProgress(userId);
+
+  const paths = getPaths();
 
   const entries: PathEntry[] = paths.map((path) => ({
     path,

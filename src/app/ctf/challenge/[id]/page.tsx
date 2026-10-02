@@ -12,8 +12,7 @@ import {
 
 import CTFChallengePanel from "@/components/CTFChallengePanel";
 import LabTerminal from "@/components/LabTerminal";
-import { findCTFChallenge } from "@/content/ctf-catalog";
-import { getCTFChallengeState } from "@/server/ctf";
+import { getCTFChallengeState, getCTFChallenge } from "@/server/ctf";
 import { requireRonakId } from "@/server/current-user";
 
 export default async function CTFChallengePage({
@@ -24,28 +23,28 @@ export default async function CTFChallengePage({
   const userId = await requireRonakId();
   const { id } = await params;
 
-  const entry = findCTFChallenge(id);
+  const entry = getCTFChallenge(id);
 
   if (!entry) notFound();
 
-  const { category, universe, challenge } = entry;
-  const state = getCTFChallengeState(userId, challenge);
+  const { category, universe, ctf, challenge } = entry;
+  const state = getCTFChallengeState(userId, challenge.id);
 
   return (
     <div className="ctf-page ctf-challenge-page">
       <nav className="ctf-route-bar" aria-label="CTF navigation">
         <Link
-          href={`/ctf/${category.id}`}
+          href={`/ctf/${ctf.id}`}
           className="ctf-button ctf-button-quiet"
         >
           <ArrowLeft size={15} aria-hidden="true" />
-          Back to {category.name}
+          Back to {ctf.name}
         </Link>
 
         <div className="ctf-breadcrumb">
           <Link href="/ctf">CTF</Link>
           <ChevronRight size={13} aria-hidden="true" />
-          <Link href={`/ctf/${category.id}`}>{category.name}</Link>
+          <Link href={`/ctf/${ctf.id}`}>{ctf.name}</Link>
           <ChevronRight size={13} aria-hidden="true" />
           <span aria-current="page">Mission</span>
         </div>
@@ -57,10 +56,10 @@ export default async function CTFChallengePage({
           <h1>{challenge.title}</h1>
 
           <div className="ctf-challenge-meta">
-            <span className="ctf-difficulty">{category.difficulty}</span>
+            <span className="ctf-difficulty">{ctf.difficulty || category.name}</span>
             <span>
               <Flag size={13} aria-hidden="true" />
-              {category.name}
+              {ctf.name}
             </span>
             {challenge.labId && (
               <span>

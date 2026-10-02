@@ -49,5 +49,10 @@ def save_file(filepath, content):
     with open(filepath, 'w', encoding='utf-8') as f:
         f.writelines(content)
 
+import sys
+
 if __name__ == "__main__":
-    extract_files(r"C:\Trading Bot\Trial Scripts\batch7.txt")
+    if len(sys.argv) > 1:
+        extract_files(sys.argv[1])
+    else:
+        extract_files(r"C:\Trading Bot\Trial Scripts\batch7.txt")

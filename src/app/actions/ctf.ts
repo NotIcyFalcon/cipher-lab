@@ -4,9 +4,8 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { findCTFChallenge } from "@/content/ctf-catalog";
 import type { CTFActionReply } from "@/lib/ctf-types";
-import { getCTFChallengeState } from "@/server/ctf";
+import { getCTFChallengeState, getCTFChallenge } from "@/server/ctf";
 import { requireRonakId } from "@/server/current-user";
 import { getDb } from "@/server/db";
 
@@ -26,11 +25,9 @@ const flagSchema = z.object({
   flag: z.string().trim().min(1).max(512),
 });
 
-function flagsMatch(submitted: string, expected: string): boolean {
-  const submittedHash = createHash("sha256").update(submitted).digest();
-  const expectedHash = createHash("sha256").update(expected).digest();
-
-  return timingSafeEqual(submittedHash, expectedHash);
+function verifyFlag(submitted: string, expectedHash: string): boolean {
+  const submittedHash = createHash("sha256").update(submitted).digest("hex");
+  return submittedHash === expectedHash;
 }
 
 function refreshCTFPages(categoryId: string, challengeId: string) {
@@ -52,16 +49,17 @@ export async function buyCTFHint(
     return { ok: false, error: "Select a valid challenge and hint." };
   }
 
-  const entry = findCTFChallenge(parsed.data.challengeId);
+  const entry = getCTFChallenge(parsed.data.challengeId);
 
   if (!entry) {
     return { ok: false, error: "Challenge not found." };
   }
 
-  const { challenge, category } = entry;
+  const { challenge, ctf } = entry;
   const index = parsed.data.hintIndex;
 
-  if (!challenge.hints[index]) {
+  const hint = challenge.hints[index];
+  if (!hint) {
     return { ok: false, error: "Hint not found." };
   }
 
@@ -72,7 +70,7 @@ export async function buyCTFHint(
   try {
     reply = db
       .transaction((): CTFActionReply => {
-        const state = getCTFChallengeState(userId, challenge);
+        const state = getCTFChallengeState(userId, challenge.id);
 
         if (state.hints[index].unlocked) {
           return {
@@ -92,18 +90,19 @@ export async function buyCTFHint(
         }
 
         db.prepare(`
-          INSERT INTO ctf_hint_unlocks (
+          INSERT INTO ctf_hint_purchases (
             user_id,
             challenge_id,
-            hint_index
+            hint_id,
+            penalty_xp
           )
-          VALUES (?, ?, ?)
-        `).run(userId, challenge.id, index);
+          VALUES (?, ?, ?, ?)
+        `).run(userId, challenge.id, hint.id, hint.penalty);
 
         return {
           ok: true,
           outcome: "unlocked",
-          state: getCTFChallengeState(userId, challenge),
+          state: getCTFChallengeState(userId, challenge.id),
         };
       })
       .immediate();
@@ -116,7 +115,7 @@ export async function buyCTFHint(
   }
 
   if (reply.ok) {
-    refreshCTFPages(category.id, challenge.id);
+    refreshCTFPages(ctf.id, challenge.id);
   }
 
   return reply;
@@ -139,15 +138,15 @@ export async function submitCTFFlag(
     };
   }
 
-  const entry = findCTFChallenge(parsed.data.challengeId);
+  const entry = getCTFChallenge(parsed.data.challengeId);
 
   if (!entry) {
     return { ok: false, error: "Challenge not found." };
   }
 
-  const { challenge, category } = entry;
+  const { challenge, ctf } = entry;
 
-  if (!flagsMatch(parsed.data.flag, challenge.flag)) {
+  if (!verifyFlag(parsed.data.flag, challenge.flag_hash)) {
     return {
       ok: false,
       error: "That flag is not correct. Recheck the evidence and try again.",
@@ -160,7 +159,7 @@ export async function submitCTFFlag(
   try {
     reply = db
       .transaction((): CTFActionReply => {
-        const state = getCTFChallengeState(userId, challenge);
+        const state = getCTFChallengeState(userId, challenge.id);
 
         if (state.completed) {
           return {
@@ -182,7 +181,7 @@ export async function submitCTFFlag(
         return {
           ok: true,
           outcome: "correct",
-          state: getCTFChallengeState(userId, challenge),
+          state: getCTFChallengeState(userId, challenge.id),
         };
       })
       .immediate();
@@ -193,6 +192,6 @@ export async function submitCTFFlag(
     };
   }
 
-  refreshCTFPages(category.id, challenge.id);
+  refreshCTFPages(ctf.id, challenge.id);
   return reply;
 }

@@ -10,6 +10,8 @@ export type HomeworkQuestion = {
   homeworkId: string;
   title: string;
   objective: string;
+  baseXp: number;
+  testXp: number;
   totalPoints: number;
   totalTests: number;
 };

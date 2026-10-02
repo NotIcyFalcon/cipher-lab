@@ -31,11 +31,13 @@ export default async function CTFPage() {
 
   // Group categories by their difficulty as a simple grouping mechanism,
   // similar to how Learning Paths groups by category.
-  const groups = new Map<string, typeof categories>();
-  for (const category of categories) {
-    const key = category.id;
+  const topics = categories; // renaming for clarity below
+
+  const groups = new Map<string, typeof topics>();
+  for (const topic of topics) {
+    const key = topic.id;
     const group = groups.get(key) ?? [];
-    group.push(category);
+    group.push(topic);
     groups.set(key, group);
   }
 
@@ -111,48 +113,48 @@ export default async function CTFPage() {
           <h3>No topics yet.</h3>
         </div>
       ) : (
-        categories.map((category, groupIndex) => {
+        topics.map((topic, groupIndex) => {
           const Icon =
-            category.id === "networking"
+            topic.id === "networking"
               ? Network
-              : category.id === "osint"
+              : topic.id === "osint"
                 ? Globe2
-                : category.id === "general" ? Flag : Boxes;
+                : topic.id === "general" ? Flag : Boxes;
 
           const complete =
-            category.challengeCount > 0 &&
-            category.completedCount === category.challengeCount;
+            topic.challengeCount > 0 &&
+            topic.completedCount === topic.challengeCount;
 
           const percentage =
-            category.achievableXp > 0
+            topic.achievableXp > 0
               ? Math.round(
-                  (category.earnedXp / category.achievableXp) * 100,
+                  (topic.earnedXp / topic.achievableXp) * 100,
                 )
               : complete ? 100 : 0;
 
           return (
             <section
-              key={category.id}
+              key={topic.id}
               className="paths-category b5-ctf-category"
               aria-labelledby={`ctf-category-${groupIndex}`}
             >
               <div className="dashboard-section-heading">
                 <div>
                   <span className="dashboard-kicker">EXPLORE A CATEGORY</span>
-                  <h2 id={`ctf-category-${groupIndex}`}>{category.name}</h2>
+                  <h2 id={`ctf-category-${groupIndex}`}>{topic.name}</h2>
                 </div>
                 <span className="paths-category-count">
-                  {category.challengeCount}{" "}
-                  {category.challengeCount === 1 ? "challenge" : "challenges"}
+                  {topic.challengeCount}{" "}
+                  {topic.challengeCount === 1 ? "challenge" : "challenges"}
                 </span>
               </div>
 
               <ul className="ctf-category-grid">
-                {category.universes.map((universe) => (
-                  <li key={universe.id}>
+                {topic.ctfs.map((ctf) => (
+                  <li key={ctf.id}>
                     <article
                       className={`ctf-category-card b5-ctf-card${
-                        complete ? " is-complete" : ""
+                        (ctf.challengeCount > 0 && ctf.completedCount === ctf.challengeCount) ? " is-complete" : ""
                       }`}
                     >
                       <div className="ctf-card-top">
@@ -160,34 +162,34 @@ export default async function CTFPage() {
                           <Icon size={22} strokeWidth={1.6} />
                         </span>
                         <span className="ctf-difficulty">
-                          {category.difficulty}
+                          {ctf.difficulty || "Beginner"}
                         </span>
                       </div>
 
                       <div className="ctf-card-body">
                         <h3>
                           <Link
-                            href={`/ctf/${encodeURIComponent(category.id)}`}
+                            href={`/ctf/${encodeURIComponent(ctf.id)}`}
                             className="b5-ctf-card-link"
                           >
-                            {universe.name}
+                            {ctf.name}
                           </Link>
                         </h3>
 
                         <div className="ctf-card-counts">
                           <span>
-                            {universe.challenges.length}{" "}
-                            {universe.challenges.length === 1
+                            {ctf.challengeCount}{" "}
+                            {ctf.challengeCount === 1
                               ? "challenge"
                               : "challenges"}
                           </span>
                           <span>
-                            {universe.challenges.filter((c) => c.completed).length} completed
+                            {ctf.completedCount} completed
                           </span>
                         </div>
                         
                         <p style={{ marginTop: "15px", marginBottom: "20px", color: "var(--color-text-secondary)", fontSize: "14px", lineHeight: "1.5" }}>
-                          {universe.description}
+                          {ctf.description}
                         </p>
 
                         <div className="ctf-suggested b5-ctf-suggested">
@@ -195,7 +197,7 @@ export default async function CTFPage() {
                             SUGGESTED LEARNING
                           </span>
                           <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
-                            {category.suggestedPaths.map((path) => (
+                            {ctf.suggestedPaths.map((path: any) => (
                               <li key={path.name}>
                                 <Link href={path.href} className="dashboard-text-link" style={{ fontSize: "13px" }}>
                                   {path.name}
@@ -211,22 +213,26 @@ export default async function CTFPage() {
                         <div>
                           <span>Earned / achievable</span>
                           <strong>
-                            {category.earnedXp}
-                            <span> / {category.achievableXp} XP</span>
+                            {ctf.earnedXp}
+                            <span> / {ctf.achievableXp} XP</span>
                           </strong>
                         </div>
                         <progress
-                          value={percentage}
+                          value={
+                            ctf.achievableXp > 0
+                              ? Math.round((ctf.earnedXp / ctf.achievableXp) * 100)
+                              : (ctf.challengeCount > 0 && ctf.completedCount === ctf.challengeCount) ? 100 : 0
+                          }
                           max={100}
-                          aria-label={`${category.name}: ${category.earnedXp} of ${category.achievableXp} XP`}
+                          aria-label={`${ctf.name}: ${ctf.earnedXp} of ${ctf.achievableXp} XP`}
                         />
                       </div>
 
                       <footer className="ctf-card-footer">
-                        <span className={complete ? "ctf-text-success" : ""}>
-                          {complete
+                        <span className={(ctf.challengeCount > 0 && ctf.completedCount === ctf.challengeCount) ? "ctf-text-success" : ""}>
+                          {(ctf.challengeCount > 0 && ctf.completedCount === ctf.challengeCount)
                             ? "ALL CAPTURED"
-                            : `${category.completedCount}/${category.challengeCount}`}
+                            : `${ctf.completedCount}/${ctf.challengeCount}`}
                         </span>
                         <span className="ctf-text-link" aria-hidden="true">
                           Explore

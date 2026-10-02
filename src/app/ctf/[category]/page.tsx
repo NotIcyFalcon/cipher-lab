@@ -22,9 +22,15 @@ export default async function CTFCategoryPage({
   const userId = await requireRonakId();
   const { category: categoryId } = await params;
 
-  const category = getCTFCatalogProgress(userId).find(
-    (item) => item.id === categoryId,
-  );
+  const topics = getCTFCatalogProgress(userId);
+  let category = null;
+  for (const t of topics) {
+    const found = t.ctfs.find((c: any) => c.id === categoryId);
+    if (found) {
+      category = found;
+      break;
+    }
+  }
 
   if (!category) notFound();
 
@@ -96,9 +102,9 @@ export default async function CTFCategoryPage({
         </div>
       ) : (
         <div className="ctf-universe-list">
-          {category.universes.map((universe, index) => {
+          {category.universes.map((universe: any, index: number) => {
             const completed = universe.challenges.filter(
-              (challenge) => challenge.completed,
+              (challenge: any) => challenge.state.completed,
             ).length;
 
             return (
@@ -129,21 +135,21 @@ export default async function CTFCategoryPage({
                   </div>
                 ) : (
                   <ul className="ctf-mission-grid">
-                    {universe.challenges.map((challenge) => (
+                    {universe.challenges.map((challenge: any) => (
                       <li key={challenge.id}>
                         <Link
                           href={`/ctf/challenge/${challenge.id}`}
                           className={`ctf-mission-link${
-                            challenge.completed ? " is-complete" : ""
+                            challenge.state.completed ? " is-complete" : ""
                           }`}
                           aria-label={`${challenge.title}, ${
-                            challenge.completed
-                              ? `completed, ${challenge.earnedXp} XP earned, re-attempt`
-                              : `${challenge.achievableXp} XP available`
+                            challenge.state.completed
+                              ? `completed, ${challenge.state.awardedXp} XP earned, re-attempt`
+                              : `${challenge.state.achievableXp} XP available`
                           }`}
                         >
                           <span className="ctf-mission-mark" aria-hidden="true">
-                            {challenge.completed ? (
+                            {challenge.state.completed ? (
                               <CheckCircle2 size={19} />
                             ) : (
                               <Flag size={19} />
@@ -151,11 +157,11 @@ export default async function CTFCategoryPage({
                           </span>
                           <strong>{challenge.title}</strong>
                           <span className="ctf-mission-points">
-                            {challenge.completed
-                              ? challenge.earnedXp
-                              : challenge.achievableXp}
+                            {challenge.state.completed
+                              ? challenge.state.awardedXp
+                              : challenge.state.achievableXp}
                             <small>
-                              {challenge.completed ? "XP EARNED" : "XP"}
+                              {challenge.state.completed ? "XP EARNED" : "XP"}
                             </small>
                           </span>
                           <ArrowRight

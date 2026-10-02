@@ -13,12 +13,11 @@ import {
   Trophy,
 } from "lucide-react";
 import WorkspaceShell from "@/components/WorkspaceShell";
-import { lessons } from "@/content/lessons";
+import { getPaths, getLessons } from "@/server/catalog";
 import {
-  paths,
   pathHref,
   pathRevisionHref,
-} from "@/content/paths";
+} from "@/lib/path-links";
 import {
   formatLessonDuration,
   getPathProgress,
@@ -34,6 +33,9 @@ const number = (value: number) => value.toLocaleString("en-US");
 export default async function DashboardPage() {
   const userId = await requireRonakId();
   const progress = getProgress(userId);
+
+  const paths = getPaths();
+  const lessons = getLessons();
 
   const pathSummaries = paths.map((path) => ({
     path,
@@ -57,11 +59,10 @@ export default async function DashboardPage() {
   ).length;
 
   const completedHomework = new Set(
-    lessons.flatMap((lesson) =>
-      lesson.blocks.flatMap((block) =>
-        block.type === "homework" &&
-        (progress.homeworkBest[block.homeworkId] ?? 0) >= block.totalPoints
-          ? [block.homeworkId]
+    paths.flatMap((path) =>
+      path.homework.flatMap((question) =>
+        (progress.homeworkBest[question.homeworkId] ?? 0) >= question.totalPoints
+          ? [question.homeworkId]
           : [],
       ),
     ),
