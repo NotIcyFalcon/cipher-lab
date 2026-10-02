@@ -31,7 +31,7 @@ export function getCTFCatalogProgress(userId: string) {
   const db = getDb();
   const account = readCTFAccountData(userId);
 
-  const topics = db.prepare("SELECT * FROM topics WHERE type = 'ctf' ORDER BY sequence_order, id").all() as any[];
+  const topics = db.prepare("SELECT * FROM topics WHERE type = 'ctf' ORDER BY id").all() as any[];
   const ctfs = db.prepare("SELECT * FROM ctfs ORDER BY sequence_order, id").all() as any[];
   const universes = db.prepare("SELECT * FROM ctf_universes ORDER BY sequence_order, id").all() as any[];
   const challenges = db.prepare("SELECT * FROM ctf_challenges ORDER BY sequence_order, id").all() as any[];
