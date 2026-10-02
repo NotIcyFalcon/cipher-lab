@@ -88,7 +88,7 @@ export default async function CTFCategoryPage({
       ) : (
         <div className="ctf-universe-list">
           {category.ctfs.map((ctf: any) => (
-            <div key={ctf.id} className="ctf-definition-block">
+            <div key={ctf.id} id={`ctf-${ctf.id}`} className="ctf-definition-block">
               <header className="ctf-definition-heading" style={{ marginTop: "40px", marginBottom: "20px" }}>
                 <h2 style={{ fontSize: "24px", color: "white" }}>{ctf.name}</h2>
                 <p style={{ color: "var(--color-text-secondary)" }}>{ctf.description}</p>

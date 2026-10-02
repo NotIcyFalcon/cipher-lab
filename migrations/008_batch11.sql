@@ -31,3 +31,22 @@ SET command_blacklist_json =
   '["sudo","su","shutdown","reboot","poweroff","halt","mkfs","mount","umount","dd","rm -rf /"]'
 WHERE command_blacklist_json IS NULL
    OR trim(command_blacklist_json) = '';
+
+-- Add suggested paths to CTFs and CTF Challenges
+ALTER TABLE ctfs
+ADD COLUMN suggested_paths_json TEXT NOT NULL DEFAULT '[]'
+CHECK (json_valid(suggested_paths_json) AND json_type(suggested_paths_json) = 'array');
+
+ALTER TABLE ctf_challenges
+ADD COLUMN suggested_paths_json TEXT NOT NULL DEFAULT '[]'
+CHECK (json_valid(suggested_paths_json) AND json_type(suggested_paths_json) = 'array');
+
+-- Add flag hash for CTF Challenges
+ALTER TABLE ctf_challenges
+ADD COLUMN flag_hash TEXT
+CHECK (flag_hash IS NULL OR length(flag_hash) >= 1);
+
+-- Add Chapter Goals (objectives) to Chapters
+ALTER TABLE chapters
+ADD COLUMN objectives_json TEXT NOT NULL DEFAULT '[]'
+CHECK (json_valid(objectives_json) AND json_type(objectives_json) = 'array');

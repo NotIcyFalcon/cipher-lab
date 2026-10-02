@@ -38,8 +38,6 @@ import {
 
 import "@/app/batch-two.css";
 
-// Display only. Awards remain controlled by the existing server action.
-const LAB_POINTS = 50;
 
 type ReadingBlock = Exclude<ContentBlock, { type: "homework" }>;
 
@@ -247,7 +245,7 @@ function LabBlock({
           </span>
           <div>
             <strong>Practice completed</strong>
-            <p>{block.title} · {LAB_POINTS} lab points earned</p>
+            <p>{block.title} · {block.points ?? 50} lab points earned</p>
           </div>
         </div>
 
@@ -557,7 +555,8 @@ export default function LearningPage(props: LearningPageProps) {
                 const showWarning = readingDone && unfinishedLabs;
                 const current = lesson.id === item.id;
                 const locked = !accessibleIds.has(item.id);
-                const lessonPoints = item.xp + labs.length * LAB_POINTS;
+                const labPointsSum = labs.reduce((sum, lab) => sum + (lab.points ?? 50), 0);
+                const lessonPoints = item.xp + labPointsSum;
                 const tooltipId = `${sidebarId}-lab-warning-${index}`;
 
                 const stateLabel = fullyComplete
@@ -705,7 +704,7 @@ export default function LearningPage(props: LearningPageProps) {
               {lessonLabs.length > 0 && (
                 <span>
                   <Terminal size={14} aria-hidden="true" />
-                  {lessonLabs.length * LAB_POINTS} lab pts
+                  {lessonLabs.reduce((sum, lab) => sum + (lab.points ?? 50), 0)} lab pts
                 </span>
               )}
             </div>

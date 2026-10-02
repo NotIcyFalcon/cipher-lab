@@ -114,106 +114,116 @@ export default async function CTFPage() {
           <h3>No topics yet.</h3>
         </div>
       ) : (
-        <section
-          className="paths-category b5-ctf-category"
-          aria-labelledby={`ctf-topics-grid`}
-        >
-          <div className="dashboard-section-heading">
-            <div>
-              <span className="dashboard-kicker">EXPLORE TOPICS</span>
-              <h2 id={`ctf-topics-grid`}>All Topics</h2>
+        topics.map((topic) => (
+          <section
+            key={topic.id}
+            className="paths-category b5-ctf-category"
+            aria-labelledby={`ctf-topic-${topic.id}`}
+          >
+            <div className="dashboard-section-heading">
+              <div>
+                <span className="dashboard-kicker">{topic.description || "EXPLORE"}</span>
+                <h2 id={`ctf-topic-${topic.id}`}>{topic.name}</h2>
+              </div>
+              <span className="paths-category-count">
+                {topic.ctfs.length}{" "}
+                {topic.ctfs.length === 1 ? "CTF" : "CTFs"}
+              </span>
             </div>
-            <span className="paths-category-count">
-              {topics.length}{" "}
-              {topics.length === 1 ? "topic" : "topics"}
-            </span>
-          </div>
 
-          <ul className="ctf-category-grid">
-            {topics.map((topic) => {
-              const Icon =
-                topic.id === "networking"
-                  ? Network
-                  : topic.id === "osint"
-                    ? Globe2
-                    : topic.id === "general" ? Flag : Boxes;
-              
-              return (
-                  <li key={topic.id}>
-                    <article
-                      className={`ctf-category-card b5-ctf-card${
-                        (topic.challengeCount > 0 && topic.completedCount === topic.challengeCount) ? " is-complete" : ""
-                      }`}
-                    >
-                      <div className="ctf-card-top">
-                        <span className="ctf-category-icon" aria-hidden="true">
-                          <Icon size={22} strokeWidth={1.6} />
-                        </span>
-                      </div>
+            {topic.ctfs.length === 0 ? (
+              <p style={{ color: "var(--color-text-secondary)" }}>No CTFs in this topic yet.</p>
+            ) : (
+              <ul className="ctf-category-grid">
+                {topic.ctfs.map((ctf: any) => {
+                  const Icon =
+                    topic.id === "networking"
+                      ? Network
+                      : topic.id === "osint"
+                        ? Globe2
+                        : topic.id === "general" ? Flag : Boxes;
+                  
+                  return (
+                      <li key={ctf.id}>
+                        <article
+                          className={`ctf-category-card b5-ctf-card${
+                            (ctf.challengeCount > 0 && ctf.completedCount === ctf.challengeCount) ? " is-complete" : ""
+                          }`}
+                        >
+                          <div className="ctf-card-top">
+                            <span className="ctf-category-icon" aria-hidden="true">
+                              <Icon size={22} strokeWidth={1.6} />
+                            </span>
+                            {ctf.difficulty && (
+                              <span className="ctf-card-difficulty">{ctf.difficulty}</span>
+                            )}
+                          </div>
 
-                      <div className="ctf-card-body">
-                        <h3>
-                          <Link
-                            href={`/ctf/${encodeURIComponent(topic.id)}`}
-                            className="b5-ctf-card-link"
-                          >
-                            {topic.name}
-                          </Link>
-                        </h3>
+                          <div className="ctf-card-body">
+                            <h3>
+                              <Link
+                                href={`/ctf/${encodeURIComponent(topic.id)}#ctf-${ctf.id}`}
+                                className="b5-ctf-card-link"
+                              >
+                                {ctf.name}
+                              </Link>
+                            </h3>
 
-                        <div className="ctf-card-counts">
-                          <span>
-                            {topic.challengeCount}{" "}
-                            {topic.challengeCount === 1
-                              ? "challenge"
-                              : "challenges"}
-                          </span>
-                          <span>
-                            {topic.completedCount} completed
-                          </span>
-                        </div>
-                        
-                        <p style={{ marginTop: "15px", marginBottom: "20px", color: "var(--color-text-secondary)", fontSize: "14px", lineHeight: "1.5" }}>
-                          {topic.description}
-                        </p>
-                      </div>
+                            <div className="ctf-card-counts">
+                              <span>
+                                {ctf.challengeCount}{" "}
+                                {ctf.challengeCount === 1
+                                  ? "challenge"
+                                  : "challenges"}
+                              </span>
+                              <span>
+                                {ctf.completedCount} completed
+                              </span>
+                            </div>
+                            
+                            <p style={{ marginTop: "15px", marginBottom: "20px", color: "var(--color-text-secondary)", fontSize: "14px", lineHeight: "1.5" }}>
+                              {ctf.description}
+                            </p>
+                          </div>
 
-                      <div className="ctf-card-progress">
-                        <div>
-                          <span>Earned / achievable</span>
-                          <strong>
-                            {topic.earnedXp}
-                            <span> / {topic.achievableXp} XP</span>
-                          </strong>
-                        </div>
-                        <progress
-                          value={
-                            topic.achievableXp > 0
-                              ? Math.round((topic.earnedXp / topic.achievableXp) * 100)
-                              : (topic.challengeCount > 0 && topic.completedCount === topic.challengeCount) ? 100 : 0
-                          }
-                          max={100}
-                          aria-label={`${topic.name}: ${topic.earnedXp} of ${topic.achievableXp} XP`}
-                        />
-                      </div>
+                          <div className="ctf-card-progress">
+                            <div>
+                              <span>Earned / achievable</span>
+                              <strong>
+                                {ctf.earnedXp}
+                                <span> / {ctf.achievableXp} XP</span>
+                              </strong>
+                            </div>
+                            <progress
+                              value={
+                                ctf.achievableXp > 0
+                                  ? Math.round((ctf.earnedXp / ctf.achievableXp) * 100)
+                                  : (ctf.challengeCount > 0 && ctf.completedCount === ctf.challengeCount) ? 100 : 0
+                              }
+                              max={100}
+                              aria-label={`${ctf.name}: ${ctf.earnedXp} of ${ctf.achievableXp} XP`}
+                            />
+                          </div>
 
-                      <footer className="ctf-card-footer">
-                        <span className={(topic.challengeCount > 0 && topic.completedCount === topic.challengeCount) ? "ctf-text-success" : ""}>
-                          {(topic.challengeCount > 0 && topic.completedCount === topic.challengeCount)
-                            ? "ALL CAPTURED"
-                            : `${topic.completedCount}/${topic.challengeCount}`}
-                        </span>
-                        <span className="ctf-text-link" aria-hidden="true">
-                          Explore
-                          <ArrowRight size={15} />
-                        </span>
-                      </footer>
-                    </article>
-                  </li>
-                );
-            })}
-          </ul>
-        </section>
+                          <footer className="ctf-card-footer">
+                            <span className={(ctf.challengeCount > 0 && ctf.completedCount === ctf.challengeCount) ? "ctf-text-success" : ""}>
+                              {(ctf.challengeCount > 0 && ctf.completedCount === ctf.challengeCount)
+                                ? "ALL CAPTURED"
+                                : `${ctf.completedCount}/${ctf.challengeCount}`}
+                            </span>
+                            <span className="ctf-text-link" aria-hidden="true">
+                              Explore
+                              <ArrowRight size={15} />
+                            </span>
+                          </footer>
+                        </article>
+                      </li>
+                    );
+                })}
+              </ul>
+            )}
+          </section>
+        ))
       )}
 
       <aside className="ctf-rules-note">

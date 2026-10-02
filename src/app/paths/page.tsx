@@ -213,16 +213,18 @@ export default async function PathsPage() {
                                 <span> / {stats.labsAvailable}</span>
                               </dd>
                             </div>
-                            <div>
-                              <dt>
-                                <FileCode2 size={14} aria-hidden="true" />
-                                Homework
-                              </dt>
-                              <dd>
-                                {stats.homeworkEarned}{" "}
-                                <span> / {stats.homeworkAvailable}</span>
-                              </dd>
-                            </div>
+                            {stats.homeworkAvailable > 0 && (
+                              <div>
+                                <dt>
+                                  <FileCode2 size={14} aria-hidden="true" />
+                                  Homework
+                                </dt>
+                                <dd>
+                                  {stats.homeworkEarned}{" "}
+                                  <span> / {stats.homeworkAvailable}</span>
+                                </dd>
+                              </div>
+                            )}
                           </dl>
                         </div>
 

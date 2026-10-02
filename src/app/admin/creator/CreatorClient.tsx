@@ -208,6 +208,7 @@ function makeDraft(
             description: chapter.description ?? "",
             reading_points: chapter.reading_points,
             blocks: initialBlocks(chapter.content_json),
+            objectives: stringArray(chapter.objectives_json),
           })),
       };
     }
@@ -222,8 +223,6 @@ function makeDraft(
         question_markdown: row?.question_markdown ?? "",
         setup_script: row?.setup_script ?? "",
         total_base_xp: row?.total_base_xp ?? 0,
-        lab_id: row?.lab_id ?? "",
-        expected_result_description: row?.expected_result_description ?? "",
         standard_solution_script: row?.standard_solution_script ?? "",
         tests: data.tests
           .filter((test) => test.homework_id === row?.id)
@@ -272,6 +271,8 @@ function makeDraft(
         points: row?.points ?? 100,
         difficulty: row?.difficulty ?? "",
         lab_id: row?.lab_id ?? "",
+        flag_hash: row?.flag_hash ?? "",
+        suggested_path_ids: stringArray(row?.suggested_paths_json ?? null),
         hints: data.hints
           .filter((hint) => hint.challenge_id === row?.id)
           .map((hint) => ({
@@ -294,7 +295,9 @@ function makeDraft(
         command_blacklist: blacklistText(
           row?.command_blacklist_json ?? null,
         ),
+        command_whitelist: stringArray(row?.command_whitelist_json ?? null).join("\n"),
         setup_script: row?.setup_script ?? "",
+        completion_code_hash: row?.completion_code_hash ?? "",
       };
     }
   }
@@ -814,6 +817,59 @@ function ChapterFields({
         onChange={(description) => onChange({ ...chapter, description })}
       />
 
+      <div className="creator-section-heading" style={{ marginTop: "1rem" }}>
+        <h4>Chapter Goals</h4>
+        <span className="creator-count">{chapter.objectives.length}/10</span>
+      </div>
+
+      <div className="creator-stack">
+        {chapter.objectives.map((objective, index) => (
+          <div className="creator-option-row" key={index}>
+            <TextField
+              label={`Goal ${index + 1}`}
+              value={objective}
+              required
+              maxLength={1_000}
+              onChange={(value) =>
+                onChange({
+                  ...chapter,
+                  objectives: chapter.objectives.map((item, position) =>
+                    position === index ? value : item,
+                  ),
+                })
+              }
+            />
+
+            <button
+              type="button"
+              className="creator-icon-button creator-danger-text"
+              aria-label={`Remove goal ${index + 1}`}
+              onClick={() => {
+                onChange({
+                  ...chapter,
+                  objectives: chapter.objectives.filter(
+                    (_, position) => position !== index,
+                  ),
+                });
+              }}
+            >
+              <Trash2 size={16} aria-hidden="true" />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        className="secondary-button"
+        disabled={chapter.objectives.length >= 10}
+        onClick={() =>
+          onChange({ ...chapter, objectives: [...chapter.objectives, ""] })
+        }
+      >
+        Add goal
+      </button>
+
       <NumberField
         label="Reading points"
         value={chapter.reading_points}
@@ -930,12 +986,11 @@ function DraftFields({
             onChange={(type) =>
               onChange({
                 ...draft,
-                type: type as "path" | "homework" | "ctf",
+                type: type as "path" | "ctf",
               })
             }
           >
             <option value="path">Learning paths</option>
-            <option value="homework">Homework</option>
             <option value="ctf">CTF</option>
           </SelectField>
 
@@ -948,8 +1003,8 @@ function DraftFields({
           />
 
           <p className="creator-help">
-            Homework belongs to a learning path. Paths may be organized under
-            Learning Path or Homework topics. CTF challenges require CTF topics.
+            Homework belongs to a learning path. Paths must be organized under
+            Learning Path topics. CTF challenges require CTF topics.
           </p>
         </>
       );
@@ -1059,6 +1114,7 @@ function DraftFields({
                     description: "",
                     reading_points: 100,
                     blocks: [],
+                    objectives: [],
                   },
                 ],
               })
@@ -1118,23 +1174,7 @@ function DraftFields({
                 onChange({ ...draft, total_base_xp })
               }
             />
-            <LabSelect
-              labs={data.labs}
-              value={draft.lab_id}
-              onChange={(lab_id) => onChange({ ...draft, lab_id })}
-            />
           </div>
-
-          <TextField
-            label="Expected result description"
-            value={draft.expected_result_description}
-            multiline
-            maxLength={50_000}
-            onChange={(expected_result_description) =>
-              onChange({ ...draft, expected_result_description })
-            }
-          />
-
           <TextField
             label="Standard solution script"
             value={draft.standard_solution_script}
@@ -1392,6 +1432,74 @@ function DraftFields({
             onChange={(lab_id) => onChange({ ...draft, lab_id })}
           />
 
+          <TextField
+            label="Flag Hash"
+            value={draft.flag_hash}
+            placeholder="MD5/SHA256 hash or exact flag (leave empty if not applicable)"
+            maxLength={200}
+            onChange={(flag_hash) => onChange({ ...draft, flag_hash })}
+          />
+
+          <div className="creator-section-heading" style={{ marginTop: "1rem" }}>
+            <div>
+              <h3>Recommended Learning Paths</h3>
+            </div>
+            <span className="creator-count">{draft.suggested_path_ids.length}/10</span>
+          </div>
+
+          <div className="creator-stack">
+            {draft.suggested_path_ids.map((pathId, index) => (
+              <div className="creator-option-row" key={index}>
+                <SelectField
+                  label={`Path ${index + 1}`}
+                  value={pathId}
+                  required
+                  onChange={(value) =>
+                    onChange({
+                      ...draft,
+                      suggested_path_ids: draft.suggested_path_ids.map((item, position) =>
+                        position === index ? value : item,
+                      ),
+                    })
+                  }
+                >
+                  <option value="">Choose a path…</option>
+                  {data.paths.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title}
+                    </option>
+                  ))}
+                </SelectField>
+                <button
+                  type="button"
+                  className="creator-icon-button creator-danger-text"
+                  aria-label={`Remove path ${index + 1}`}
+                  onClick={() => {
+                    onChange({
+                      ...draft,
+                      suggested_path_ids: draft.suggested_path_ids.filter(
+                        (_, position) => position !== index,
+                      ),
+                    });
+                  }}
+                >
+                  <Trash2 size={16} aria-hidden="true" />
+                </button>
+              </div>
+            ))}
+          </div>
+          
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={draft.suggested_path_ids.length >= 10}
+            onClick={() =>
+              onChange({ ...draft, suggested_path_ids: [...draft.suggested_path_ids, ""] })
+            }
+          >
+            Add recommended path
+          </button>
+
           <div className="creator-section-heading">
             <div>
               <h3>Progressive hints</h3>
@@ -1511,6 +1619,27 @@ function DraftFields({
             maxLength={10_000}
             onChange={(command_blacklist) =>
               onChange({ ...draft, command_blacklist })
+            }
+          />
+
+          <TextField
+            label="Command whitelist — one entry per line"
+            value={draft.command_whitelist}
+            multiline
+            code
+            maxLength={10_000}
+            onChange={(command_whitelist) =>
+              onChange({ ...draft, command_whitelist })
+            }
+          />
+
+          <TextField
+            label="Completion Correct Code"
+            value={draft.completion_code_hash}
+            placeholder="Code user must enter to complete lab"
+            maxLength={200}
+            onChange={(completion_code_hash) =>
+              onChange({ ...draft, completion_code_hash })
             }
           />
 

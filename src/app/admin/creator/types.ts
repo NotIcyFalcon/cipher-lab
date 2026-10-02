@@ -33,6 +33,7 @@ export type ChapterRow = {
   title: string;
   description: string | null;
   content_json: string;
+  objectives_json: string;
   reading_points: number;
   sequence_order: number;
 };
@@ -45,7 +46,9 @@ export type LabRow = {
   default_user: string;
   whitelist_enabled: number;
   command_blacklist_json: string | null;
+  command_whitelist_json: string | null;
   setup_script: string | null;
+  completion_code_hash: string | null;
 };
 
 export type HomeworkRow = {
@@ -53,10 +56,8 @@ export type HomeworkRow = {
   path_id: string;
   question_markdown: string;
   setup_script: string | null;
-  expected_result_description: string | null;
   standard_solution_script: string | null;
   total_base_xp: number;
-  lab_id: string | null;
 };
 
 export type TestCaseRow = {
@@ -95,6 +96,8 @@ export type CtfChallengeRow = {
   points: number;
   difficulty: string | null;
   lab_id: string | null;
+  flag_hash: string | null;
+  suggested_paths_json: string;
 };
 
 export type HintRow = {
@@ -156,6 +159,7 @@ export type ChapterDraft = {
   description: string;
   reading_points: number;
   blocks: EditorBlock[];
+  objectives: string[];
 };
 
 export type TestDraft = {
@@ -198,8 +202,6 @@ export type HomeworkDraft = {
   question_markdown: string;
   setup_script: string;
   total_base_xp: number;
-  lab_id: string;
-  expected_result_description: string;
   standard_solution_script: string;
   tests: TestDraft[];
 };
@@ -231,6 +233,8 @@ export type CtfDraft = {
   points: number;
   difficulty: string;
   lab_id: string;
+  flag_hash: string;
+  suggested_path_ids: string[];
   hints: HintDraft[];
 };
 
@@ -241,7 +245,9 @@ export type LabDraft = {
   default_user: string;
   whitelist_enabled: boolean;
   command_blacklist: string;
+  command_whitelist: string;
   setup_script: string;
+  completion_code_hash: string;
 };
 
 export type CreatorDraft =

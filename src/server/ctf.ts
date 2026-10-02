@@ -117,10 +117,16 @@ export function getCTFChallenge(challengeId: string) {
   const ctf = db.prepare("SELECT * FROM ctfs WHERE id = ?").get(universe.ctf_id) as any;
   const topic = db.prepare("SELECT * FROM topics WHERE id = ?").get(ctf.topic_id) as any;
 
+  const pathIds = JSON.parse(challenge.suggested_paths_json || '[]');
+  const suggestedPaths = pathIds.length > 0 
+    ? db.prepare(`SELECT id, title, description FROM learning_paths WHERE id IN (${pathIds.map(() => '?').join(',')})`).all(...pathIds) as any[]
+    : [];
+
   return {
     challenge: {
       ...challenge,
-      hints
+      hints,
+      suggestedPaths
     },
     universe,
     ctf,
