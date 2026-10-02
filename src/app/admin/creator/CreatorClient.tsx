@@ -298,6 +298,8 @@ function makeDraft(
         command_whitelist: stringArray(row?.command_whitelist_json ?? null).join("\n"),
         setup_script: row?.setup_script ?? "",
         completion_code_hash: row?.completion_code_hash ?? "",
+        base_image: row?.base_image ?? "",
+        snapshot_image: row?.snapshot_image ?? "",
       };
     }
   }
@@ -787,9 +789,9 @@ function BlockFields({
             onChange={(hint) => onChange({ ...block, hint })}
           />
           <TextField
-            label="Completion Correct Code Hash"
+            label="Completion Answer (Flag)"
             value={block.completionCodeHash ?? ""}
-            placeholder="Pre-hashed SHA-256 code to verify completion"
+            placeholder="Type the raw answer (will be securely hashed on save)"
             onChange={(completionCodeHash) => onChange({ ...block, completionCodeHash })}
           />
         </>
@@ -1610,6 +1612,23 @@ function DraftFields({
             onChange={(default_user) => onChange({ ...draft, default_user })}
           />
 
+          <TextField
+            label="Base image"
+            value={draft.base_image}
+            required
+            maxLength={500}
+            placeholder="e.g. debian:bullseye-slim"
+            onChange={(base_image) => onChange({ ...draft, base_image })}
+          />
+
+          <TextField
+            label="Snapshot image (Optional)"
+            value={draft.snapshot_image}
+            maxLength={500}
+            placeholder="Leave blank to build from scratch"
+            onChange={(snapshot_image) => onChange({ ...draft, snapshot_image })}
+          />
+
           <CheckField
             label="Whitelist enabled"
             checked={draft.whitelist_enabled}
@@ -1641,13 +1660,10 @@ function DraftFields({
           />
 
           <TextField
-            label="Completion Correct Code"
+            label="Completion Answer (Flag)"
             value={draft.completion_code_hash}
-            placeholder="Code user must enter to complete lab"
-            maxLength={200}
-            onChange={(completion_code_hash) =>
-              onChange({ ...draft, completion_code_hash })
-            }
+            placeholder="Type the raw answer (will be securely hashed on save)"
+            onChange={(completion_code_hash) => onChange({ ...draft, completion_code_hash })}
           />
 
           <TextField

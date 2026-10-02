@@ -1,6 +1,6 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/server/db";
@@ -339,7 +339,14 @@ function parseBlocks(db: Db, value: unknown): EditorBlock[] {
         };
       }
 
-      case "lab":
+      case "lab": {
+        let completionCodeHash = text(block.completionCodeHash, "Completion Code", 200, false);
+        if (completionCodeHash && !/^[a-f0-9]{64}$/i.test(completionCodeHash)) {
+          completionCodeHash = createHash("sha256")
+            .update(completionCodeHash.trim().toLowerCase())
+            .digest("hex");
+        }
+
         return {
           id,
           type,
@@ -348,7 +355,9 @@ function parseBlocks(db: Db, value: unknown): EditorBlock[] {
           objective: multiline(block.objective, "Lab objective", 10_000, true),
           hint: multiline(block.hint, "Lab hint", 10_000),
           points: integer(block.points, "Lab points"),
+          completionCodeHash: completionCodeHash || undefined,
         };
+      }
     }
   });
 
@@ -406,6 +415,8 @@ function savePath(db: Db, id: string, input: Record<string, unknown>) {
         reading_points: integer(chapter.reading_points, "Reading points"),
         sequence_order: index,
         content_json: JSON.stringify(parseBlocks(db, chapter.blocks)),
+        objectives: JSON.stringify(list(chapter.objectives, "Chapter goals", 10).map((goal) => text(goal, "Chapter goal", 2000))),
+        objectives_json: JSON.stringify(list(chapter.objectives, "Chapter goals", 10).map((goal) => text(goal, "Chapter goal", 2000))),
       };
     },
   );
@@ -447,10 +458,7 @@ function saveHomework(db: Db, id: string, input: Record<string, unknown>) {
     ),
     setup_script: multiline(input.setup_script, "Global setup script", 50_000),
     total_base_xp: integer(input.total_base_xp, "Total Base XP"),
-    expected_result_description: multiline(
-      input.expected_result_description,
-      "Expected result",
-    ),
+
     standard_solution_script: multiline(
       input.standard_solution_script,
       "Standard solution script",
@@ -467,7 +475,11 @@ function saveCtfDefinition(db: Db, id: string, input: Record<string, unknown>) {
     name: text(input.name, "CTF definition name"),
     description: multiline(input.description, "CTF description", 10_000),
     difficulty: text(input.difficulty, "Difficulty", 80, false),
-    suggested_paths_json: "[]",
+    suggested_paths_json: JSON.stringify(
+      list(input.suggested_path_ids, "Suggested paths", 10).map((id) =>
+        identifier(id, "Suggested path ID"),
+      ),
+    ),
   });
 }
 
@@ -501,6 +513,12 @@ function saveCtf(db: Db, id: string, input: Record<string, unknown>) {
     points: integer(input.points, "Base points"),
     difficulty: text(input.difficulty, "Difficulty", 80, false),
     lab_id: optionalLab(db, input.lab_id),
+    flag_hash: text(input.flag_hash, "Flag hash", 255, false),
+    suggested_paths_json: JSON.stringify(
+      list(input.suggested_path_ids, "Suggested paths", 10).map((id) =>
+        identifier(id, "Suggested path ID"),
+      ),
+    ),
   });
 
   syncChildren(db, "ctf_hints", "challenge_id", id, hints);

@@ -227,8 +227,8 @@ function attachTerminal(ws) {
           return stop("Access code not accepted.", 1008);
         }
 
-        if (!labs.has(message.labId) || !validSize(message)) {
-          return stop("Unknown lab or invalid terminal size.", 1008);
+        if (!validSize(message)) {
+          return stop("Invalid terminal size.", 1008);
         }
 
         authenticated = true;
