@@ -21,7 +21,7 @@ export function dockerAPI(method, path, body = null, options = {}) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      error ? reject(error) : resolve(result);
+      if (error) reject(error); else resolve(result);
     };
 
     const request = http.request({

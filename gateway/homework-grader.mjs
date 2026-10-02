@@ -142,7 +142,7 @@ async function grade(job) {
     if (containerId) {
       try {
         await dockerAPI("DELETE", `/containers/${containerId}?v=1&force=1`, null, { statuses: [204, 404] });
-      } catch (e) {
+      } catch {
       }
     }
   }

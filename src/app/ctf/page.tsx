@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from "next/link";
 import {
   ArrowRight,
@@ -121,16 +122,9 @@ export default async function CTFPage() {
                 ? Globe2
                 : topic.id === "general" ? Flag : Boxes;
 
-          const complete =
-            topic.challengeCount > 0 &&
-            topic.completedCount === topic.challengeCount;
 
-          const percentage =
-            topic.achievableXp > 0
-              ? Math.round(
-                  (topic.earnedXp / topic.achievableXp) * 100,
-                )
-              : complete ? 100 : 0;
+
+
 
           return (
             <section
