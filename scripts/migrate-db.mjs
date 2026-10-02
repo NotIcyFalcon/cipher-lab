@@ -27,9 +27,13 @@ const migrations = [
     version: 6,
     file: new URL("../migrations/006_batch8.sql", import.meta.url),
   },
+  {
+    version: 7,
+    file: new URL("../migrations/007_batch10.sql", import.meta.url),
+  },
 ];
 
-const latestVersion = 6;
+const latestVersion = 7;
 
 const databasePath = resolve(
   process.env.DATABASE_PATH || "./data/cyberbox.sqlite",
