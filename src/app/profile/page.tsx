@@ -6,7 +6,6 @@ import {
   CalendarDays,
   Check,
   Flag,
-  Heart,
   Lightbulb,
   Radar,
   Sparkles,

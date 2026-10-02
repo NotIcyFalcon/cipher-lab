@@ -130,8 +130,6 @@ export default async function CTFPage() {
                 )
               : complete ? 100 : 0;
 
-          let challengeNumber = 0;
-
           return (
             <section
               key={category.id}

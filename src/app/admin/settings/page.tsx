@@ -21,11 +21,15 @@ export default async function AdminSettingsPage() {
 
   const db = getDb();
   
-  const reading = db.prepare("SELECT user_id, lesson_id, created_at FROM reading_progress WHERE user_id = 'ronak'").all() as any[];
-  const labs = db.prepare("SELECT user_id, challenge_id, completed_at FROM lab_completions WHERE user_id = 'ronak'").all() as any[];
-  const homework = db.prepare("SELECT id, homework_id, status, created_at FROM homework_submissions WHERE user_id = 'ronak'").all() as any[];
-  const ctf = db.prepare("SELECT user_id, challenge_id, completed_at FROM ctf_completions WHERE user_id = 'ronak'").all() as any[];
-  const hints = db.prepare("SELECT user_id, hint_id, unlocked_at FROM ctf_hint_unlocks WHERE user_id = 'ronak'").all() as any[];
+  type ReadingRow = { user_id: string; lesson_id: string; created_at: number };
+  type HomeworkRow = { id: string; homework_id: string; status: string; created_at: number };
+  type CtfRow = { user_id: string; challenge_id: string; completed_at: number };
+  type HintRow = { user_id: string; hint_id: string; unlocked_at: number };
+
+  const reading = db.prepare("SELECT user_id, lesson_id, created_at FROM reading_progress WHERE user_id = 'ronak'").all() as ReadingRow[];
+  const homework = db.prepare("SELECT id, homework_id, status, created_at FROM homework_submissions WHERE user_id = 'ronak'").all() as HomeworkRow[];
+  const ctf = db.prepare("SELECT user_id, challenge_id, completed_at FROM ctf_completions WHERE user_id = 'ronak'").all() as CtfRow[];
+  const hints = db.prepare("SELECT user_id, hint_id, unlocked_at FROM ctf_hint_unlocks WHERE user_id = 'ronak'").all() as HintRow[];
 
   return (
     <WorkspaceShell current="/admin/settings" userId={userId}>
@@ -55,7 +59,7 @@ export default async function AdminSettingsPage() {
             </form>
             <form action={resetProgressAction.bind(null, "ronak")}>
               <button className="primary-button" style={{ background: "var(--color-danger)", color: "white" }}>
-                Reset Ronak's XP to 0
+                Reset Ronak&apos;s XP to 0
               </button>
             </form>
           </div>
