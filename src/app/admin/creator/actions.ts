@@ -447,7 +447,6 @@ function saveHomework(db: Db, id: string, input: Record<string, unknown>) {
     ),
     setup_script: multiline(input.setup_script, "Global setup script", 50_000),
     total_base_xp: integer(input.total_base_xp, "Total Base XP"),
-    lab_id: optionalLab(db, input.lab_id),
     expected_result_description: multiline(
       input.expected_result_description,
       "Expected result",
@@ -535,7 +534,7 @@ function saveLab(db: Db, id: string, input: Record<string, unknown>) {
       ? 1
       : 0,
     command_blacklist_json: JSON.stringify(blacklist),
-    setup_script: multiline(input.setup_script, "Setup script", 50_000),
+    initial_setup_script: multiline(input.setup_script, "Setup script", 50_000),
   });
 }
 
