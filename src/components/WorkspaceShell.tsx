@@ -7,6 +7,7 @@ const navigation = [
   { href: "/paths", label: "Learning Paths" },
   { href: "/homework", label: "Homework" },
   { href: "/ctf", label: "CTF" },
+  { href: "/profile", label: "Profile" },
 ] as const;
 
 type WorkspaceRoute = (typeof navigation)[number]["href"];
@@ -55,9 +56,12 @@ export default function WorkspaceShell({
           </nav>
 
           <Link
-            href="#"
-            className="workspace-profile"
-            aria-label="Ronak profile"
+            href="/profile"
+            className={`workspace-profile${
+              current === "/profile" ? " is-active" : ""
+            }`}
+            aria-label="Ronak's profile"
+            aria-current={current === "/profile" ? "page" : undefined}
           >
             <span className="workspace-profile-icon">
               <UserRound size={17} aria-hidden="true" />
@@ -67,11 +71,7 @@ export default function WorkspaceShell({
         </div>
       </header>
 
-      <main
-        id="main-content"
-        className="workspace-main"
-        tabIndex={-1}
-      >
+      <main id="main-content" className="workspace-main" tabIndex={-1}>
         {children}
       </main>
 

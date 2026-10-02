@@ -597,7 +597,7 @@ export default function HomeworkQuestionCard({
                         <div className="hw-test-body">
                           <div className="hw-output-grid">
                             <OutputPanel
-                              title="Expected output"
+                              title={result.assertionType === "file" ? "Expected Result" : "Expected Output"}
                               output={result.expectedOutput}
                             />
                             <OutputPanel

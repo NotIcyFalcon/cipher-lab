@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "@xterm/xterm/css/xterm.css";
 import "./globals.css";
 import "./workspace.css";
+import "./batch-five.css";
 
 export const metadata: Metadata = {
   title: "Cyber Box — Learn by doing",

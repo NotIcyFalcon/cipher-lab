@@ -92,6 +92,7 @@ export async function runGrader(
     ...r,
     name: r.name || `Test ${index + 1}`,
     expectedOutput: question.testCases[index].expectedOutput ?? "",
+    assertionType: question.testCases[index].evaluationCommand ? "file" : "stdout",
   }));
 
   return {

@@ -30,7 +30,7 @@ export default async function CTFPage() {
   );
 
   return (
-    <div className="ctf-page">
+    <div className="ctf-page b5-ctf">
       <header className="ctf-hero">
         <div className="ctf-hero-copy">
           <span className="ctf-kicker">
@@ -43,9 +43,9 @@ export default async function CTFPage() {
             <span>Capture the flag.</span>
           </h1>
           <p>
-            Step into a story, inspect the evidence, and find what others
-            missed. Every mission is a new opportunity to think like an
-            investigator.
+            Choose a topic, explore its story universes, and take on the
+            challenges inside. Every clue is another chance to build your
+            investigator&apos;s mindset.
           </p>
 
           <div className="ctf-hero-tags">
@@ -55,7 +55,7 @@ export default async function CTFPage() {
             </span>
             <span>
               <Flag size={13} aria-hidden="true" />
-              Real problem-solving
+              Topics → Universes → Challenges
             </span>
           </div>
         </div>
@@ -69,7 +69,9 @@ export default async function CTFPage() {
             <Radar size={49} strokeWidth={1.2} />
           </span>
           <span className="ctf-radar-node" />
-          <span className="ctf-radar-caption">DISCOVER / DECODE / CAPTURE</span>
+          <span className="ctf-radar-caption">
+            DISCOVER / DECODE / CAPTURE
+          </span>
         </div>
       </header>
 
@@ -77,7 +79,7 @@ export default async function CTFPage() {
         <div>
           <dt>
             <Compass size={15} aria-hidden="true" />
-            Operation categories
+            Topics to explore
           </dt>
           <dd>{categories.length}</dd>
           <p>Choose your next field of investigation</p>
@@ -85,12 +87,12 @@ export default async function CTFPage() {
         <div>
           <dt>
             <CheckCircle2 size={15} aria-hidden="true" />
-            Missions completed
+            Challenges completed
           </dt>
           <dd>
             {totals.completed} <span>/ {totals.challenges}</span>
           </dd>
-          <p>Completed missions remain open for practice</p>
+          <p>Completed challenges remain open for practice</p>
         </div>
         <div>
           <dt>
@@ -104,22 +106,22 @@ export default async function CTFPage() {
         </div>
       </dl>
 
-      <section aria-labelledby="ctf-categories-title">
+      <section aria-labelledby="ctf-topics-title">
         <div className="ctf-section-heading">
           <div>
-            <span className="ctf-kicker">SELECT YOUR OPERATION</span>
-            <h2 id="ctf-categories-title">Different fields. One mindset.</h2>
+            <span className="ctf-kicker">SELECT A TOPIC</span>
+            <h2 id="ctf-topics-title">Different fields. One mindset.</h2>
           </div>
           <span className="ctf-index-label">
-            {String(categories.length).padStart(2, "0")} CATEGORIES
+            {String(categories.length).padStart(2, "0")} TOPICS
           </span>
         </div>
 
         {categories.length === 0 ? (
           <div className="ctf-empty">
             <Radar size={32} aria-hidden="true" />
-            <h3>No operations on the radar yet.</h3>
-            <p>New CTF categories will appear here.</p>
+            <h3>No topics on the radar yet.</h3>
+            <p>New CTF topics will appear here.</p>
           </div>
         ) : (
           <ul className="ctf-category-grid">
@@ -129,9 +131,7 @@ export default async function CTFPage() {
                   ? Network
                   : category.id === "osint"
                     ? Globe2
-                    : category.id === "general"
-                      ? Flag
-                      : Boxes;
+                    : category.id === "general" ? Flag : Boxes;
 
               const complete =
                 category.challengeCount > 0 &&
@@ -142,14 +142,14 @@ export default async function CTFPage() {
                   ? Math.round(
                       (category.earnedXp / category.achievableXp) * 100,
                     )
-                  : complete
-                    ? 100
-                    : 0;
+                  : complete ? 100 : 0;
+
+              let challengeNumber = 0;
 
               return (
                 <li key={category.id}>
                   <article
-                    className={`ctf-category-card${
+                    className={`ctf-category-card b5-ctf-card${
                       complete ? " is-complete" : ""
                     }`}
                   >
@@ -158,7 +158,7 @@ export default async function CTFPage() {
                         <Icon size={25} strokeWidth={1.6} />
                       </span>
                       <span className="ctf-card-coordinate">
-                        FIELD / {String(index + 1).padStart(2, "0")}
+                        TOPIC / {String(index + 1).padStart(2, "0")}
                       </span>
                       <span className="ctf-difficulty">
                         {category.difficulty}
@@ -167,7 +167,11 @@ export default async function CTFPage() {
 
                     <div className="ctf-card-body">
                       <h3>
-                        <Link href={`/ctf/${category.id}`}>
+                        <Link
+                          href={`/ctf/${encodeURIComponent(category.id)}`}
+                          className="b5-ctf-card-link"
+                          aria-label={`Explore ${category.name}: ${category.challengeCount} challenges`}
+                        >
                           {category.name}
                         </Link>
                       </h3>
@@ -180,11 +184,60 @@ export default async function CTFPage() {
                             ? "universe"
                             : "universes"}
                         </span>
-                        <span>{category.challengeCount} missions</span>
+                        <span>{category.challengeCount} challenges</span>
                         <span>{category.completedCount} completed</span>
                       </div>
 
-                      <div className="ctf-suggested">
+                      <div className="b5-ctf-challenges">
+                        <span className="ctf-small-label">
+                          CHALLENGES IN THIS TOPIC
+                        </span>
+
+                        {category.universes.map((universe) => (
+                          <div
+                            key={universe.id}
+                            className="b5-ctf-universe-preview"
+                          >
+                            <h4>{universe.name}</h4>
+                            <ul>
+                              {universe.challenges.map((challenge) => {
+                                challengeNumber += 1;
+
+                                return (
+                                  <li key={challenge.id}>
+                                    <span
+                                      className="b5-ctf-challenge-status"
+                                      aria-hidden="true"
+                                    >
+                                      {challenge.completed ? (
+                                        <CheckCircle2 size={15} />
+                                      ) : (
+                                        <Flag size={15} />
+                                      )}
+                                    </span>
+                                    <span>
+                                      <strong>
+                                        {category.name}{" "}
+                                        {String(challengeNumber).padStart(2, "0")}
+                                      </strong>
+                                      <span>{challenge.title}</span>
+                                      <small>
+                                        {challenge.completed
+                                          ? "Completed"
+                                          : "Ready to explore"}
+                                        {" · "}
+                                        {challenge.points} base XP
+                                      </small>
+                                    </span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="ctf-suggested b5-ctf-suggested">
                         <span className="ctf-small-label">
                           SUGGESTED LEARNING
                         </span>
@@ -223,16 +276,14 @@ export default async function CTFPage() {
 
                     <footer className="ctf-card-footer">
                       <span className={complete ? "ctf-text-success" : ""}>
-                        {complete ? "ALL MISSIONS CAPTURED" : "AWAITING DISCOVERY"}
+                        {complete
+                          ? "ALL CHALLENGES CAPTURED"
+                          : "YOUR NEXT DISCOVERY"}
                       </span>
-                      <Link
-                        href={`/ctf/${category.id}`}
-                        className="ctf-text-link"
-                        aria-label={`Explore ${category.name}`}
-                      >
-                        Enter field
-                        <ArrowRight size={15} aria-hidden="true" />
-                      </Link>
+                      <span className="ctf-text-link" aria-hidden="true">
+                        Explore topic
+                        <ArrowRight size={15} />
+                      </span>
                     </footer>
                   </article>
                 </li>
@@ -245,9 +296,11 @@ export default async function CTFPage() {
       <aside className="ctf-rules-note">
         <ShieldCheck size={21} aria-hidden="true" />
         <div>
-          <strong>Intelligence has a cost. Your progress has permanence.</strong>
+          <strong>
+            Intelligence has a cost. Your progress has permanence.
+          </strong>
           <p>
-            Hints reduce the available XP for their mission. Successful
+            Hints reduce the available XP for their challenge. Successful
             captures are recorded once, and re-attempts never duplicate
             rewards. CTF XP is separate from learning-path points.
           </p>
@@ -256,4 +309,3 @@ export default async function CTFPage() {
     </div>
   );
 }
-

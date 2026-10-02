@@ -24,24 +24,25 @@ import {
   RotateCcw,
   Terminal,
   Trophy,
+  X,
 } from "lucide-react";
 
-import { type Lesson, type ContentBlock } from "@/content/lessons";
+import type { Lesson, ContentBlock } from "@/content/lessons";
 import WorkspaceShell from "@/components/WorkspaceShell";
 import LabTerminal from "@/components/LabTerminal";
 import type { Progress } from "@/lib/progress-types";
 import {
   markReadingComplete,
   completeLab,
-  importReadingProgress,
 } from "@/app/actions/progress";
+
 import "@/app/batch-two.css";
 
-// Display-only value matching the existing completeLab Server Action.
-// Scoring remains server-controlled.
+// Display only. Awards remain controlled by the existing server action.
 const LAB_POINTS = 50;
 
 type ReadingBlock = Exclude<ContentBlock, { type: "homework" }>;
+
 type ReadingLesson = Omit<Lesson, "blocks"> & {
   blocks: ReadingBlock[];
 };
@@ -89,13 +90,13 @@ function getInitialActiveId({
   );
   const requested = lessons.find((lesson) => lesson.id === initialLessonId);
 
-  // A deep link should not bypass the sequential reading entry point.
   if (
     requested &&
     (requested.id === firstUnread?.id || hasStartedLesson(requested, progress))
   ) {
     return requested.id;
   }
+
   return firstUnread?.id ?? lessons[0]?.id ?? "";
 }
 
@@ -105,39 +106,94 @@ function Quiz({
   block: Extract<ContentBlock, { type: "quiz" }>;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
-  const correct = selected === block.answer;
+  const [checked, setChecked] = useState<number | null>(null);
+
+  const questionId = useId();
+  const feedbackId = useId();
+  const hasChecked = checked !== null;
+  const correct = hasChecked && checked === block.answer;
+
+  function selectOption(index: number) {
+    setSelected(index);
+    // A new selection needs a new explicit check.
+    setChecked(null);
+  }
 
   return (
-    <section className="quiz-card">
+    <section className="quiz-card b5-quiz" aria-labelledby={questionId}>
       <span className="eyebrow">QUICK CHECK</span>
-      <h3>{block.question}</h3>
-      <div className="quiz-options">
-        {block.options.map((option, index) => (
-          <button
-            key={`${block.id}:${index}`}
-            type="button"
-            className={`quiz-option${
-              selected === index ? " selected" : ""
-            }`}
-            aria-pressed={selected === index}
-            onClick={() => setSelected(index)}
-          >
-            <span className="option-letter">
-              {String.fromCharCode(65 + index)}
-            </span>
-            {option}
-            {selected === index && correct && (
-              <Check size={18} aria-hidden="true" />
-            )}
-          </button>
-        ))}
+      <h3 id={questionId}>{block.question}</h3>
+
+      <div
+        className="quiz-options"
+        role="group"
+        aria-labelledby={questionId}
+      >
+        {block.options.map((option, index) => {
+          const isSelected = selected === index;
+          const isChecked = checked === index;
+
+          const verdictClass = isChecked
+            ? correct
+              ? " is-correct"
+              : " is-incorrect"
+            : "";
+
+          return (
+            <button
+              key={`${block.id}:${index}`}
+              type="button"
+              className={`quiz-option${
+                isSelected ? " selected" : ""
+              }${verdictClass}`}
+              aria-pressed={isSelected}
+              onClick={() => selectOption(index)}
+            >
+              <span className="option-letter">
+                {String.fromCharCode(65 + index)}
+              </span>
+              <span className="b5-quiz-option-copy">{option}</span>
+              {isChecked &&
+                (correct ? (
+                  <Check size={19} aria-hidden="true" />
+                ) : (
+                  <X size={19} aria-hidden="true" />
+                ))}
+            </button>
+          );
+        })}
       </div>
-      <p className="quiz-feedback" aria-live="polite">
-        {selected === null
-          ? "Take a guess. Curiosity counts."
+
+      <div className="b5-quiz-actions">
+        <button
+          type="button"
+          className="primary-button"
+          disabled={selected === null}
+          onClick={() => setChecked(selected)}
+          aria-describedby={feedbackId}
+        >
+          <Check size={16} aria-hidden="true" />
+          Check
+        </button>
+        <span>Select an answer, then check it when you are ready.</span>
+      </div>
+
+      <p
+        id={feedbackId}
+        className={`quiz-feedback${
+          hasChecked ? (correct ? " is-correct" : " is-incorrect") : ""
+        }`}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {!hasChecked
+          ? selected === null
+            ? "Take your time. This is a place to practice."
+            : "Answer selected. Click Check to see your feedback."
           : correct
-            ? `Exactly! ${block.explanation}`
-            : "Not quite. Revisit the notes and try another answer."}
+            ? `Correct! ${block.explanation}`
+            : "Not quite yet. Revisit the notes, choose an answer, and check again."}
       </p>
     </section>
   );
@@ -170,6 +226,7 @@ function LabBlock({
       try {
         const result = await completeLab(lessonId, block.id, flagInput);
         setError(!result.ok);
+
         if (result.ok) {
           setRetrying(false);
           setFlagInput("");
@@ -189,11 +246,10 @@ function LabBlock({
           </span>
           <div>
             <strong>Practice completed</strong>
-            <p>
-              {block.title} · {LAB_POINTS} lab points earned
-            </p>
+            <p>{block.title} · {LAB_POINTS} lab points earned</p>
           </div>
         </div>
+
         <button
           type="button"
           className="secondary-button"
@@ -209,14 +265,15 @@ function LabBlock({
   return (
     <section className="lab-card lesson-lab-card">
       <LabTerminal labId={block.labId} title={block.title} />
+
       <div className="lab-instructions">
         <span className="eyebrow">YOUR MISSION</span>
         <p>{block.objective}</p>
 
         {isCompleted && (
           <p className="lesson-lab-reattempt-note">
-            You have already earned these lab points. Reattempting does not award
-            them again.
+            You have already earned these lab points. Reattempting does not
+            award them again.
           </p>
         )}
 
@@ -247,6 +304,7 @@ function LabBlock({
               {!submitting && <ArrowRight size={15} aria-hidden="true" />}
             </button>
           </div>
+
           {error && (
             <p id={errorId} className="lesson-lab-error" role="alert">
               Incorrect answer or submission could not finish.
@@ -297,6 +355,7 @@ function LessonBlock({
           <p>{block.body}</p>
         </section>
       );
+
     case "tip":
       return (
         <aside className="tip">
@@ -307,6 +366,7 @@ function LessonBlock({
           </div>
         </aside>
       );
+
     case "code":
       return (
         <section className="code-card">
@@ -314,12 +374,11 @@ function LessonBlock({
             <span>{block.title}</span>
             <span className="eyebrow">BASH</span>
           </div>
-          <pre>
-            <code>{block.code}</code>
-          </pre>
+          <pre><code>{block.code}</code></pre>
           <p className="code-caption">{block.caption}</p>
         </section>
       );
+
     case "lab":
       return (
         <LabBlock
@@ -329,18 +388,14 @@ function LessonBlock({
           revision={revision}
         />
       );
+
     case "quiz":
       return <Quiz block={block} />;
   }
 }
 
 export default function LearningPage(props: LearningPageProps) {
-  const {
-    lessons,
-    progress,
-    revision = false,
-    pathTitle,
-  } = props;
+  const { lessons, progress, revision = false, pathTitle } = props;
 
   const [activeId, setActiveId] = useState(() => getInitialActiveId(props));
   const [visitedIds, setVisitedIds] = useState<string[]>(() => {
@@ -351,13 +406,11 @@ export default function LearningPage(props: LearningPageProps) {
   const [revisionReading, setRevisionReading] = useState<string[]>([]);
   const [savedThisVisit, setSavedThisVisit] = useState<string[]>([]);
   const [saving, startSaving] = useTransition();
-  const [importing, startImporting] = useTransition();
 
   const headingRef = useRef<HTMLHeadingElement>(null);
   const previousActiveId = useRef(activeId);
   const sidebarId = useId();
 
-  // Only update this local overlay after a successful server action.
   const savedReading = new Set([
     ...progress.readingIds,
     ...savedThisVisit,
@@ -372,8 +425,8 @@ export default function LearningPage(props: LearningPageProps) {
 
   const nextLesson = lessons[lessonIndex + 1];
   const previousLesson = lessons[lessonIndex - 1];
-
   const isRead = lesson ? completedReading.has(lesson.id) : false;
+
   const readCount = lessons.filter((item) =>
     completedReading.has(item.id),
   ).length;
@@ -391,12 +444,14 @@ export default function LearningPage(props: LearningPageProps) {
       accessibleIds.add(item.id);
     }
   }
+
   if (firstUnread) accessibleIds.add(firstUnread.id);
   if (lesson) accessibleIds.add(lesson.id);
 
   useEffect(() => {
     if (previousActiveId.current === activeId) return;
     previousActiveId.current = activeId;
+
     headingRef.current?.focus({ preventScroll: true });
     headingRef.current?.scrollIntoView({
       block: "start",
@@ -414,6 +469,7 @@ export default function LearningPage(props: LearningPageProps) {
 
   function markAsRead() {
     if (!lesson || isRead || saving) return;
+
     const lessonId = lesson.id;
 
     if (revision) {
@@ -433,20 +489,6 @@ export default function LearningPage(props: LearningPageProps) {
         setNotice("Reading progress saved.");
       } catch {
         setNotice("Progress could not be saved. Please try again.");
-      }
-    });
-  }
-
-  function importOldReading() {
-    if (importing) return;
-    startImporting(async () => {
-      try {
-        const raw =
-          window.localStorage.getItem("cipher-lab:reading-progress:v1") ?? "[]";
-        await importReadingProgress(raw);
-        setNotice("Existing reading progress imported.");
-      } catch {
-        setNotice("Reading progress could not be imported.");
       }
     });
   }
@@ -474,7 +516,7 @@ export default function LearningPage(props: LearningPageProps) {
 
   return (
     <WorkspaceShell current="/paths">
-      <div className="lesson-workspace">
+      <div className="lesson-workspace b5-learning">
         <aside
           className="lesson-index"
           aria-label={`${pathTitle} chapter index`}
@@ -514,29 +556,22 @@ export default function LearningPage(props: LearningPageProps) {
                 const showWarning = readingDone && unfinishedLabs;
                 const current = lesson.id === item.id;
                 const locked = !accessibleIds.has(item.id);
-
                 const lessonPoints = item.xp + labs.length * LAB_POINTS;
                 const tooltipId = `${sidebarId}-lab-warning-${index}`;
 
                 const stateLabel = fullyComplete
-                  ? revision
-                    ? "Reviewed"
-                    : "Completed"
+                  ? revision ? "Reviewed" : "Completed"
                   : showWarning
                     ? "Reading complete"
                     : current
                       ? "Current lesson"
-                      : locked
-                        ? "Locked"
-                        : "In progress";
+                      : locked ? "Locked" : "In progress";
 
                 const stateClass = fullyComplete
                   ? " is-complete"
                   : showWarning
                     ? " has-unfinished-labs"
-                    : locked
-                      ? " is-locked"
-                      : " is-ongoing";
+                    : locked ? " is-locked" : " is-ongoing";
 
                 return (
                   <li
@@ -550,17 +585,16 @@ export default function LearningPage(props: LearningPageProps) {
                       className="lesson-index-button"
                       disabled={locked || saving}
                       aria-current={current ? "step" : undefined}
-                      aria-label={`${index + 1}. ${item.title}. ${lessonPoints} reading and lab points. ${stateLabel}${
+                      aria-label={`${index + 1}. ${item.title}. ${
+                        lessonPoints
+                      } reading and lab points. ${stateLabel}${
                         current && stateLabel !== "Current lesson"
                           ? ". Current lesson"
                           : ""
                       }`}
                       onClick={() => openLesson(item.id)}
                     >
-                      <span
-                        className="lesson-index-number"
-                        aria-hidden="true"
-                      >
+                      <span className="lesson-index-number" aria-hidden="true">
                         {locked ? (
                           <LockKeyhole size={14} />
                         ) : fullyComplete ? (
@@ -572,7 +606,8 @@ export default function LearningPage(props: LearningPageProps) {
                       <span className="lesson-index-copy">
                         <strong>{item.title}</strong>
                         <span>
-                          {lessonPoints} pts <span aria-hidden="true"> · </span>
+                          {lessonPoints} pts{" "}
+                          <span aria-hidden="true"> · </span>
                           {stateLabel}
                         </span>
                       </span>
@@ -607,13 +642,14 @@ export default function LearningPage(props: LearningPageProps) {
           <div className="lesson-index-note">
             <LockKeyhole size={15} aria-hidden="true" />
             <p>
-              Mark the current reading complete to unlock the next chapter. You can
-              return to unfinished labs later.
+              Mark the current reading complete to unlock the next chapter.
+              You can return to unfinished labs later.
             </p>
           </div>
+
           <p className="lesson-index-points-note">
-            Chapter points include reading and labs. Homework points are tracked
-            separately on the Homework screen.
+            Chapter points include reading and labs. Homework points are
+            tracked separately on the Homework screen.
           </p>
         </aside>
 
@@ -633,9 +669,9 @@ export default function LearningPage(props: LearningPageProps) {
               <div>
                 <strong>Revision mode</strong>
                 <p>
-                  A fresh reading pass for this visit. Your saved XP and previous
-                  completions are unchanged. Reloading starts this local pass
-                  over.
+                  A fresh reading pass for this visit. Your saved XP and
+                  previous completions are unchanged. Reloading starts this
+                  local pass over.
                 </p>
               </div>
               <Link href="/paths" className="secondary-button">
@@ -649,10 +685,9 @@ export default function LearningPage(props: LearningPageProps) {
               CHAPTER {String(lessonIndex + 1).padStart(2, "0")} OF{" "}
               {String(lessons.length).padStart(2, "0")}
             </span>
-            <h1 ref={headingRef} tabIndex={-1}>
-              {lesson.title}
-            </h1>
+            <h1 ref={headingRef} tabIndex={-1}>{lesson.title}</h1>
             <p>{lesson.description}</p>
+
             <div className="lesson-hero-meta">
               <span>
                 <BookOpen size={14} aria-hidden="true" />
@@ -700,7 +735,9 @@ export default function LearningPage(props: LearningPageProps) {
           >
             {lesson.blocks.map((block) => (
               <LessonBlock
-                key={`${lesson.id}:${block.id}:${revision ? "revision" : "learn"}`}
+                key={`${lesson.id}:${block.id}:${
+                  revision ? "revision" : "learn"
+                }`}
                 lessonId={lesson.id}
                 block={block}
                 progress={progress}
@@ -740,35 +777,14 @@ export default function LearningPage(props: LearningPageProps) {
                 {saving
                   ? "Saving..."
                   : revision
-                    ? isRead
-                      ? "Reviewed"
-                      : "Mark as reviewed"
-                    : isRead
-                      ? "Lesson read"
-                      : "Mark as read"}
+                    ? isRead ? "Reviewed" : "Mark as reviewed"
+                    : isRead ? "Lesson read" : "Mark as read"}
               </button>
             </section>
+
             <p className="save-notice lesson-save-notice" role="status">
               {notice}
             </p>
-
-            {!revision && (
-              <details className="learning-import lesson-progress-import">
-                <summary>Previously learned on this browser?</summary>
-                <p>
-                  Import reading progress saved by the earlier version of Cyber
-                  Box.
-                </p>
-                <button
-                  type="button"
-                  onClick={importOldReading}
-                  disabled={importing}
-                  className="secondary-button"
-                >
-                  {importing ? "Importing..." : "Import old progress"}
-                </button>
-              </details>
-            )}
 
             <footer className="lesson-bottom-navigation">
               <div className="lesson-bottom-copy">
@@ -808,6 +824,7 @@ export default function LearningPage(props: LearningPageProps) {
                     Previous
                   </button>
                 )}
+
                 {nextLesson ? (
                   <button
                     type="button"
