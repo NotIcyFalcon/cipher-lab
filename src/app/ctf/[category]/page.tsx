@@ -8,8 +8,7 @@ import {
   ChevronRight,
   Flag,
   Orbit,
-  Trophy,
-  Layers3
+  Trophy
 } from "lucide-react";
 
 import { getCTFCatalogProgress } from "@/server/ctf";

@@ -27,7 +27,7 @@ export default async function CTFChallengePage({
 
   if (!entry) notFound();
 
-  const { category, universe, ctf, challenge } = entry;
+  const { category, universe, challenge } = entry;
   const state = getCTFChallengeState(userId, challenge.id);
 
   return (
@@ -121,7 +121,7 @@ export default async function CTFChallengePage({
           <div className="ctf-briefing-body">
             <p>The following learning paths provide useful context for this mission:</p>
             <ul style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              {challenge.suggestedPaths.map((path: any) => (
+              {challenge.suggestedPaths.map((path: { id: string; title: string; description: string }) => (
                 <li key={path.id}>
                   <Link href={`/learning/${path.id}`} className="ctf-text-link">
                     <strong>{path.title}</strong>

@@ -10,7 +10,6 @@ import { Plus, Save, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { saveCreatorAction, deleteCreatorAction } from "./actions";
 import {
   DEFAULT_COMMAND_BLACKLIST,
-  DEFAULT_LAB_POINTS,
   DEFAULT_LAB_USER,
   learningLabPoints,
 } from "@/lib/creator-defaults";

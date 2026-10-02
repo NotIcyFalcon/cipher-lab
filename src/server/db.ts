@@ -1,6 +1,6 @@
 import "server-only";
 import Database from "better-sqlite3";
-import { randomUUID } from "node:crypto";
+
 
 const globalForDb = globalThis as typeof globalThis & {
   cyberboxDb?: Database.Database;
