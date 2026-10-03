@@ -220,6 +220,7 @@ function makeDraft(
         entity: "homework",
         id: row?.id ?? "",
         path_id: row?.path_id ?? pathId,
+        title: row?.title ?? "Assignment",
         question_markdown: row?.question_markdown ?? "",
         setup_script: row?.setup_script ?? "",
         total_base_xp: row?.total_base_xp ?? 0,
@@ -298,8 +299,6 @@ function makeDraft(
         command_whitelist: stringArray(row?.command_whitelist_json ?? null).join("\n"),
         setup_script: row?.setup_script ?? "",
         completion_code_hash: row?.completion_code_hash ?? "",
-        base_image: row?.base_image ?? "",
-        snapshot_image: row?.snapshot_image ?? "",
       };
     }
   }
@@ -459,7 +458,7 @@ function LabSelect({
       <option value="">{required ? "Choose a lab…" : "No lab assigned"}</option>
       {labs.map((lab) => (
         <option key={lab.id} value={lab.id}>
-          {lab.base_image} · {lab.default_user} · {lab.id.slice(0, 8)}
+          {lab.name} · {lab.id.slice(0, 8)}
         </option>
       ))}
     </SelectField>
@@ -1149,6 +1148,15 @@ function DraftFields({
 
       return (
         <>
+          <div className="creator-editor-header">
+            <TextField
+              label="Question Title"
+              value={draft.title}
+              required
+              maxLength={200}
+              onChange={(title) => onChange({ ...draft, title })}
+            />
+          </div>
           <SelectField
             label="Learning path"
             value={draft.path_id}
@@ -1612,23 +1620,6 @@ function DraftFields({
             onChange={(default_user) => onChange({ ...draft, default_user })}
           />
 
-          <TextField
-            label="Base image"
-            value={draft.base_image}
-            required
-            maxLength={500}
-            placeholder="e.g. debian:bullseye-slim"
-            onChange={(base_image) => onChange({ ...draft, base_image })}
-          />
-
-          <TextField
-            label="Snapshot image (Optional)"
-            value={draft.snapshot_image}
-            maxLength={500}
-            placeholder="Leave blank to build from scratch"
-            onChange={(snapshot_image) => onChange({ ...draft, snapshot_image })}
-          />
-
           <CheckField
             label="Whitelist enabled"
             checked={draft.whitelist_enabled}
@@ -1837,7 +1828,7 @@ function catalogItems(section: CreatorSection, data: CreatorData) {
     case "homework":
       return data.homework.map((homework) => ({
         id: homework.id,
-        title: homework.question_markdown.slice(0, 85) || "Untitled homework",
+        title: homework.title || homework.question_markdown.slice(0, 85) || "Untitled question",
         detail: [
           data.paths.find((path) => path.id === homework.path_id)?.title,
           `${homework.total_base_xp} base XP`,

@@ -450,13 +450,13 @@ function saveHomework(db: Db, id: string, input: Record<string, unknown>) {
   writeRow(db, "homework", {
     id,
     path_id: parentId(db, "learning_paths", input.path_id, "Learning path"),
+    title: text(input.title, "Title", 200),
     question_markdown: multiline(
       input.question_markdown,
       "Question Markdown",
       50_000,
       true,
     ),
-    setup_script: multiline(input.setup_script, "Global setup script", 50_000),
     total_base_xp: integer(input.total_base_xp, "Total Base XP"),
 
     standard_solution_script: multiline(
@@ -541,9 +541,8 @@ function saveLab(db: Db, id: string, input: Record<string, unknown>) {
   writeRow(db, "labs", {
     id,
     name: text(input.name, "Lab name", 200),
-    base_image: text(input.base_image, "Base image", 500, false) || "",
-    snapshot_image:
-      text(input.snapshot_image, "Snapshot image", 500, false) || null,
+    base_image: "ubuntu:latest",
+    snapshot_image: null,
     default_user: text(input.default_user, "Default user", 100),
     whitelist_enabled: boolean(
       input.whitelist_enabled,

@@ -54,6 +54,7 @@ export type LabRow = {
 export type HomeworkRow = {
   id: string;
   path_id: string;
+  title: string;
   question_markdown: string;
   setup_script: string | null;
   standard_solution_script: string | null;
@@ -200,6 +201,7 @@ export type HomeworkDraft = {
   entity: "homework";
   id: string;
   path_id: string;
+  title: string;
   question_markdown: string;
   setup_script: string;
   total_base_xp: number;
@@ -244,8 +246,6 @@ export type LabDraft = {
   id: string;
   name: string;
   default_user: string;
-  base_image: string;
-  snapshot_image: string;
   whitelist_enabled: boolean;
   command_blacklist: string;
   command_whitelist: string;
