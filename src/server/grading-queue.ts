@@ -3,6 +3,13 @@ import { getDb } from "./db";
 
 const MAX_CONCURRENT_JOBS = 1;
 
+interface HomeworkJob {
+  id: number;
+  kind: string;
+  homework_id: string;
+  submission_id?: number;
+}
+
 let isRunning = false;
 let activeJobs = 0;
 
@@ -45,7 +52,7 @@ function claimJob() {
         AND available_at <= ?
       ORDER BY id
       LIMIT 1
-    `).get(Date.now()) as any | undefined;
+    `).get(Date.now()) as HomeworkJob | undefined;
 
     if (!job) return null;
 
@@ -62,7 +69,7 @@ function claimJob() {
   }).immediate();
 }
 
-async function processJob(job: any) {
+async function processJob(job: HomeworkJob) {
   const db = getDb();
   try {
     if (job.kind === 'grade_submission') {
@@ -146,15 +153,16 @@ async function processJob(job: any) {
         WHERE id = ?
       `).run(Date.now(), job.id);
     }
-  } catch (error: any) {
-    console.error("[Grading Queue] Job failed", job.id, error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[Grading Queue] Job failed", job.id, message);
     db.prepare(`
       UPDATE homework_jobs
       SET status = 'failed',
           error = ?,
           finished_at = ?
       WHERE id = ?
-    `).run(error.message, Date.now(), job.id);
+    `).run(message, Date.now(), job.id);
 
     if (job.kind === 'grade_submission' && job.submission_id) {
       db.prepare(`

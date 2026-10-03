@@ -8,7 +8,6 @@ import {
   dockerSocketPath,
   composeProject,
   maxRunningLabs,
-  labs,
 } from "./config.mjs";
 
 // Track running labs: labId -> { containerId, containerName, startedAt, lastUsed }
