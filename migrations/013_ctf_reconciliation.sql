@@ -9,7 +9,7 @@ CREATE TABLE ctf_completions_new (
 );
 
 INSERT INTO ctf_completions_new (user_id, challenge_id, awarded_xp, completed_at)
-SELECT user_id, challenge_id, xp, completed_at FROM ctf_completions;
+SELECT user_id, challenge_id, awarded_xp, completed_at FROM ctf_completions;
 
 DROP VIEW user_xp;
 DROP TABLE ctf_completions;
