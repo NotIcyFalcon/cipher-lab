@@ -48,22 +48,29 @@ export type LabRow = {
   command_blacklist_json: string | null;
   command_whitelist_json: string | null;
   setup_script: string | null;
-  completion_code_hash: string | null;
 };
 
 export type HomeworkRow = {
   id: string;
   path_id: string;
   title: string;
+  total_base_xp: number;
+};
+
+export type QuestionRow = {
+  id: string;
+  homework_id: string;
+  title: string;
   question_markdown: string;
   setup_script: string | null;
   standard_solution_script: string | null;
-  total_base_xp: number;
+  sequence_order: number;
 };
 
 export type TestCaseRow = {
   id: string;
   homework_id: string;
+  question_id: string | null;
   setup_script: string | null;
   xp_reward: number;
   is_hidden: number;
@@ -115,6 +122,7 @@ export type CreatorData = {
   chapters: ChapterRow[];
   labs: LabRow[];
   homework: HomeworkRow[];
+  questions: QuestionRow[];
   tests: TestCaseRow[];
   ctfs: CtfRow[];
   universes: CtfUniverseRow[];
@@ -197,16 +205,22 @@ export type PathDraft = {
   chapters: ChapterDraft[];
 };
 
+export type QuestionDraft = {
+  id: string;
+  title: string;
+  question_markdown: string;
+  setup_script: string;
+  standard_solution_script: string;
+  tests: TestDraft[];
+};
+
 export type HomeworkDraft = {
   entity: "homework";
   id: string;
   path_id: string;
   title: string;
-  question_markdown: string;
-  setup_script: string;
   total_base_xp: number;
-  standard_solution_script: string;
-  tests: TestDraft[];
+  questions: QuestionDraft[];
 };
 
 export type CtfDefinitionDraft = {
@@ -250,7 +264,6 @@ export type LabDraft = {
   command_blacklist: string;
   command_whitelist: string;
   setup_script: string;
-  completion_code_hash: string;
 };
 
 export type CreatorDraft =

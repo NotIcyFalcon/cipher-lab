@@ -236,7 +236,11 @@ async function enforceLimit(excludeLabId) {
 
 // Public API: ensure a lab is running and return its SSH host
 export async function ensureLabRunning(labId) {
-  const labDef = labs.get(labId) || { service: "linux-basics" };
+  const labDef = labs.get(labId);
+
+  if (!labDef) {
+    throw new Error("Unknown lab.");
+  }
 
   // If we already track it as running, refresh lastUsed and verify
   if (runningLabs.has(labId)) {

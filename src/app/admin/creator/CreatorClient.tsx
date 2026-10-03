@@ -221,17 +221,24 @@ function makeDraft(
         id: row?.id ?? "",
         path_id: row?.path_id ?? pathId,
         title: row?.title ?? "Assignment",
-        question_markdown: row?.question_markdown ?? "",
-        setup_script: row?.setup_script ?? "",
         total_base_xp: row?.total_base_xp ?? 0,
-        standard_solution_script: row?.standard_solution_script ?? "",
-        tests: data.tests
-          .filter((test) => test.homework_id === row?.id)
-          .map((test) => ({
-            id: test.id,
-            setup_script: test.setup_script ?? "",
-            xp_reward: test.xp_reward,
-            is_hidden: test.is_hidden === 1,
+        questions: (data.questions ?? [])
+          .filter((question) => question.homework_id === row?.id)
+          .sort((a, b) => a.sequence_order - b.sequence_order)
+          .map((question) => ({
+            id: question.id,
+            title: question.title,
+            question_markdown: question.question_markdown,
+            setup_script: question.setup_script ?? "",
+            standard_solution_script: question.standard_solution_script ?? "",
+            tests: data.tests
+              .filter((test) => test.question_id === question.id)
+              .map((test) => ({
+                id: test.id,
+                setup_script: test.setup_script ?? "",
+                xp_reward: test.xp_reward,
+                is_hidden: test.is_hidden === 1,
+              })),
           })),
       };
     }
@@ -292,13 +299,12 @@ function makeDraft(
         id: row?.id ?? "",
         name: row?.name ?? "",
         default_user: row?.default_user ?? DEFAULT_LAB_USER,
-        whitelist_enabled: row ? row.whitelist_enabled === 1 : true,
+        whitelist_enabled: row ? row.whitelist_enabled === 1 : false,
         command_blacklist: blacklistText(
           row?.command_blacklist_json ?? null,
         ),
         command_whitelist: stringArray(row?.command_whitelist_json ?? null).join("\n"),
         setup_script: row?.setup_script ?? "",
-        completion_code_hash: row?.completion_code_hash ?? "",
       };
     }
   }
@@ -458,7 +464,7 @@ function LabSelect({
       <option value="">{required ? "Choose a lab…" : "No lab assigned"}</option>
       {labs.map((lab) => (
         <option key={lab.id} value={lab.id}>
-          {lab.name} · {lab.id.slice(0, 8)}
+          {lab.name || "Unnamed lab"}
         </option>
       ))}
     </SelectField>
@@ -1141,16 +1147,16 @@ function DraftFields({
       );
 
     case "homework": {
-      const rewardTotal = draft.tests.reduce(
-        (total, test) => total + (Number.isFinite(test.xp_reward) ? test.xp_reward : 0),
-        0,
-      );
+      const rewardTotal = draft.questions.reduce((total, q) => total + q.tests.reduce(
+        (tTotal, test) => tTotal + (Number.isFinite(test.xp_reward) ? test.xp_reward : 0),
+        0
+      ), 0);
 
       return (
         <>
           <div className="creator-editor-header">
             <TextField
-              label="Question Title"
+              label="Assignment Title"
               value={draft.title}
               required
               maxLength={200}
@@ -1171,18 +1177,6 @@ function DraftFields({
             ))}
           </SelectField>
 
-          <TextField
-            label="Question Markdown"
-            value={draft.question_markdown}
-            multiline
-            required
-            rows={10}
-            maxLength={50_000}
-            onChange={(question_markdown) =>
-              onChange({ ...draft, question_markdown })
-            }
-          />
-
           <div className="creator-two-columns">
             <NumberField
               label="Total Base XP"
@@ -1192,124 +1186,223 @@ function DraftFields({
               }
             />
           </div>
-          <TextField
-            label="Standard solution script"
-            value={draft.standard_solution_script}
-            multiline
-            code
-            rows={10}
-            maxLength={50_000}
-            onChange={(standard_solution_script) =>
-              onChange({ ...draft, standard_solution_script })
-            }
-          />
 
           <div className="creator-section-heading">
             <div>
-              <h3>Test cases</h3>
-              <p>
-                Test-case rewards: {rewardTotal} XP. Stored separately from
-                Total Base XP.
-              </p>
+              <h3>Questions</h3>
+              <p>Test-case rewards across all questions: {rewardTotal} XP.</p>
             </div>
-            <span className="creator-count">{draft.tests.length}/100</span>
+            <span className="creator-count">{draft.questions.length}/10</span>
           </div>
 
-          {draft.tests.map((test, index) => (
-            <section className="creator-child" key={test.id}>
+          {draft.questions.map((question, qIndex) => (
+            <section key={question.id} className="creator-child">
               <div className="creator-section-heading">
-                <h3>Test case {index + 1}</h3>
+                <h3>Question {qIndex + 1}</h3>
                 <ListControls
-                  label={`test case ${index + 1}`}
-                  index={index}
-                  length={draft.tests.length}
-                  reorder={false}
+                  label={`question ${qIndex + 1}`}
+                  index={qIndex}
+                  length={draft.questions.length}
+                  onMove={(direction) =>
+                    onChange({
+                      ...draft,
+                      questions: moveItem(draft.questions, qIndex, direction),
+                    })
+                  }
                   onRemove={() =>
                     onChange({
                       ...draft,
-                      tests: draft.tests.filter((item) => item.id !== test.id),
+                      questions: draft.questions.filter((item) => item.id !== question.id),
                     })
                   }
                 />
               </div>
 
-              <div className="creator-stack">
-                <TextField
-                  label="Setup script"
-                  value={test.setup_script}
-                  multiline
-                  code
-                  rows={7}
-                  maxLength={50_000}
-                  onChange={(setup_script) =>
-                    onChange({
-                      ...draft,
-                      tests: draft.tests.map((item) =>
-                        item.id === test.id
-                          ? { ...item, setup_script }
-                          : item,
-                      ),
-                    })
-                  }
-                />
+              <TextField
+                label="Question title"
+                value={question.title}
+                required
+                onChange={(title) =>
+                  onChange({
+                    ...draft,
+                    questions: draft.questions.map(q => q.id === question.id ? { ...q, title } : q)
+                  })
+                }
+              />
 
-                <NumberField
-                  label="XP reward"
-                  value={test.xp_reward}
-                  onChange={(xp_reward) =>
-                    onChange({
-                      ...draft,
-                      tests: draft.tests.map((item) =>
-                        item.id === test.id ? { ...item, xp_reward } : item,
-                      ),
-                    })
-                  }
-                />
+              <TextField
+                label="Question Markdown"
+                value={question.question_markdown}
+                multiline
+                required
+                rows={10}
+                maxLength={50_000}
+                onChange={(question_markdown) =>
+                  onChange({
+                    ...draft,
+                    questions: draft.questions.map(q => q.id === question.id ? { ...q, question_markdown } : q)
+                  })
+                }
+              />
 
-                <CheckField
-                  label="Hidden from the student"
-                  checked={test.is_hidden}
-                  onChange={(is_hidden) =>
-                    onChange({
-                      ...draft,
-                      tests: draft.tests.map((item) =>
-                        item.id === test.id ? { ...item, is_hidden } : item,
-                      ),
-                    })
-                  }
-                />
+              <TextField
+                label="Question setup script"
+                value={question.setup_script}
+                multiline
+                code
+                rows={5}
+                maxLength={50_000}
+                onChange={(setup_script) =>
+                  onChange({
+                    ...draft,
+                    questions: draft.questions.map(q => q.id === question.id ? { ...q, setup_script } : q)
+                  })
+                }
+              />
+
+              <TextField
+                label="Standard solution script"
+                value={question.standard_solution_script}
+                multiline
+                code
+                rows={10}
+                maxLength={50_000}
+                onChange={(standard_solution_script) =>
+                  onChange({
+                    ...draft,
+                    questions: draft.questions.map(q => q.id === question.id ? { ...q, standard_solution_script } : q)
+                  })
+                }
+              />
+
+              <div className="creator-section-heading" style={{ marginTop: '1rem' }}>
+                <h4>Test Cases</h4>
+                <span className="creator-count">{question.tests.length}/100</span>
               </div>
+
+              {question.tests.map((test, index) => (
+                <div className="creator-stack creator-option-row" key={test.id}>
+                  <div style={{ flex: 1 }}>
+                    <TextField
+                      label={`Test case ${index + 1} setup script`}
+                      value={test.setup_script}
+                      multiline
+                      code
+                      rows={4}
+                      maxLength={50_000}
+                      onChange={(setup_script) =>
+                        onChange({
+                          ...draft,
+                          questions: draft.questions.map(q => q.id === question.id ? {
+                            ...q,
+                            tests: q.tests.map(t => t.id === test.id ? { ...t, setup_script } : t)
+                          } : q)
+                        })
+                      }
+                    />
+
+                    <div className="creator-two-columns" style={{ marginTop: '0.5rem' }}>
+                      <NumberField
+                        label="XP reward"
+                        value={test.xp_reward}
+                        onChange={(xp_reward) =>
+                          onChange({
+                            ...draft,
+                            questions: draft.questions.map(q => q.id === question.id ? {
+                              ...q,
+                              tests: q.tests.map(t => t.id === test.id ? { ...t, xp_reward } : t)
+                            } : q)
+                          })
+                        }
+                      />
+
+                      <CheckField
+                        label="Hidden from student"
+                        checked={test.is_hidden}
+                        onChange={(is_hidden) =>
+                          onChange({
+                            ...draft,
+                            questions: draft.questions.map(q => q.id === question.id ? {
+                              ...q,
+                              tests: q.tests.map(t => t.id === test.id ? { ...t, is_hidden } : t)
+                            } : q)
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                  
+                  <button
+                    type="button"
+                    className="creator-icon-button creator-danger-text"
+                    aria-label={`Remove test case ${index + 1}`}
+                    onClick={() => {
+                      onChange({
+                        ...draft,
+                        questions: draft.questions.map(q => q.id === question.id ? {
+                          ...q,
+                          tests: q.tests.filter(t => t.id !== test.id)
+                        } : q)
+                      });
+                    }}
+                  >
+                    <Trash2 size={16} aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={question.tests.length >= 100}
+                onClick={() =>
+                  onChange({
+                    ...draft,
+                    questions: draft.questions.map(q => q.id === question.id ? {
+                      ...q,
+                      tests: [
+                        ...q.tests,
+                        {
+                          id: newId(),
+                          setup_script: "",
+                          xp_reward: 10,
+                          is_hidden: false,
+                        },
+                      ],
+                    } : q)
+                  })
+                }
+              >
+                <Plus size={16} aria-hidden="true" />
+                Add test case
+              </button>
             </section>
           ))}
 
           <button
             type="button"
             className="secondary-button"
-            disabled={draft.tests.length >= 100}
+            disabled={draft.questions.length >= 10}
             onClick={() =>
               onChange({
                 ...draft,
-                tests: [
-                  ...draft.tests,
+                questions: [
+                  ...draft.questions,
                   {
                     id: newId(),
+                    title: "",
+                    question_markdown: "",
                     setup_script: "",
-                    xp_reward: 10,
-                    is_hidden: false,
+                    standard_solution_script: "",
+                    tests: [],
                   },
                 ],
               })
             }
           >
             <Plus size={16} aria-hidden="true" />
-            Add test case
+            Add question
           </button>
-
-          <p className="creator-help">
-            Scripts are saved only. Test execution, solution snapshots, and
-            student-facing hidden-test filtering are not wired up in this batch.
-            Test cases have no persisted ordering column in the current schema.
-          </p>
         </>
       );
     }
@@ -1450,12 +1543,16 @@ function DraftFields({
           />
 
           <TextField
-            label="Flag Hash"
+            label="Flag"
             value={draft.flag_hash}
-            placeholder="MD5/SHA256 hash or exact flag (leave empty if not applicable)"
-            maxLength={200}
+            placeholder="Enter the raw flag text"
+            maxLength={1024}
             onChange={(flag_hash) => onChange({ ...draft, flag_hash })}
           />
+          <p className="creator-help">
+            The existing flag is stored securely and cannot be displayed. Enter a new
+            raw flag only if you want to replace it.
+          </p>
 
           <div className="creator-section-heading" style={{ marginTop: "1rem" }}>
             <div>
@@ -1651,13 +1748,6 @@ function DraftFields({
           />
 
           <TextField
-            label="Completion Answer (Flag)"
-            value={draft.completion_code_hash}
-            placeholder="Type the raw answer (will be securely hashed on save)"
-            onChange={(completion_code_hash) => onChange({ ...draft, completion_code_hash })}
-          />
-
-          <TextField
             label="Setup script"
             value={draft.setup_script}
             multiline
@@ -1828,7 +1918,7 @@ function catalogItems(section: CreatorSection, data: CreatorData) {
     case "homework":
       return data.homework.map((homework) => ({
         id: homework.id,
-        title: homework.title || homework.question_markdown.slice(0, 85) || "Untitled question",
+        title: homework.title || "Untitled assignment",
         detail: [
           data.paths.find((path) => path.id === homework.path_id)?.title,
           `${homework.total_base_xp} base XP`,

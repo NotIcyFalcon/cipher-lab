@@ -11,6 +11,7 @@ import {
   type ChapterRow,
   type LabRow,
   type HomeworkRow,
+  type QuestionRow,
   type TestCaseRow,
   type CtfRow,
   type CtfUniverseRow,
@@ -71,6 +72,10 @@ export default async function CreatorSectionPage({
     tests: db
       .prepare("SELECT * FROM homework_test_cases ORDER BY homework_id, id")
       .all() as TestCaseRow[],
+
+    questions: db
+      .prepare("SELECT * FROM homework_questions ORDER BY homework_id, sequence_order, id")
+      .all() as QuestionRow[],
 
     challenges: db
       .prepare("SELECT * FROM ctf_challenges ORDER BY sequence_order, id")

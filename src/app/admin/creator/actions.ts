@@ -22,6 +22,7 @@ type Table =
   | "learning_paths"
   | "chapters"
   | "homework"
+  | "homework_questions"
   | "homework_test_cases"
   | "ctfs"
   | "ctf_universes"
@@ -29,7 +30,7 @@ type Table =
   | "ctf_hints"
   | "labs";
 
-type ChildTable = "chapters" | "homework_test_cases" | "ctf_hints";
+type ChildTable = "chapters" | "homework_questions" | "homework_test_cases" | "ctf_hints";
 type ParentColumn = "path_id" | "homework_id" | "challenge_id";
 
 const tables: Record<CreatorSection, Table> = {
@@ -433,39 +434,52 @@ function savePath(db: Db, id: string, input: Record<string, unknown>) {
 }
 
 function saveHomework(db: Db, id: string, input: Record<string, unknown>) {
-  const tests = list(input.tests, "Test cases", 100).map((value): Row => {
-    const test = object(value);
+  const questions = list(input.questions, "Questions", 10);
+  const questionRows: Row[] = [];
+  const testRows: Row[] = [];
 
-    return {
-      id: identifier(test.id, "Test case ID"),
+  questions.forEach((qValue, index) => {
+    const q = object(qValue);
+    const qId = identifier(q.id, "Question ID");
+
+    questionRows.push({
+      id: qId,
       homework_id: id,
-      setup_script: multiline(test.setup_script, "Test case setup script"),
-      xp_reward: integer(test.xp_reward, "Test case XP"),
-      is_hidden: boolean(test.is_hidden, "Hidden test case") ? 1 : 0,
-      expected_output: typeof test.expected_output === "string" ? test.expected_output : null,
-      expected_folder: typeof test.expected_folder === "string" ? test.expected_folder : null,
-    };
+      title: text(q.title, "Question Title", 200),
+      question_markdown: multiline(q.question_markdown, "Question Markdown", 50_000, true),
+      setup_script: multiline(q.setup_script, "Setup script", 50_000, false),
+      standard_solution_script: multiline(q.standard_solution_script, "Standard solution script", 50_000, false),
+      sequence_order: index,
+    });
+
+    const tests = list(q.tests, "Test cases", 100);
+    tests.forEach((tValue) => {
+      const test = object(tValue);
+      testRows.push({
+        id: identifier(test.id, "Test case ID"),
+        homework_id: id,
+        question_id: qId,
+        setup_script: multiline(test.setup_script, "Test case setup script", 50_000, false),
+        xp_reward: integer(test.xp_reward, "Test case XP"),
+        is_hidden: boolean(test.is_hidden, "Hidden test case") ? 1 : 0,
+      });
+    });
   });
 
   writeRow(db, "homework", {
     id,
     path_id: parentId(db, "learning_paths", input.path_id, "Learning path"),
     title: text(input.title, "Title", 200),
-    question_markdown: multiline(
-      input.question_markdown,
-      "Question Markdown",
-      50_000,
-      true,
-    ),
     total_base_xp: integer(input.total_base_xp, "Total Base XP"),
-
-    standard_solution_script: multiline(
-      input.standard_solution_script,
-      "Standard solution script",
-    ),
   });
 
-  syncChildren(db, "homework_test_cases", "homework_id", id, tests);
+  syncChildren(db, "homework_questions", "homework_id", id, questionRows);
+  syncChildren(db, "homework_test_cases", "homework_id", id, testRows);
+  
+  db.prepare(`
+    INSERT INTO homework_jobs (kind, homework_id, available_at, created_at)
+    VALUES ('prepare_expected', ?, strftime('%s', 'now'), strftime('%s', 'now'))
+  `).run(id);
 }
 
 function saveCtfDefinition(db: Db, id: string, input: Record<string, unknown>) {
@@ -492,7 +506,24 @@ function saveCtfUniverse(db: Db, id: string, input: Record<string, unknown>) {
   });
 }
 
+function getFlagHash(
+  input: Record<string, unknown>,
+  existingHash: string | null,
+): string | null {
+  const raw = text(input.flag_hash, "Flag", 1024, false);
+
+  if (!raw) {
+    return existingHash;
+  }
+
+  return createHash("sha256")
+    .update(raw.trim().toLowerCase(), "utf8")
+    .digest("hex");
+}
+
 function saveCtf(db: Db, id: string, input: Record<string, unknown>) {
+  const existing = db.prepare(`SELECT flag_hash FROM ctf_challenges WHERE id = ?`).get(id) as { flag_hash: string | null } | undefined;
+
   const hints = list(input.hints, "Hints", 50).map((value, index): Row => {
     const hint = object(value);
 
@@ -513,7 +544,7 @@ function saveCtf(db: Db, id: string, input: Record<string, unknown>) {
     points: integer(input.points, "Base points"),
     difficulty: text(input.difficulty, "Difficulty", 80, false),
     lab_id: optionalLab(db, input.lab_id),
-    flag_hash: text(input.flag_hash, "Flag hash", 255, false),
+    flag_hash: getFlagHash(input, existing?.flag_hash ?? null),
     suggested_paths_json: JSON.stringify(
       list(input.suggested_path_ids, "Suggested paths", 10).map((id) =>
         identifier(id, "Suggested path ID"),
@@ -588,41 +619,6 @@ export async function saveCreatorAction(
     const entity = choice(input.entity, creatorSections, "editor");
     const suppliedId = text(input.id, "Record ID", 128, false);
     const id = suppliedId || randomUUID();
-
-    if (entity === "homework") {
-      const tests = list(input.tests, "Test cases", 100);
-      const standardSolution = multiline(input.standard_solution_script, "Standard solution script");
-      const baseXp = integer(input.total_base_xp, "Total Base XP");
-      const totalPoints = baseXp + tests.reduce((sum: number, t) => sum + integer(object(t).xp_reward, "Test case XP"), 0);
-
-      const mappedTests = tests.map((t) => {
-        const test = object(t);
-        return {
-          id: identifier(test.id, "Test case ID"),
-          setupScript: multiline(test.setup_script, "Test case setup script"),
-          xpReward: integer(test.xp_reward, "Test case XP"),
-          hidden: boolean(test.is_hidden, "Hidden test case"),
-        };
-      });
-
-      // Pre-compute expected values by sending the standard solution as both the answer and standardSolution
-      const graderResult = await runGrader({
-        homeworkId: id,
-        pathId: "",
-        title: "",
-        objective: "",
-        baseXp,
-        totalPoints,
-        standardSolution,
-        testCases: mappedTests,
-      }, standardSolution);
-
-      graderResult.results.forEach((result, idx) => {
-        const test = object(tests[idx]);
-        test.expected_output = result.expectedOutput;
-        test.expected_folder = result.expectedFolder;
-      });
-    }
 
     const db = getDb();
 

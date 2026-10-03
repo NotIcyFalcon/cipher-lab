@@ -39,9 +39,25 @@ const migrations = [
     version: 9,
     file: new URL("../migrations/009_batch11_part2.sql", import.meta.url),
   },
+  {
+    version: 10,
+    file: new URL("../migrations/010_batch12_labs.sql", import.meta.url),
+  },
+  {
+    version: 11,
+    file: new URL("../migrations/011_homework_questions.sql", import.meta.url),
+  },
+  {
+    version: 12,
+    file: new URL("../migrations/012_grading_queue.sql", import.meta.url),
+  },
+  {
+    version: 13,
+    file: new URL("../migrations/013_ctf_reconciliation.sql", import.meta.url),
+  },
 ];
 
-const latestVersion = 9;
+const latestVersion = 13;
 
 const databasePath = resolve(
   process.env.DATABASE_PATH || "./data/cyberbox.sqlite",

@@ -78,7 +78,7 @@ export function getProfileDashboard(userId: string, now = new Date()) {
   }
 
   for (const { path, stats } of pathEntries) {
-    addField(path.title, stats.earned, stats.available);
+    addField(path.topicName, stats.earned, stats.available);
   }
 
   for (const category of ctfCategories) {
