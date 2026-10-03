@@ -236,10 +236,20 @@ async function enforceLimit(excludeLabId) {
 
 // Public API: ensure a lab is running and return its SSH host
 export async function ensureLabRunning(labId) {
-  const labDef = labs.get(labId);
+  let serviceName = "linux-basics";
 
-  if (!labDef) {
-    throw new Error("Unknown lab.");
+  try {
+    const res = await fetch(`http://web:3000/api/internal/lab-service?labId=${encodeURIComponent(labId)}`, {
+      headers: { Authorization: `Bearer ${process.env.GRADER_INTERNAL_TOKEN}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.service) {
+        serviceName = data.service;
+      }
+    }
+  } catch (err) {
+    console.error("[Docker] Failed to query lab service mapping:", err.message);
   }
 
   // If we already track it as running, refresh lastUsed and verify
@@ -264,7 +274,7 @@ export async function ensureLabRunning(labId) {
   await enforceLimit(labId);
 
   // Start the container
-  const result = await startContainer(labDef.service);
+  const result = await startContainer(serviceName);
 
   runningLabs.set(labId, {
     containerId: result.containerId,

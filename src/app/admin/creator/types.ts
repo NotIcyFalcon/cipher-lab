@@ -161,6 +161,7 @@ export type EditorBlock =
       hint: string;
       points: number;
       completionCodeHash?: string;
+      completionAnswer?: string;
     };
 
 export type ChapterDraft = {
@@ -209,7 +210,6 @@ export type QuestionDraft = {
   id: string;
   title: string;
   question_markdown: string;
-  setup_script: string;
   standard_solution_script: string;
   tests: TestDraft[];
 };
@@ -250,8 +250,7 @@ export type CtfDraft = {
   points: number;
   difficulty: string;
   lab_id: string;
-  flag_hash: string;
-  suggested_path_ids: string[];
+  flag: string;
   hints: HintDraft[];
 };
 

@@ -64,6 +64,7 @@ export function getCTFCatalogProgress(userId: string) {
 
           return {
             ...challenge,
+            labId: challenge.lab_id,
             name: challenge.title, // keeping standard interface
             state
           };
@@ -125,6 +126,7 @@ export function getCTFChallenge(challengeId: string) {
   return {
     challenge: {
       ...challenge,
+      labId: challenge.lab_id,
       hints,
       suggestedPaths
     },

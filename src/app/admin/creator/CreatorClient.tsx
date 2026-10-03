@@ -105,6 +105,7 @@ function initialBlocks(json: string): EditorBlock[] {
           hint: stringField("hint"),
           points: learningLabPoints(block.points),
           completionCodeHash: typeof block.completionCodeHash === "string" ? block.completionCodeHash : "",
+          completionAnswer: "",
         };
 
       case "quiz": {
@@ -229,7 +230,6 @@ function makeDraft(
             id: question.id,
             title: question.title,
             question_markdown: question.question_markdown,
-            setup_script: question.setup_script ?? "",
             standard_solution_script: question.standard_solution_script ?? "",
             tests: data.tests
               .filter((test) => test.question_id === question.id)
@@ -279,8 +279,7 @@ function makeDraft(
         points: row?.points ?? 100,
         difficulty: row?.difficulty ?? "",
         lab_id: row?.lab_id ?? "",
-        flag_hash: row?.flag_hash ?? "",
-        suggested_path_ids: stringArray(row?.suggested_paths_json ?? null),
+        flag: "",
         hints: data.hints
           .filter((hint) => hint.challenge_id === row?.id)
           .map((hint) => ({
@@ -597,6 +596,7 @@ function createBlock(type: "note" | "code" | "quiz" | "lab"): EditorBlock {
         hint: "",
         points: 50,
         completionCodeHash: "",
+        completionAnswer: "",
       };
   }
 }
@@ -795,9 +795,9 @@ function BlockFields({
           />
           <TextField
             label="Completion Answer (Flag)"
-            value={block.completionCodeHash ?? ""}
+            value={block.completionAnswer ?? ""}
             placeholder="Type the raw answer (will be securely hashed on save)"
-            onChange={(completionCodeHash) => onChange({ ...block, completionCodeHash })}
+            onChange={(completionAnswer) => onChange({ ...block, completionAnswer })}
           />
         </>
       );
@@ -1246,21 +1246,6 @@ function DraftFields({
               />
 
               <TextField
-                label="Question setup script"
-                value={question.setup_script}
-                multiline
-                code
-                rows={5}
-                maxLength={50_000}
-                onChange={(setup_script) =>
-                  onChange({
-                    ...draft,
-                    questions: draft.questions.map(q => q.id === question.id ? { ...q, setup_script } : q)
-                  })
-                }
-              />
-
-              <TextField
                 label="Standard solution script"
                 value={question.standard_solution_script}
                 multiline
@@ -1392,7 +1377,6 @@ function DraftFields({
                     id: newId(),
                     title: "",
                     question_markdown: "",
-                    setup_script: "",
                     standard_solution_script: "",
                     tests: [],
                   },
@@ -1449,6 +1433,66 @@ function DraftFields({
             placeholder="Beginner, Intermediate, Advanced…"
             onChange={(difficulty) => onChange({ ...draft, difficulty })}
           />
+
+          <div className="creator-section-heading" style={{ marginTop: "1rem" }}>
+            <div>
+              <h3>Recommended Learning Paths</h3>
+            </div>
+            <span className="creator-count">{draft.suggested_path_ids.length}/10</span>
+          </div>
+
+          <div className="creator-stack">
+            {draft.suggested_path_ids.map((pathId, index) => (
+              <div className="creator-option-row" key={index}>
+                <SelectField
+                  label={`Path ${index + 1}`}
+                  value={pathId}
+                  required
+                  onChange={(value) =>
+                    onChange({
+                      ...draft,
+                      suggested_path_ids: draft.suggested_path_ids.map((item, position) =>
+                        position === index ? value : item,
+                      ),
+                    })
+                  }
+                >
+                  <option value="">Choose a path…</option>
+                  {data.paths.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title}
+                    </option>
+                  ))}
+                </SelectField>
+                <button
+                  type="button"
+                  className="creator-icon-button creator-danger-text"
+                  aria-label={`Remove path ${index + 1}`}
+                  onClick={() => {
+                    onChange({
+                      ...draft,
+                      suggested_path_ids: draft.suggested_path_ids.filter(
+                        (_, position) => position !== index,
+                      ),
+                    });
+                  }}
+                >
+                  <Trash2 size={16} aria-hidden="true" />
+                </button>
+              </div>
+            ))}
+          </div>
+          
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={draft.suggested_path_ids.length >= 10}
+            onClick={() =>
+              onChange({ ...draft, suggested_path_ids: [...draft.suggested_path_ids, ""] })
+            }
+          >
+            Add recommended path
+          </button>
         </>
       );
 
@@ -1544,75 +1588,15 @@ function DraftFields({
 
           <TextField
             label="Flag"
-            value={draft.flag_hash}
+            value={draft.flag}
             placeholder="Enter the raw flag text"
             maxLength={1024}
-            onChange={(flag_hash) => onChange({ ...draft, flag_hash })}
+            onChange={(flag) => onChange({ ...draft, flag })}
           />
           <p className="creator-help">
             The existing flag is stored securely and cannot be displayed. Enter a new
             raw flag only if you want to replace it.
           </p>
-
-          <div className="creator-section-heading" style={{ marginTop: "1rem" }}>
-            <div>
-              <h3>Recommended Learning Paths</h3>
-            </div>
-            <span className="creator-count">{draft.suggested_path_ids.length}/10</span>
-          </div>
-
-          <div className="creator-stack">
-            {draft.suggested_path_ids.map((pathId, index) => (
-              <div className="creator-option-row" key={index}>
-                <SelectField
-                  label={`Path ${index + 1}`}
-                  value={pathId}
-                  required
-                  onChange={(value) =>
-                    onChange({
-                      ...draft,
-                      suggested_path_ids: draft.suggested_path_ids.map((item, position) =>
-                        position === index ? value : item,
-                      ),
-                    })
-                  }
-                >
-                  <option value="">Choose a path…</option>
-                  {data.paths.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.title}
-                    </option>
-                  ))}
-                </SelectField>
-                <button
-                  type="button"
-                  className="creator-icon-button creator-danger-text"
-                  aria-label={`Remove path ${index + 1}`}
-                  onClick={() => {
-                    onChange({
-                      ...draft,
-                      suggested_path_ids: draft.suggested_path_ids.filter(
-                        (_, position) => position !== index,
-                      ),
-                    });
-                  }}
-                >
-                  <Trash2 size={16} aria-hidden="true" />
-                </button>
-              </div>
-            ))}
-          </div>
-          
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={draft.suggested_path_ids.length >= 10}
-            onClick={() =>
-              onChange({ ...draft, suggested_path_ids: [...draft.suggested_path_ids, ""] })
-            }
-          >
-            Add recommended path
-          </button>
 
           <div className="creator-section-heading">
             <div>

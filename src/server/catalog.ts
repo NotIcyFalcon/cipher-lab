@@ -66,17 +66,19 @@ export function getPublicHomework(pathId: string): HomeworkQuestion[] {
   return getDb().prepare(`
     SELECT
       h.id AS homeworkId,
-      h.title,
-      h.question_markdown AS objective,
-      h.total_base_xp AS baseXp,
+      hq.id AS questionId,
+      hq.title,
+      hq.question_markdown AS objective,
+      0 AS baseXp,
       COALESCE(SUM(t.xp_reward), 0) AS testXp,
-      h.total_base_xp + COALESCE(SUM(t.xp_reward), 0) AS totalPoints,
+      COALESCE(SUM(t.xp_reward), 0) AS totalPoints,
       COUNT(t.id) AS totalTests
     FROM homework h
-    LEFT JOIN homework_test_cases t ON t.homework_id = h.id
+    JOIN homework_questions hq ON h.id = hq.homework_id
+    LEFT JOIN homework_test_cases t ON t.question_id = hq.id
     WHERE h.path_id = ?
-    GROUP BY h.id
-    ORDER BY h.title, h.id
+    GROUP BY h.id, hq.id
+    ORDER BY h.title, h.id, hq.sequence_order
   `).all(pathId) as HomeworkQuestion[];
 }
 

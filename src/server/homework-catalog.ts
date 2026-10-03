@@ -22,6 +22,7 @@ const testSchema = z.object({
 
 const definitionSchema = z.object({
   homeworkId: z.string().min(1).max(200),
+  questionId: z.string().min(1).max(200),
   pathId: z.string().min(1).max(200),
   title: z.string(),
   objective: z.string(),
@@ -35,21 +36,23 @@ export type HomeworkDefinition = z.infer<typeof definitionSchema> & {
   totalPoints: number;
 };
 
-export function findHomework(homeworkId: string): HomeworkDefinition | undefined {
+export function findHomework(homeworkId: string, questionId: string): HomeworkDefinition | undefined {
   const db = getDb();
 
   const row = db.prepare(`
     SELECT
-      id AS homeworkId,
-      path_id AS pathId,
-      title,
-      question_markdown AS objective,
-      setup_script AS setupScript,
-      total_base_xp AS baseXp,
-      standard_solution_script AS standardSolution
-    FROM homework
-    WHERE id = ?
-  `).get(homeworkId) as Record<string, unknown> | undefined;
+      h.id AS homeworkId,
+      hq.id AS questionId,
+      h.path_id AS pathId,
+      hq.title,
+      hq.question_markdown AS objective,
+      hq.setup_script AS setupScript,
+      0 AS baseXp,
+      hq.standard_solution_script AS standardSolution
+    FROM homework h
+    JOIN homework_questions hq ON h.id = hq.homework_id
+    WHERE h.id = ? AND hq.id = ?
+  `).get(homeworkId, questionId) as Record<string, unknown> | undefined;
 
   if (!row) return undefined;
 
@@ -62,9 +65,9 @@ export function findHomework(homeworkId: string): HomeworkDefinition | undefined
       expected_output AS expectedOutput,
       expected_folder AS expectedFolder
     FROM homework_test_cases
-    WHERE homework_id = ?
+    WHERE question_id = ?
     ORDER BY sequence_order, id
-  `).all(homeworkId) as Array<{
+  `).all(questionId) as Array<{
     id: string;
     setupScript: string;
     xpReward: number;
@@ -134,6 +137,7 @@ export function publicQuestion(question: HomeworkDefinition): HomeworkQuestion {
 
   return {
     homeworkId: question.homeworkId,
+    questionId: question.questionId,
     title: question.title,
     objective: question.objective,
     baseXp: question.baseXp,

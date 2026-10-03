@@ -12,6 +12,7 @@ import {
   type CreatorSection,
   type EditorBlock,
 } from "./types";
+import { hashLabAnswer, hashCtfFlag } from "@/server/flags";
 
 type Db = ReturnType<typeof getDb>;
 type Value = string | number | null;
@@ -282,7 +283,20 @@ function syncChildren(
   }
 }
 
-function parseBlocks(db: Db, value: unknown): EditorBlock[] {
+function storedChapterLabHashes(db: Db, chapterId: string) {
+  const row = db.prepare(`SELECT content_json FROM chapters WHERE id = ?`).get(chapterId) as { content_json: string } | undefined;
+  const map = new Map<string, string>();
+  if (row?.content_json) {
+    const blocks = JSON.parse(row.content_json);
+    for (const b of blocks) {
+      if (b.type === 'lab' && b.completionCodeHash) map.set(b.id, b.completionCodeHash);
+    }
+  }
+  return map;
+}
+
+function parseBlocks(db: Db, chapterId: string, value: unknown): EditorBlock[] {
+  const storedHashes = storedChapterLabHashes(db, chapterId);
   const blocks = list(value, "Chapter blocks", 100).map((item): EditorBlock => {
     const block = object(item);
     const id = identifier(block.id, "Block ID");
@@ -341,11 +355,13 @@ function parseBlocks(db: Db, value: unknown): EditorBlock[] {
       }
 
       case "lab": {
-        let completionCodeHash = text(block.completionCodeHash, "Completion Code", 200, false);
-        if (completionCodeHash && !/^[a-f0-9]{64}$/i.test(completionCodeHash)) {
-          completionCodeHash = createHash("sha256")
-            .update(completionCodeHash.trim().toLowerCase())
-            .digest("hex");
+        let completionCodeHash: string | undefined = undefined;
+
+        const rawAnswer = text(block.completionAnswer, "Completion Answer", 200, false);
+        if (rawAnswer) {
+          completionCodeHash = hashLabAnswer(rawAnswer);
+        } else {
+          completionCodeHash = storedHashes.get(id);
         }
 
         return {
@@ -356,7 +372,7 @@ function parseBlocks(db: Db, value: unknown): EditorBlock[] {
           objective: multiline(block.objective, "Lab objective", 10_000, true),
           hint: multiline(block.hint, "Lab hint", 10_000),
           points: integer(block.points, "Lab points"),
-          completionCodeHash: completionCodeHash || undefined,
+          completionCodeHash,
         };
       }
     }
@@ -415,7 +431,7 @@ function savePath(db: Db, id: string, input: Record<string, unknown>) {
         ),
         reading_points: integer(chapter.reading_points, "Reading points"),
         sequence_order: index,
-        content_json: JSON.stringify(parseBlocks(db, chapter.blocks)),
+        content_json: JSON.stringify(parseBlocks(db, identifier(chapter.id, "Chapter ID"), chapter.blocks)),
         objectives: JSON.stringify(list(chapter.objectives, "Chapter goals", 10).map((goal) => text(goal, "Chapter goal", 2000))),
         objectives_json: JSON.stringify(list(chapter.objectives, "Chapter goals", 10).map((goal) => text(goal, "Chapter goal", 2000))),
       };
@@ -447,7 +463,6 @@ function saveHomework(db: Db, id: string, input: Record<string, unknown>) {
       homework_id: id,
       title: text(q.title, "Question Title", 200),
       question_markdown: multiline(q.question_markdown, "Question Markdown", 50_000, true),
-      setup_script: multiline(q.setup_script, "Setup script", 50_000, false),
       standard_solution_script: multiline(q.standard_solution_script, "Standard solution script", 50_000, false),
       sequence_order: index,
     });
@@ -510,15 +525,13 @@ function getFlagHash(
   input: Record<string, unknown>,
   existingHash: string | null,
 ): string | null {
-  const raw = text(input.flag_hash, "Flag", 1024, false);
+  const raw = text(input.flag, "Flag", 1024, false);
 
   if (!raw) {
     return existingHash;
   }
 
-  return createHash("sha256")
-    .update(raw.trim().toLowerCase(), "utf8")
-    .digest("hex");
+  return hashCtfFlag(raw);
 }
 
 function saveCtf(db: Db, id: string, input: Record<string, unknown>) {
@@ -545,11 +558,6 @@ function saveCtf(db: Db, id: string, input: Record<string, unknown>) {
     difficulty: text(input.difficulty, "Difficulty", 80, false),
     lab_id: optionalLab(db, input.lab_id),
     flag_hash: getFlagHash(input, existing?.flag_hash ?? null),
-    suggested_paths_json: JSON.stringify(
-      list(input.suggested_path_ids, "Suggested paths", 10).map((id) =>
-        identifier(id, "Suggested path ID"),
-      ),
-    ),
   });
 
   syncChildren(db, "ctf_hints", "challenge_id", id, hints);

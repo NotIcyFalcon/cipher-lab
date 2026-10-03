@@ -182,8 +182,14 @@ export default async function PathsPage() {
                           <div className="paths-course-tags">
                             <span>{path.difficulty}</span>
                             <span>{path.type}</span>
+                            {path.timeDays > 0 && (
+                              <span>
+                                <Clock3 size={12} aria-hidden="true" />
+                                {path.timeDays} {path.timeDays === 1 ? "day" : "days"}
+                              </span>
+                            )}
                             <span>
-                              <Clock3 size={12} aria-hidden="true" />
+                              <BookOpen size={12} aria-hidden="true" />
                               {formatLessonDuration(stats.minutes)} reading
                             </span>
                           </div>

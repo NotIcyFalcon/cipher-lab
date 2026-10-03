@@ -8,6 +8,7 @@ export type TestResult = {
 
 export type HomeworkQuestion = {
   homeworkId: string;
+  questionId: string;
   title: string;
   objective: string;
   baseXp: number;

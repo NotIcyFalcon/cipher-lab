@@ -135,6 +135,7 @@ export default function HomeworkQuestionCard({
 
     const formData = new FormData(event.currentTarget);
     formData.set("homeworkId", question.homeworkId);
+    formData.set("questionId", question.questionId);
 
     run("grade", async () => {
       const reply = await gradeHomework(formData);

@@ -7,7 +7,6 @@ import {
   assertHomeworkAccess,
   findHomework,
 } from "@/server/homework-catalog";
-import { runGrader } from "@/server/run-grader";
 import { getHistory, getSubmission } from "@/server/progress";
 import { refreshProgress } from "@/server/refresh-progress";
 import type { HistoryPage, Submission } from "@/lib/progress-types";
@@ -22,8 +21,12 @@ export async function gradeHomework(formData: FormData): Promise<GradeReply> {
   const parsedId = z.string().min(1).max(200).safeParse(
     formData.get("homeworkId"),
   );
+  
+  const parsedQuestionId = z.string().min(1).max(200).safeParse(
+    formData.get("questionId"),
+  );
 
-  if (!parsedId.success) {
+  if (!parsedId.success || !parsedQuestionId.success) {
     return { ok: false, error: "Select a homework question." };
   }
 
@@ -67,17 +70,18 @@ export async function gradeHomework(formData: FormData): Promise<GradeReply> {
     snapshot = db.transaction(() => {
       assertHomeworkAccess(userId, parsedId.data);
 
-      const question = findHomework(parsedId.data);
+      const question = findHomework(parsedId.data, parsedQuestionId.data);
       if (!question) throw new Error("This assignment is not ready for grading.");
 
       const pending = db.prepare(`
         SELECT id
         FROM homework_submissions
         WHERE user_id = ?
+          AND homework_id = ?
           AND status = 'pending'
           AND created_at > ?
         LIMIT 1
-      `).get(userId, Date.now() - 20 * 60_000);
+      `).get(userId, parsedId.data, Date.now() - 20 * 60_000);
 
       if (pending) {
         throw new Error("Your previous submission is still being graded.");
@@ -98,9 +102,25 @@ export async function gradeHomework(formData: FormData): Promise<GradeReply> {
         question.testCases.length,
         Date.now(),
       );
+      
+      const submissionId = Number(result.lastInsertRowid);
+      
+      db.prepare(`
+        INSERT INTO homework_jobs (
+          kind, homework_id, question_id, submission_id, status, available_at, created_at
+        ) VALUES (
+          'grade_submission', ?, ?, ?, 'queued', ?, ?
+        )
+      `).run(
+        question.homeworkId,
+        question.questionId,
+        submissionId,
+        Date.now(),
+        Date.now()
+      );
 
       return {
-        id: Number(result.lastInsertRowid),
+        id: submissionId,
         question,
       };
     }).immediate();
@@ -109,42 +129,6 @@ export async function gradeHomework(formData: FormData): Promise<GradeReply> {
       ok: false,
       error: error instanceof Error ? error.message : "Submission rejected.",
     };
-  }
-
-  try {
-    const grade = await runGrader(snapshot.question, code);
-
-    db.prepare(`
-      UPDATE homework_submissions
-      SET status = 'graded',
-          passed_tests = ?,
-          awarded_xp = ?,
-          results_json = ?,
-          finished_at = ?,
-          error = NULL
-      WHERE id = ? AND user_id = ? AND status = 'pending'
-    `).run(
-      grade.passedTests,
-      grade.awardedXp,
-      JSON.stringify(grade.results),
-      Date.now(),
-      snapshot.id,
-      userId,
-    );
-  } catch {
-    // Do not log scripts, reference solutions, or hidden diagnostics.
-    db.prepare(`
-      UPDATE homework_submissions
-      SET status = 'error',
-          error = ?,
-          finished_at = ?
-      WHERE id = ? AND user_id = ? AND status = 'pending'
-    `).run(
-      "Grading could not finish. Your script was saved; please retry.",
-      Date.now(),
-      snapshot.id,
-      userId,
-    );
   }
 
   refreshProgress();
