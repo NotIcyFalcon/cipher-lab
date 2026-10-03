@@ -22,7 +22,7 @@ INSERT INTO labs_batch12 (
 SELECT 
   id, base_image, snapshot_image, default_user, whitelist_enabled, 
   command_blacklist_json, command_whitelist_json, initial_setup_script, 
-  setup_script, name
+  NULL AS setup_script, id AS name
 FROM labs;
 
 DROP TABLE labs;
