@@ -7,7 +7,7 @@ import {
   type FormEvent,
   type MouseEvent,
 } from "react";
-import { Terminal as TerminalIcon, Trophy } from "lucide-react";
+import { RotateCcw, Terminal as TerminalIcon, Trophy } from "lucide-react";
 import { getLabAccessCode } from "@/app/actions";
 import "@/app/batch-two.css";
 
@@ -35,7 +35,7 @@ export default function LabTerminal({
   const displayPoints = points !== undefined ? points : (variant === "lab" ? 50 : null);
   const hostRef = useRef<HTMLDivElement>(null);
   const [accessCode, setAccessCode] = useState<string | undefined>();
-  const [request, setRequest] = useState<{ code: string } | null>(null);
+  const [request, setRequest] = useState<{ code: string; reset: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState("Your practice space is ready.");
@@ -174,6 +174,7 @@ export default function LabTerminal({
           send({
             type: "auth",
             code: request!.code,
+            reset: request!.reset,
             labId,
             cols: terminal.cols,
             rows: terminal.rows,
@@ -304,7 +305,17 @@ export default function LabTerminal({
     setBusy(true);
     setConnected(false);
     setStatus("Opening your practice space...");
-    setRequest({ code: accessCode.trim() });
+    setRequest({ code: accessCode.trim(), reset: false });
+  }
+
+  // Discard the running lab (files and processes) and start it fresh.
+  function resetLab() {
+    if (!accessCode?.trim()) return;
+    if (!window.confirm("Reset this lab? Files and changes you made inside it will be lost.")) return;
+    setBusy(true);
+    setConnected(false);
+    setStatus("Resetting the lab...");
+    setRequest({ code: accessCode.trim(), reset: true });
   }
 
   function disconnect() {
@@ -312,7 +323,7 @@ export default function LabTerminal({
     setBusy(false);
     setConnected(false);
     setStatus(
-      "Disconnected. Your files stay until the lab restarts or is reset.",
+      "Disconnected. The lab keeps running for 15 minutes, so your files are still there if you reconnect.",
     );
   }
 
@@ -340,6 +351,17 @@ export default function LabTerminal({
               </span>
             </span>
           )}
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={resetLab}
+            disabled={!accessCode?.trim()}
+            title="Start this lab again from a clean state"
+          >
+            <RotateCcw size={14} aria-hidden="true" />
+            Reset
+          </button>
 
           {busy ? (
             <button

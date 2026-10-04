@@ -25,7 +25,7 @@ export default async function HomeworkPathPage({
   const progress = getProgress(userId);
 
   return (
-    <main className="b8-page">
+    <div className="b8-page">
       <Link href="/homework">← All homework</Link>
       <h1>{path.title} homework</h1>
 
@@ -36,13 +36,13 @@ export default async function HomeworkPathPage({
       ) : (
         path.homework.map((question, index) => (
           <HomeworkQuestionCard
-            key={question.homeworkId}
+            key={question.questionId}
             question={question}
             questionNumber={index + 1}
-            bestXp={progress.homeworkBest[question.homeworkId] ?? 0}
+            bestXp={progress.homeworkQuestionBest[question.questionId] ?? 0}
           />
         ))
       )}
-    </main>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import type { LabRecipe } from "@/lib/lab-recipe";
+import type { CompareOptions, HomeworkEnvironment } from "@/lib/homework-recipe";
 
 export const creatorSections = [
   "topics",
@@ -59,6 +60,13 @@ export type HomeworkRow = {
   path_id: string;
   title: string;
   total_base_xp: number;
+  environment_json: string;
+  prep_status: "draft" | "queued" | "preparing" | "ready" | "failed";
+  prep_error: string | null;
+  prep_log: string;
+  definition_hash: string | null;
+  prepared_hash: string | null;
+  prepared_at: number | null;
 };
 
 export type QuestionRow = {
@@ -66,8 +74,9 @@ export type QuestionRow = {
   homework_id: string;
   title: string;
   question_markdown: string;
-  setup_script: string | null;
   standard_solution_script: string | null;
+  time_limit_sec: number;
+  compare_json: string;
   sequence_order: number;
 };
 
@@ -76,10 +85,16 @@ export type TestCaseRow = {
   homework_id: string;
   question_id: string | null;
   setup_script: string | null;
+  args: string;
+  stdin: string;
   xp_reward: number;
   is_hidden: number;
-  expected_output: string | null;
-  expected_folder: string | null;
+  sequence_order: number;
+  // Preview of the reference solution's results (from expected_json).
+  expected_stdout: string | null;
+  expected_exit: number | null;
+  expected_files: number | null;
+  expected_ms: number | null;
 };
 
 export type CtfRow = {
@@ -180,10 +195,10 @@ export type ChapterDraft = {
 export type TestDraft = {
   id: string;
   setup_script: string;
+  args: string;
+  stdin: string;
   xp_reward: number;
   is_hidden: boolean;
-  expected_output?: string | null;
-  expected_folder?: string | null;
 };
 
 export type HintDraft = {
@@ -215,6 +230,8 @@ export type QuestionDraft = {
   title: string;
   question_markdown: string;
   standard_solution_script: string;
+  time_limit_sec: number;
+  compare: CompareOptions;
   tests: TestDraft[];
 };
 
@@ -224,6 +241,7 @@ export type HomeworkDraft = {
   path_id: string;
   title: string;
   total_base_xp: number;
+  environment: HomeworkEnvironment;
   questions: QuestionDraft[];
 };
 

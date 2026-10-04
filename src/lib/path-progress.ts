@@ -34,11 +34,12 @@ export function getPathProgress(path: LearningPath, progress: Progress) {
     0,
   );
 
+  // Each question's best attempt counts once.
   const homeworkEarned = path.homework.reduce(
     (sum, question) =>
       sum + Math.min(
         question.totalPoints,
-        Math.max(0, progress.homeworkBest[question.homeworkId] ?? 0),
+        Math.max(0, progress.homeworkQuestionBest[question.questionId] ?? 0),
       ),
     0,
   );

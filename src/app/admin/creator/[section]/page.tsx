@@ -77,15 +77,35 @@ export default async function CreatorSectionPage({
       .all() as LabRow[],
 
     homework: db
-      .prepare("SELECT * FROM homework ORDER BY path_id, id")
+      .prepare(`
+        SELECT id, path_id, title, total_base_xp, environment_json, prep_status,
+               prep_error, substr(prep_log, -8000) AS prep_log,
+               definition_hash, prepared_hash, prepared_at
+        FROM homework
+        ORDER BY path_id, id
+      `)
       .all() as HomeworkRow[],
 
     tests: db
-      .prepare("SELECT * FROM homework_test_cases ORDER BY homework_id, id")
+      .prepare(`
+        SELECT id, homework_id, question_id, setup_script, args, stdin,
+               xp_reward, is_hidden, sequence_order,
+               substr(json_extract(expected_json, '$.stdout'), 1, 1500) AS expected_stdout,
+               json_extract(expected_json, '$.exitCode') AS expected_exit,
+               json_array_length(expected_json, '$.files') AS expected_files,
+               json_extract(expected_json, '$.durationMs') AS expected_ms
+        FROM homework_test_cases
+        ORDER BY homework_id, sequence_order, id
+      `)
       .all() as TestCaseRow[],
 
     questions: db
-      .prepare("SELECT * FROM homework_questions ORDER BY homework_id, sequence_order, id")
+      .prepare(`
+        SELECT id, homework_id, title, question_markdown, standard_solution_script,
+               time_limit_sec, compare_json, sequence_order
+        FROM homework_questions
+        ORDER BY homework_id, sequence_order, id
+      `)
       .all() as QuestionRow[],
 
     challenges: db

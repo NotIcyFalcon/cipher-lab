@@ -155,25 +155,49 @@ function provisionScript(machine, family, policy) {
   }
   l.push("");
 
-  // Files (staged into /cyberbox/files by the Dockerfile COPY)
+  // Files (uploaded to /cyberbox/files before this script runs)
   machine.files.forEach((file, index) => {
+    const ownerUser = file.owner.split(":")[0];
     const dest = resolvePath(file.path, file.owner);
+    const dir = dirname(dest);
     const staged = `/cyberbox/files/${index}`;
-    l.push(`install -d ${sq(dirname(dest))}`);
+    l.push(`mkdir -p ${sq(dir)}`);
+
+    // Folders created inside the owner's home belong to the owner, so the
+    // user can work in them.
+    const home = homeOf(ownerUser);
+    if (ownerUser !== "root" && dir.startsWith(home + "/")) {
+      const parts = dir.slice(home.length + 1).split("/");
+      const chain = parts.map((_, i) => `${home}/${parts.slice(0, i + 1).join("/")}`);
+      l.push(`chown ${sq(ownerUser)} ${chain.map(sq).join(" ")}`);
+    }
+
     l.push(`cp ${sq(staged)} ${sq(dest)}`);
     l.push(`chown ${sq(file.owner)} ${sq(dest)}`);
     l.push(`chmod ${sq(file.mode)} ${sq(dest)}`);
   });
-  if (machine.files.length) l.push("rm -rf /cyberbox/files");
+  l.push("rm -rf /cyberbox/files");
   l.push("");
 
-  // Admin-authored build script, run as root with network available.
+  // Admin-authored build script: root, internet available, run with bash in
+  // the main user's home folder. The build fails if it exits non-zero.
   if (machine.buildScript.trim()) {
     l.push("# ---- build script ----");
-    l.push(machine.buildScript);
+    l.push(`cd ${sq(homeOf(machine.mainUser))} 2>/dev/null || cd /root`);
+    l.push("if ! bash /cyberbox/build.sh; then");
+    l.push("  echo 'cyberbox: the build script exited with an error' >&2");
+    l.push("  exit 1");
+    l.push("fi");
+    l.push("cd /root");
   }
+  l.push("rm -f /cyberbox/build.sh");
 
   l.push(...policySetup(policy));
+
+  // Scripts are root-only; the guard and allow-list must stay readable.
+  l.push("");
+  l.push("chmod 0755 /cyberbox");
+  l.push("chmod 0700 /cyberbox/entrypoint.sh /cyberbox/start.sh 2>/dev/null || true");
 
   return l.join("\n") + "\n";
 }
@@ -197,8 +221,8 @@ function entrypointScript(machine) {
   if (machine.services.length) l.push("");
 
   if (machine.startScript.trim()) {
-    l.push("# ---- start script ----");
-    l.push(machine.startScript);
+    // Root, no internet, bash, in the main user's home folder.
+    l.push(`( cd ${sq(homeOf(machine.mainUser))} 2>/dev/null || cd /root; bash /cyberbox/start.sh ) >/cyberbox/log/start.log 2>&1`);
     l.push("");
   }
 
@@ -207,36 +231,36 @@ function entrypointScript(machine) {
   return l.join("\n") + "\n";
 }
 
+/**
+ * Render one machine into the files the image builder uploads and the
+ * command it runs. Returns { baseImage, files, provision, entrypoint }.
+ */
 export function renderMachine(machine, policy) {
   const template = TEMPLATE_IMAGES[machine.template];
   if (!template) throw new Error(`Unknown template: ${machine.template}`);
 
-  const provision = provisionScript(machine, template.family, policy);
-  const entrypoint = entrypointScript(machine);
-
-  const dockerfile = [
-    `FROM ${template.image}`,
-    "LABEL cyberbox.kind=lab",
-    "WORKDIR /root",
-    "COPY cyberbox/ /cyberbox/",
-    "RUN chmod +x /cyberbox/provision.sh /cyberbox/entrypoint.sh \\",
-    " && /cyberbox/provision.sh \\",
-    " && rm -f /cyberbox/provision.sh",
-    'ENTRYPOINT ["/cyberbox/entrypoint.sh"]',
-    "",
-  ].join("\n");
-
-  const context = [
-    { name: "Dockerfile", content: dockerfile, mode: 0o644 },
-    { name: "cyberbox/provision.sh", content: provision, mode: 0o755 },
-    { name: "cyberbox/entrypoint.sh", content: entrypoint, mode: 0o755 },
+  const files = [
+    { name: "cyberbox", type: "5", mode: 0o755 },
+    { name: "cyberbox/provision.sh", content: provisionScript(machine, template.family, policy), mode: 0o700 },
+    { name: "cyberbox/entrypoint.sh", content: entrypointScript(machine), mode: 0o700 },
+    { name: "cyberbox/build.sh", content: machine.buildScript || "", mode: 0o700 },
+    { name: "cyberbox/files", type: "5", mode: 0o700 },
   ];
 
+  if (machine.startScript.trim()) {
+    files.push({ name: "cyberbox/start.sh", content: machine.startScript, mode: 0o700 });
+  }
+
   machine.files.forEach((file, index) => {
-    context.push({ name: `cyberbox/files/${index}`, content: file.content, mode: 0o644 });
+    files.push({ name: `cyberbox/files/${index}`, content: file.content, mode: 0o600 });
   });
 
-  return { dockerfile, context, mainUser: machine.mainUser };
+  return {
+    baseImage: template.image,
+    files,
+    provision: ["/bin/sh", "-c", "sh /cyberbox/provision.sh && rm -f /cyberbox/provision.sh"],
+    entrypoint: ["/cyberbox/entrypoint.sh"],
+  };
 }
 
 function dirname(path) {

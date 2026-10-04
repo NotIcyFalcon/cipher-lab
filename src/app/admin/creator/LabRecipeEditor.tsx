@@ -87,7 +87,7 @@ function UserEditor({
   );
 }
 
-function FileEditor({
+export function FileEditor({
   file,
   index,
   length,
@@ -279,11 +279,11 @@ function MachineEditor({
       </button>
 
       {/* Build + start scripts */}
-      <TextField label="Build script (runs as root at build time, has internet)" multiline code rows={5} maxLength={LAB_LIMITS.scriptChars}
+      <TextField label="Build script (bash, as root, in the main user's home, once at build time, internet available; the build fails if it exits non-zero)" multiline code rows={5} maxLength={LAB_LIMITS.scriptChars}
         value={machine.buildScript} placeholder={"# installed after packages; set up the environment\nchmod u+s /usr/bin/find"}
         onChange={(buildScript) => update("buildScript", buildScript)} />
 
-      <TextField label="Start script (runs as root each session, no internet)" multiline code rows={3} maxLength={LAB_LIMITS.scriptChars}
+      <TextField label="Start script (bash, as root, in the main user's home, every time a session starts, no internet)" multiline code rows={3} maxLength={LAB_LIMITS.scriptChars}
         value={machine.startScript} placeholder={"# regenerate a per-session flag, start extra processes…"}
         onChange={(startScript) => update("startScript", startScript)} />
 

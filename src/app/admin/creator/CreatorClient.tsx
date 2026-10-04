@@ -8,16 +8,18 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Save, Trash2 } from "lucide-react";
-import { saveCreatorAction, deleteCreatorAction, buildLabAction } from "./actions";
+import { saveCreatorAction, deleteCreatorAction, buildLabAction, prepareHomeworkAction } from "./actions";
 import {
   TextField,
   NumberField,
   SelectField,
-  CheckField,
   ListControls,
   moveItem,
 } from "./fields";
 import LabRecipeEditor from "./LabRecipeEditor";
+import HomeworkEditor, { newQuestion } from "./HomeworkEditor";
+import { parseCompare, parseEnvironment } from "@/lib/homework-recipe";
+import LabTerminal from "@/components/LabTerminal";
 import { defaultRecipe, recipeSchema, type LabRecipe } from "@/lib/lab-recipe";
 import { learningLabPoints } from "@/lib/creator-defaults";
 import {
@@ -29,6 +31,7 @@ import {
   type ChapterDraft,
   type EditorBlock,
   type LabRow,
+  type HomeworkRow,
 } from "./types";
 
 const labels: Record<CreatorSection, string> = {
@@ -222,23 +225,31 @@ function makeDraft(
         path_id: row?.path_id ?? pathId,
         title: row?.title ?? "Assignment",
         total_base_xp: row?.total_base_xp ?? 0,
-        questions: (data.questions ?? [])
-          .filter((question) => question.homework_id === row?.id)
-          .sort((a, b) => a.sequence_order - b.sequence_order)
-          .map((question) => ({
-            id: question.id,
-            title: question.title,
-            question_markdown: question.question_markdown,
-            standard_solution_script: question.standard_solution_script ?? "",
-            tests: data.tests
-              .filter((test) => test.question_id === question.id)
-              .map((test) => ({
-                id: test.id,
-                setup_script: test.setup_script ?? "",
-                xp_reward: test.xp_reward,
-                is_hidden: test.is_hidden === 1,
-              })),
-          })),
+        environment: parseEnvironment(row?.environment_json),
+        questions: row
+          ? (data.questions ?? [])
+              .filter((question) => question.homework_id === row.id)
+              .sort((a, b) => a.sequence_order - b.sequence_order)
+              .map((question) => ({
+                id: question.id,
+                title: question.title,
+                question_markdown: question.question_markdown,
+                standard_solution_script: question.standard_solution_script ?? "",
+                time_limit_sec: question.time_limit_sec,
+                compare: parseCompare(question.compare_json),
+                tests: data.tests
+                  .filter((test) => test.question_id === question.id)
+                  .sort((a, b) => a.sequence_order - b.sequence_order)
+                  .map((test) => ({
+                    id: test.id,
+                    setup_script: test.setup_script ?? "",
+                    args: test.args ?? "",
+                    stdin: test.stdin ?? "",
+                    xp_reward: test.xp_reward,
+                    is_hidden: test.is_hidden === 1,
+                  })),
+              }))
+          : [newQuestion()],
       };
     }
 
@@ -947,250 +958,17 @@ function DraftFields({
         </>
       );
 
-    case "homework": {
-      const rewardTotal = draft.questions.reduce((total, q) => total + q.tests.reduce(
-        (tTotal, test) => tTotal + (Number.isFinite(test.xp_reward) ? test.xp_reward : 0),
-        0
-      ), 0);
-
+    case "homework":
       return (
         <>
-          <div className="creator-editor-header">
-            <TextField
-              label="Assignment Title"
-              value={draft.title}
-              required
-              maxLength={200}
-              onChange={(title) => onChange({ ...draft, title })}
-            />
-          </div>
-          <SelectField
-            label="Learning path"
-            value={draft.path_id}
-            required
-            onChange={(path_id) => onChange({ ...draft, path_id })}
-          >
-            <option value="">Choose a learning path…</option>
-            {data.paths.map((path) => (
-              <option key={path.id} value={path.id}>
-                {path.title}
-              </option>
-            ))}
-          </SelectField>
-
-          <div className="creator-two-columns">
-            <NumberField
-              label="Total Base XP"
-              value={draft.total_base_xp}
-              onChange={(total_base_xp) =>
-                onChange({ ...draft, total_base_xp })
-              }
-            />
-          </div>
-
-          <div className="creator-section-heading">
-            <div>
-              <h3>Questions</h3>
-              <p>Test-case rewards across all questions: {rewardTotal} XP.</p>
-            </div>
-            <span className="creator-count">{draft.questions.length}/10</span>
-          </div>
-
-          {draft.questions.map((question, qIndex) => (
-            <section key={question.id} className="creator-child">
-              <div className="creator-section-heading">
-                <h3>Question {qIndex + 1}</h3>
-                <ListControls
-                  label={`question ${qIndex + 1}`}
-                  index={qIndex}
-                  length={draft.questions.length}
-                  onMove={(direction) =>
-                    onChange({
-                      ...draft,
-                      questions: moveItem(draft.questions, qIndex, direction),
-                    })
-                  }
-                  onRemove={() =>
-                    onChange({
-                      ...draft,
-                      questions: draft.questions.filter((item) => item.id !== question.id),
-                    })
-                  }
-                />
-              </div>
-
-              <TextField
-                label="Question title"
-                value={question.title}
-                required
-                onChange={(title) =>
-                  onChange({
-                    ...draft,
-                    questions: draft.questions.map(q => q.id === question.id ? { ...q, title } : q)
-                  })
-                }
-              />
-
-              <TextField
-                label="Question Markdown"
-                value={question.question_markdown}
-                multiline
-                required
-                rows={10}
-                maxLength={50_000}
-                onChange={(question_markdown) =>
-                  onChange({
-                    ...draft,
-                    questions: draft.questions.map(q => q.id === question.id ? { ...q, question_markdown } : q)
-                  })
-                }
-              />
-
-              <TextField
-                label="Standard solution script"
-                value={question.standard_solution_script}
-                multiline
-                code
-                rows={10}
-                maxLength={50_000}
-                onChange={(standard_solution_script) =>
-                  onChange({
-                    ...draft,
-                    questions: draft.questions.map(q => q.id === question.id ? { ...q, standard_solution_script } : q)
-                  })
-                }
-              />
-
-              <div className="creator-section-heading" style={{ marginTop: '1rem' }}>
-                <h4>Test Cases</h4>
-                <span className="creator-count">{question.tests.length}/100</span>
-              </div>
-
-              {question.tests.map((test, index) => (
-                <div className="creator-stack creator-option-row" key={test.id}>
-                  <div style={{ flex: 1 }}>
-                    <TextField
-                      label={`Test case ${index + 1} setup script`}
-                      value={test.setup_script}
-                      multiline
-                      code
-                      rows={4}
-                      maxLength={50_000}
-                      onChange={(setup_script) =>
-                        onChange({
-                          ...draft,
-                          questions: draft.questions.map(q => q.id === question.id ? {
-                            ...q,
-                            tests: q.tests.map(t => t.id === test.id ? { ...t, setup_script } : t)
-                          } : q)
-                        })
-                      }
-                    />
-
-                    <div className="creator-two-columns" style={{ marginTop: '0.5rem' }}>
-                      <NumberField
-                        label="XP reward"
-                        value={test.xp_reward}
-                        onChange={(xp_reward) =>
-                          onChange({
-                            ...draft,
-                            questions: draft.questions.map(q => q.id === question.id ? {
-                              ...q,
-                              tests: q.tests.map(t => t.id === test.id ? { ...t, xp_reward } : t)
-                            } : q)
-                          })
-                        }
-                      />
-
-                      <CheckField
-                        label="Hidden from student"
-                        checked={test.is_hidden}
-                        onChange={(is_hidden) =>
-                          onChange({
-                            ...draft,
-                            questions: draft.questions.map(q => q.id === question.id ? {
-                              ...q,
-                              tests: q.tests.map(t => t.id === test.id ? { ...t, is_hidden } : t)
-                            } : q)
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                  
-                  <button
-                    type="button"
-                    className="creator-icon-button creator-danger-text"
-                    aria-label={`Remove test case ${index + 1}`}
-                    onClick={() => {
-                      onChange({
-                        ...draft,
-                        questions: draft.questions.map(q => q.id === question.id ? {
-                          ...q,
-                          tests: q.tests.filter(t => t.id !== test.id)
-                        } : q)
-                      });
-                    }}
-                  >
-                    <Trash2 size={16} aria-hidden="true" />
-                  </button>
-                </div>
-              ))}
-
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={question.tests.length >= 100}
-                onClick={() =>
-                  onChange({
-                    ...draft,
-                    questions: draft.questions.map(q => q.id === question.id ? {
-                      ...q,
-                      tests: [
-                        ...q.tests,
-                        {
-                          id: newId(),
-                          setup_script: "",
-                          xp_reward: 10,
-                          is_hidden: false,
-                        },
-                      ],
-                    } : q)
-                  })
-                }
-              >
-                <Plus size={16} aria-hidden="true" />
-                Add test case
-              </button>
-            </section>
-          ))}
-
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={draft.questions.length >= 10}
-            onClick={() =>
-              onChange({
-                ...draft,
-                questions: [
-                  ...draft.questions,
-                  {
-                    id: newId(),
-                    title: "",
-                    question_markdown: "",
-                    standard_solution_script: "",
-                    tests: [],
-                  },
-                ],
-              })
-            }
-          >
-            <Plus size={16} aria-hidden="true" />
-            Add question
-          </button>
+          <HomeworkEditor draft={draft} paths={data.paths} tests={data.tests} onChange={onChange} />
+          <p className="creator-help">
+            Saving prepares the homework automatically: the grading environment is built (only when it changed)
+            and your reference solution runs once on every test to record the expected results. Learners can
+            submit once preparation succeeds.
+          </p>
         </>
       );
-    }
 
     case "ctfs":
       return (
@@ -1509,9 +1287,9 @@ function DraftFields({
           />
 
           <p className="creator-help">
-            Save your changes, then build the lab. Building creates a Docker
-            image for each machine. A lab can be assigned to chapters and CTF
-            challenges only after a successful build.
+            Saving builds the lab automatically (one Docker image per machine).
+            Learners can start it once a build has succeeded. Build status, the
+            log and a test terminal appear below after saving.
           </p>
         </>
       );
@@ -1535,6 +1313,11 @@ function Editor({
   const labRow =
     draft.entity === "labs" && draft.id
       ? data.labs.find((lab) => lab.id === draft.id)
+      : undefined;
+
+  const homeworkRow =
+    draft.entity === "homework" && draft.id
+      ? data.homework.find((hw) => hw.id === draft.id)
       : undefined;
 
   return (
@@ -1588,10 +1371,94 @@ function Editor({
         </div>
       </form>
 
+      {draft.entity === "homework" && homeworkRow && (
+        <HomeworkPrepPanel homework={homeworkRow} dirty={dirty} />
+      )}
+
       {draft.entity === "labs" && labRow && (
         <LabBuildPanel lab={labRow} dirty={dirty} />
       )}
     </>
+  );
+}
+
+function HomeworkPrepPanel({ homework, dirty }: { homework: HomeworkRow; dirty: boolean }) {
+  const [state, action, pending] = useActionState(prepareHomeworkAction, initialState);
+  const router = useRouter();
+
+  const inProgress = homework.prep_status === "queued" || homework.prep_status === "preparing";
+  const ready =
+    homework.prep_status === "ready" &&
+    homework.prepared_hash !== null &&
+    homework.prepared_hash === homework.definition_hash;
+
+  // While preparation runs, refresh so status, log and reference results update.
+  useEffect(() => {
+    if (!inProgress) return;
+    const timer = setInterval(() => router.refresh(), 3_000);
+    return () => clearInterval(timer);
+  }, [inProgress, router]);
+
+  const label = ready
+    ? "Ready for submissions"
+    : homework.prep_status === "queued"
+      ? "Queued…"
+      : homework.prep_status === "preparing"
+        ? "Preparing…"
+        : homework.prep_status === "failed"
+          ? "Preparation failed"
+          : "Not prepared yet";
+
+  const tone = ready ? "ready" : homework.prep_status === "preparing" ? "building" : homework.prep_status;
+
+  return (
+    <section className={`creator-build-panel is-${tone}`}>
+      <div className="creator-section-heading">
+        <div>
+          <span className="creator-kicker">GRADER</span>
+          <h3>Status: {label}</h3>
+        </div>
+        <form action={action}>
+          <input type="hidden" name="id" value={homework.id} />
+          <button type="submit" className="secondary-button" disabled={pending || inProgress}>
+            {inProgress ? "Preparing…" : "Prepare again"}
+          </button>
+        </form>
+      </div>
+
+      {dirty && (
+        <p className="creator-help">You have unsaved changes. Saving prepares the homework again if needed.</p>
+      )}
+
+      {state.error && (
+        <p className="creator-inline-error" role="alert">{state.error}</p>
+      )}
+
+      {inProgress && (
+        <p className="creator-help">
+          Building the grading environment (only when it changed) and running your reference solution on every
+          test. This page refreshes automatically.
+        </p>
+      )}
+
+      {ready && homework.prepared_at && (
+        <p className="creator-help">
+          Expected results recorded {new Date(homework.prepared_at).toLocaleString()}. Each test above shows the
+          reference solution&apos;s result.
+        </p>
+      )}
+
+      {homework.prep_status === "failed" && homework.prep_error && (
+        <pre className="creator-inline-error" style={{ whiteSpace: "pre-wrap" }}>{homework.prep_error}</pre>
+      )}
+
+      {homework.prep_log && (
+        <details className="creator-build-log" open={inProgress || homework.prep_status === "failed"}>
+          <summary>Preparation log</summary>
+          <pre>{homework.prep_log}</pre>
+        </details>
+      )}
+    </section>
   );
 }
 
@@ -1633,7 +1500,7 @@ function LabBuildPanel({ lab, dirty }: { lab: LabRow; dirty: boolean }) {
 
       {dirty && (
         <p className="creator-help">
-          You have unsaved changes. Save first — building uses the last saved recipe.
+          You have unsaved changes. Saving starts a new build automatically.
         </p>
       )}
 
@@ -1643,24 +1510,39 @@ function LabBuildPanel({ lab, dirty }: { lab: LabRow; dirty: boolean }) {
 
       {inProgress && (
         <p className="creator-help">
-          This can take a few minutes. The page refreshes automatically.
+          Building can take a few minutes (the first build also downloads the
+          base image). The status and log refresh automatically.
+          {lab.current_build_id != null && " Learners keep using the previous build until this one finishes."}
         </p>
       )}
 
       {lab.build_status === "ready" && !inProgress && (
         <p className="creator-help">
-          This lab is built and can be assigned to chapters and CTF challenges.
+          This lab is built. Learners get a fresh copy of it every time they start it.
         </p>
       )}
 
-      {lab.last_build_error && lab.build_status !== "ready" && (
-        <p className="creator-inline-error">{lab.last_build_error}</p>
+      {lab.build_status === "failed" && (
+        <p className="creator-inline-error">
+          {lab.last_build_error || "The last build failed."}
+          {lab.current_build_id != null && " Learners still get the previous successful build."}
+        </p>
       )}
 
       {lab.last_build_log && (
-        <details className="creator-build-log">
+        <details className="creator-build-log" open={inProgress || lab.build_status === "failed"}>
           <summary>Build log</summary>
           <pre>{lab.last_build_log}</pre>
+        </details>
+      )}
+
+      {lab.current_build_id != null && (
+        <details className="creator-build-log">
+          <summary>Test this lab</summary>
+          <p className="creator-help">
+            Opens the lab exactly as a learner gets it (command policy included).
+          </p>
+          <LabTerminal labId={lab.id} title={lab.name || "Lab test"} kicker="ADMIN TEST" points={null} />
         </details>
       )}
     </section>
@@ -1754,7 +1636,13 @@ function catalogItems(section: CreatorSection, data: CreatorData) {
         title: homework.title || "Untitled assignment",
         detail: [
           data.paths.find((path) => path.id === homework.path_id)?.title,
-          `${homework.total_base_xp} base XP`,
+          {
+            draft: "Not prepared",
+            queued: "Preparing",
+            preparing: "Preparing",
+            ready: homework.prepared_hash !== null && homework.prepared_hash === homework.definition_hash ? "Ready" : "Needs preparing",
+            failed: "Preparation failed",
+          }[homework.prep_status],
         ]
           .filter(Boolean)
           .join(" · "),

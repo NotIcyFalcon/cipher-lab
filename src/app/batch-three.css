@@ -1639,3 +1639,209 @@
     transform: rotate(360deg);
   }
 }
+
+/* Homework grader v2: checks, diffs, examples, paste mode */
+.hw-test-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.hw-test-input {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.hw-test-input p {
+  margin: 0;
+  font-size: 13px;
+}
+.hw-test-input code,
+.hw-example code {
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: #0b1418;
+  color: #c9f59f;
+}
+.hw-checks {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hw-check {
+  padding: 10px 12px;
+  border: 1px solid #2a3540;
+  border-radius: 10px;
+  background: #0d151b;
+}
+.hw-check.is-pass {
+  border-color: #2f4d36;
+}
+.hw-check.is-fail {
+  border-color: #5c2f36;
+  background: #160f13;
+}
+.hw-check-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+  font-size: 13px;
+}
+.hw-check-heading > svg {
+  flex-shrink: 0;
+  align-self: center;
+}
+.hw-check.is-pass .hw-check-heading > svg {
+  color: var(--green);
+}
+.hw-check.is-fail .hw-check-heading > svg {
+  color: #ff8f8f;
+}
+.hw-check-heading > span {
+  color: #c4ccd4;
+  overflow-wrap: anywhere;
+}
+.hw-check-raw {
+  margin-top: 10px;
+}
+.hw-check-raw summary,
+.hw-example summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+}
+.hw-diff {
+  margin-top: 10px;
+  border: 1px solid #263039;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #070c10;
+}
+.hw-diff-legend {
+  display: flex;
+  gap: 14px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #1d262e;
+  font-size: 11px;
+}
+.hw-diff-legend .is-expected {
+  color: #9fe6a0;
+}
+.hw-diff-legend .is-actual {
+  color: #ff9d9d;
+}
+.hw-diff pre {
+  max-height: 320px;
+  margin: 0;
+  overflow: auto;
+  padding: 8px 0;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.hw-diff-line {
+  display: block;
+  padding: 0 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #c7d2da;
+}
+.hw-diff-line.is-expected {
+  background: #11301b;
+  color: #b8f2b9;
+}
+.hw-diff-line.is-actual {
+  background: #3a1518;
+  color: #ffc0c0;
+}
+.hw-diff-line.is-skip {
+  color: #6f7d89;
+  font-style: italic;
+}
+.hw-diff-marker {
+  display: inline-block;
+  width: 1.4em;
+  user-select: none;
+  opacity: 0.8;
+}
+.hw-file-problems {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: #d9c4c4;
+}
+.hw-examples {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+.hw-example {
+  padding: 10px 12px;
+  border: 1px solid #2a3540;
+  border-radius: 10px;
+  background: #0d151b;
+}
+.hw-example[open] {
+  display: grid;
+  gap: 10px;
+}
+.hw-example p {
+  margin: 0;
+  font-size: 13px;
+}
+.hw-mode-switch {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 4px;
+  border: 1px solid #2a3540;
+  border-radius: 10px;
+  background: #0b1217;
+}
+.hw-mode-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.hw-mode-switch button.is-active {
+  background: #1c2b21;
+  color: var(--text);
+}
+.hw-paste {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.hw-paste textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 220px;
+  padding: 12px;
+  border: 1px solid #2f3d47;
+  border-radius: 10px;
+  background: #070c10;
+  color: #e1eadf;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.hw-objective .rich-text p {
+  margin: 0;
+}

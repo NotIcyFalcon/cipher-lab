@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getDb } from "@/server/db";
+import { sanitizeSubmissionResults } from "@/server/submission-results";
 import type {
   HistoryPage,
   Progress,
@@ -75,6 +76,14 @@ export function getProgress(userId: string): Progress {
     `)
     .all(userId) as { id: string; xp: number }[];
 
+  const questionBest = db
+    .prepare(`
+      SELECT question_id AS id, best_xp AS xp
+      FROM homework_question_best
+      WHERE user_id = ? AND question_id IS NOT NULL
+    `)
+    .all(userId) as { id: string; xp: number }[];
+
   const ctf = getCTFProgress(userId);
 
   return {
@@ -83,6 +92,9 @@ export function getProgress(userId: string): Progress {
     labIds: labs.map((item) => item.id),
     homeworkBest: Object.fromEntries(
       homework.map((item) => [item.id, item.xp]),
+    ),
+    homeworkQuestionBest: Object.fromEntries(
+      questionBest.map((item) => [item.id, item.xp]),
     ),
     ...ctf,
   };
@@ -107,6 +119,7 @@ export function getSubmission(
       SELECT
         ${summaryColumns},
         homework_id AS homeworkId,
+        question_id AS questionId,
         filename,
         code,
         results_json AS resultsJson,
@@ -122,15 +135,24 @@ export function getSubmission(
 
   const { resultsJson, ...submission } = row;
 
+  let results: unknown = [];
+  try {
+    results = JSON.parse(resultsJson);
+  } catch {
+    results = [];
+  }
+
   return {
     ...submission,
-    results: JSON.parse(resultsJson),
+    // Hidden tests never reveal expected/actual details, even for old rows.
+    results: sanitizeSubmissionResults(results),
   };
 }
 
 export function getHistory(
   userId: string,
   homeworkId: string,
+  questionId: string,
   beforeId = Number.MAX_SAFE_INTEGER,
 ): HistoryPage {
   const rows = getDb()
@@ -139,11 +161,12 @@ export function getHistory(
       FROM homework_submissions
       WHERE user_id = ?
         AND homework_id = ?
+        AND (question_id = ? OR question_id IS NULL)
         AND id < ?
       ORDER BY id DESC
       LIMIT 11
     `)
-    .all(userId, homeworkId, beforeId) as SubmissionSummary[];
+    .all(userId, homeworkId, questionId, beforeId) as SubmissionSummary[];
 
   const items = rows.slice(0, 10);
 

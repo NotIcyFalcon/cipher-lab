@@ -7,12 +7,10 @@ import {
   siteOrigin,
   maxRunningLabs,
 } from "./config.mjs";
-import {
-  openLabSession,
-  execShell,
-  touchSession,
-  closeSession,
-} from "./docker-manager.mjs";
+import { openLabSession, execShell } from "./docker-manager.mjs";
+import { startInternalServer } from "./internal-server.mjs";
+
+startInternalServer();
 
 const server = createServer((request, response) => {
   request.resume();
@@ -94,7 +92,7 @@ function attachTerminal(ws) {
 
   let stream = null;
   let resizeShell = null;
-  let sessionId = null;
+  let lab = null; // { touch, release } for the lab session this terminal uses
   let authenticated = false;
   let closed = false;
   let pendingOutput = 0;
@@ -102,10 +100,10 @@ function attachTerminal(ws) {
   let lastPong = started;
   let size = { cols: 80, rows: 24 };
 
-  // Container start (up to ~10s) plus the exec handshake must fit here.
+  // Starting several machines plus the exec handshake must fit here.
   const setupTimer = setTimeout(
     () => stop("Connection setup timed out.", 1008),
-    45_000,
+    60_000,
   );
 
   const watchdog = setInterval(() => {
@@ -144,10 +142,10 @@ function attachTerminal(ws) {
       stream = null;
     }
 
-    // Tear down the lab containers for this session.
-    if (sessionId) {
-      closeSession(sessionId).catch(() => {});
-      sessionId = null;
+    // The lab keeps running for 15 minutes so files survive a reconnect.
+    if (lab) {
+      lab.release();
+      lab = null;
     }
 
     if (ws.readyState === WebSocket.OPEN) {
@@ -181,15 +179,18 @@ function attachTerminal(ws) {
   ws.on("close", () => stop("Disconnected."));
   ws.on("error", () => stop("Connection interrupted.", 1011));
 
-  async function openShell(labId) {
+  async function openShell(labId, reset) {
     try {
-      send({ type: "status", message: "Starting lab environment..." });
-      const session = await openLabSession(labId);
+      send({ type: "status", message: reset ? "Resetting the lab..." : "Starting lab environment..." });
+      const session = await openLabSession(labId, {
+        reset,
+        onStopped: (reason) => stop(reason, 1000),
+      });
       if (closed) {
-        closeSession(session.sessionId).catch(() => {});
+        session.release();
         return;
       }
-      sessionId = session.sessionId;
+      lab = session;
 
       send({ type: "status", message: "Connecting to lab..." });
 
@@ -218,11 +219,8 @@ function attachTerminal(ws) {
     } catch (error) {
       console.error("[Lab session]", error.message);
 
-      if (error.code === "UNKNOWN_LAB") {
-        return stop("This lab no longer exists. Ask the owner to check the chapter.", 1008);
-      }
-      if (error.code === "NOT_READY") {
-        return stop("This lab has not been built yet. Ask the owner to build it.", 1008);
+      if (error.code === "UNKNOWN_LAB" || error.code === "NOT_READY") {
+        return stop(error.message, 1008);
       }
       stop("Could not start the lab environment. " + error.message, 1011);
     }
@@ -253,7 +251,7 @@ function attachTerminal(ws) {
 
         authenticated = true;
         size = { cols: message.cols, rows: message.rows };
-        void openShell(message.labId);
+        void openShell(message.labId, message.reset === true);
         return;
       }
 
@@ -272,7 +270,7 @@ function attachTerminal(ws) {
         }
 
         lastInput = Date.now();
-        if (sessionId) touchSession(sessionId);
+        lab?.touch();
         stream.write(message.data);
         return;
       }

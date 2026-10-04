@@ -26,8 +26,8 @@ services:
     # Killed after lab containers but before nothing else important.
     oom_score_adj: -500
     environment:
-      GRADER_INTERNAL_URL: http://gateway:3002/grade-homework
-      LAB_BUILDER_URL: http://gateway:3003/build-lab
+      # Internal API for lab builds and homework grading (never public).
+      GATEWAY_INTERNAL_URL: http://gateway:3002
       GRADER_INTERNAL_TOKEN: ${GRADER_INTERNAL_TOKEN:?Set GRADER_INTERNAL_TOKEN in .env}
       DATABASE_PATH: /app/data/cyberbox.sqlite
       CYBERBOX_LAB_FLAGS_JSON: '{"terminal-basics:first-terminal":"cyberbox-flag","investigate-files:log-terminal":"cyberbox-flag"}'
@@ -59,12 +59,10 @@ services:
     expose:
       - "3001"
       - "3002"
-      - "3003"
     environment:
+      # Shared secret for the web -> gateway internal API (at least 16 characters).
       GRADER_INTERNAL_TOKEN: ${GRADER_INTERNAL_TOKEN:?Set GRADER_INTERNAL_TOKEN in .env}
-      GRADER_IMAGE: cyberbox-homework:1
       GRADER_PORT: "3002"
-      LAB_BUILDER_PORT: "3003"
       SITE_ORIGIN: "https://${SITE_DOMAIN:?Set SITE_DOMAIN in .env}"
       GATEWAY_PORT: "3001"
       GATEWAY_BIND_HOST: "0.0.0.0"

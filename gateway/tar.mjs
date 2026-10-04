@@ -37,6 +37,101 @@ function pad(size) {
   return remainder === 0 ? Buffer.alloc(0) : Buffer.alloc(512 - remainder);
 }
 
+function readString(buf, start, length) {
+  const slice = buf.subarray(start, start + length);
+  const end = slice.indexOf(0);
+  return slice.subarray(0, end === -1 ? slice.length : end).toString("utf8");
+}
+
+function readOctal(buf, start, length) {
+  const text = readString(buf, start, length).trim();
+  return text ? parseInt(text, 8) : 0;
+}
+
+function parsePax(body) {
+  const fields = {};
+  let offset = 0;
+  const text = body.toString("utf8");
+
+  while (offset < text.length) {
+    const space = text.indexOf(" ", offset);
+    if (space === -1) break;
+    const length = Number(text.slice(offset, space));
+    if (!Number.isFinite(length) || length <= 0) break;
+    const record = text.slice(space + 1, offset + length - 1);
+    const eq = record.indexOf("=");
+    if (eq > 0) fields[record.slice(0, eq)] = record.slice(eq + 1);
+    offset += length;
+  }
+
+  return fields;
+}
+
+/**
+ * Parse a tar archive (ustar, with PAX and GNU long-name extensions as
+ * produced by Docker's archive endpoint). Returns entries:
+ *   { name, type: "file" | "dir" | "symlink" | "other", mode, size, linkname, content }
+ */
+export function readTar(buffer) {
+  const entries = [];
+  let offset = 0;
+  let pending = {};
+
+  while (offset + 512 <= buffer.length) {
+    const header = buffer.subarray(offset, offset + 512);
+    if (header.every((byte) => byte === 0)) break;
+
+    const size = readOctal(header, 124, 12);
+    const flag = String.fromCharCode(header[156] || 48);
+    const bodyStart = offset + 512;
+    const body = buffer.subarray(bodyStart, bodyStart + size);
+    offset = bodyStart + Math.ceil(size / 512) * 512;
+
+    if (flag === "x") {
+      pending = { ...pending, ...parsePax(body) };
+      continue;
+    }
+    if (flag === "g") continue;
+    if (flag === "L") {
+      pending.path = body.toString("utf8").replace(/\0+$/, "");
+      continue;
+    }
+    if (flag === "K") {
+      pending.linkpath = body.toString("utf8").replace(/\0+$/, "");
+      continue;
+    }
+
+    const prefix = readString(header, 345, 155);
+    let name = readString(header, 0, 100);
+    if (prefix) name = `${prefix}/${name}`;
+    if (pending.path) name = pending.path;
+
+    const linkname = pending.linkpath || readString(header, 157, 100);
+    pending = {};
+
+    const type =
+      flag === "0" || flag === "\0" || flag === "7"
+        ? "file"
+        : flag === "5"
+          ? "dir"
+          : flag === "2"
+            ? "symlink"
+            : "other";
+
+    entries.push({
+      name: name.replace(/^\.\//, "").replace(/\/$/, ""),
+      type,
+      mode: readOctal(header, 100, 8) & 0o7777,
+      size,
+      linkname,
+      // A view into the archive buffer (no copy).
+      content: type === "file" ? body : Buffer.alloc(0),
+    });
+  }
+
+  return entries;
+}
+
 /**
  * Build a tar archive from entries: { name, content, mode?, type? }.
  * content is a string or Buffer. Returns a single Buffer.

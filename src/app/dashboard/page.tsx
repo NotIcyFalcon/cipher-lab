@@ -58,15 +58,15 @@ export default async function DashboardPage() {
     knownReading.has(lesson.id),
   ).length;
 
-  const completedHomework = new Set(
-    paths.flatMap((path) =>
-      path.homework.flatMap((question) =>
-        (progress.homeworkBest[question.homeworkId] ?? 0) >= question.totalPoints
-          ? [question.homeworkId]
-          : [],
-      ),
-    ),
-  ).size;
+  // A homework counts as complete when every one of its questions has a perfect score.
+  const homeworkQuestions = new Map<string, boolean>();
+  for (const path of paths) {
+    for (const question of path.homework) {
+      const perfect = (progress.homeworkQuestionBest[question.questionId] ?? 0) >= question.totalPoints;
+      homeworkQuestions.set(question.homeworkId, (homeworkQuestions.get(question.homeworkId) ?? true) && perfect);
+    }
+  }
+  const completedHomework = [...homeworkQuestions.values()].filter(Boolean).length;
 
   const xpCategories = [
     { label: "Reading", value: progress.readingXp, className: "reading" },

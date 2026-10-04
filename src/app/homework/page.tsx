@@ -40,8 +40,8 @@ export default async function HomeworkPage({
 
       <p className="b8-muted">
         Read every chapter in a learning path to unlock its homework.
-        Each passing test earns its own XP. Base XP is awarded only
-        when every test passes.
+        Each passing test earns its own XP, and a question&apos;s bonus XP is
+        added when all of its tests pass. Only your best attempt counts.
       </p>
 
       {paths.length === 0 ? (
@@ -71,7 +71,7 @@ export default async function HomeworkPage({
                     question.totalPoints,
                     Math.max(
                       0,
-                      progress.homeworkBest[question.homeworkId] ?? 0,
+                      progress.homeworkQuestionBest[question.questionId] ?? 0,
                     ),
                   ),
                 0,
@@ -83,7 +83,7 @@ export default async function HomeworkPage({
                   <h3>{path.title}</h3>
 
                   <p>
-                    {path.homework.length} assignments · {earned}/{available} XP
+                    {path.homework.length} {path.homework.length === 1 ? "question" : "questions"} · {earned}/{available} XP
                   </p>
 
                   {unlocked ? (

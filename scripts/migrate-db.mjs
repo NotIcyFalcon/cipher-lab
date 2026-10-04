@@ -99,9 +99,13 @@ const migrations = [
     version: 15,
     file: new URL("../migrations/015_lab_recipes.sql", import.meta.url),
   },
+  {
+    version: 16,
+    file: new URL("../migrations/016_homework_grader.sql", import.meta.url),
+  },
 ];
 
-const latestVersion = 15;
+const latestVersion = 16;
 
 const databasePath = resolve(
   process.env.DATABASE_PATH || "./data/cyberbox.sqlite",
@@ -184,33 +188,51 @@ try {
   const version = migrate.immediate();
 
   if (process.argv.includes("--recover")) {
-    db.prepare(`
-      UPDATE homework_submissions
-      SET status = 'error',
-          error = 'The server restarted before grading finished. Submit again.',
-          finished_at = ?
-      WHERE status = 'pending'
-    `).run(Date.now());
-  }
+    const now = Date.now();
 
-  if (process.argv.includes("--recover")) {
-    // A lab build cannot survive a restart of the web container.
-    const interrupted = db.prepare(`
-      UPDATE lab_builds
-      SET status = 'failed',
-          error = 'The server restarted before the build finished. Build again.',
-          finished_at = ?
-      WHERE status = 'building'
-    `).run(Date.now());
+    db.transaction(() => {
+      // Homework jobs interrupted by a restart simply run again.
+      db.prepare(`
+        UPDATE homework_jobs
+        SET status = 'queued', locked_at = NULL, available_at = ?
+        WHERE status = 'running'
+      `).run(now);
 
-    if (interrupted.changes > 0) {
-      // Queued builds still run after the restart; only in-progress ones fail.
+      db.prepare(`
+        UPDATE homework SET prep_status = 'queued' WHERE prep_status = 'preparing'
+      `).run();
+
+      // Pending submissions without a job left to finish them are failed.
+      db.prepare(`
+        UPDATE homework_submissions
+        SET status = 'error',
+            error = 'The server restarted before grading finished. Submit again.',
+            finished_at = ?
+        WHERE status = 'pending'
+          AND id NOT IN (
+            SELECT submission_id FROM homework_jobs
+            WHERE kind = 'grade_submission' AND status = 'queued' AND submission_id IS NOT NULL
+          )
+      `).run(now);
+
+      // A lab build in progress cannot survive a restart; queued ones still run.
+      db.prepare(`
+        UPDATE lab_builds
+        SET status = 'failed',
+            error = 'The server restarted before the build finished. Build again.',
+            finished_at = ?
+        WHERE status = 'building'
+      `).run(now);
+
       db.prepare(`
         UPDATE labs
-        SET build_status = 'failed'
+        SET build_status = CASE
+              WHEN EXISTS (SELECT 1 FROM lab_builds b WHERE b.lab_id = labs.id AND b.status = 'queued') THEN 'queued'
+              ELSE 'failed'
+            END
         WHERE build_status = 'building'
       `).run();
-    }
+    })();
   }
 
   console.log(`Cyber Box database ready (schema v${version}).`);

@@ -15,6 +15,14 @@ import {
 import { hashLabAnswer, hashCtfFlag } from "@/server/flags";
 import { recipeSchema, normalizeRecipe, totalMemoryMb, DEFAULT_LAB_MEMORY_BUDGET_MB } from "@/lib/lab-recipe";
 import { enqueueLabBuild, labNeedsBuild } from "@/server/lab-builds";
+import { enqueueHomeworkPrepare } from "@/server/homework-jobs";
+import {
+  HOMEWORK_LIMITS,
+  bonusShares,
+  environmentSchema,
+  questionSchema,
+} from "@/lib/homework-recipe";
+import { callGateway } from "@/server/gateway-client";
 
 type Db = ReturnType<typeof getDb>;
 type Value = string | number | null;
@@ -162,14 +170,6 @@ function integer(
     throw new InputError(
       `${label} must be a whole number between ${min} and ${max}.`,
     );
-  }
-
-  return value;
-}
-
-function boolean(value: unknown, label: string): boolean {
-  if (typeof value !== "boolean") {
-    throw new InputError(`${label} must be true or false.`);
   }
 
   return value;
@@ -481,9 +481,23 @@ function savePath(db: Db, id: string, input: Record<string, unknown>) {
   syncChildren(db, "chapters", "path_id", id, chapters);
 }
 
-function saveHomework(db: Db, id: string, input: Record<string, unknown>) {
-  const questions = list(input.questions, "Questions", 10);
+function zodMessage(error: { issues: { message: string; path: (string | number)[] }[] }, prefix: string) {
+  const issue = error.issues[0];
+  return issue ? `${prefix}${issue.message}` : `${prefix}invalid value.`;
+}
 
+/**
+ * Homework: environment + questions + test cases. Returns true so the caller
+ * queues preparation; enqueueHomeworkPrepare skips it when nothing that
+ * affects the expected results changed.
+ */
+function saveHomework(db: Db, id: string, input: Record<string, unknown>): boolean {
+  const environment = environmentSchema.safeParse(normalizeEnvironmentInput(input.environment));
+  if (!environment.success) {
+    throw new InputError(zodMessage(environment.error, "Environment: "));
+  }
+
+  const questions = list(input.questions, "Questions", HOMEWORK_LIMITS.questions);
   if (questions.length === 0) {
     throw new InputError("Add at least one homework question.");
   }
@@ -491,52 +505,41 @@ function saveHomework(db: Db, id: string, input: Record<string, unknown>) {
   const questionRows: Row[] = [];
   const testRows: Row[] = [];
 
-  questions.forEach((qValue, index) => {
-    const q = object(qValue);
-    const qId = identifier(q.id, "Question ID");
+  questions.forEach((raw, index) => {
+    const value = object(raw);
+    const parsed = questionSchema.safeParse({
+      ...value,
+      tests: Array.isArray(value.tests) ? value.tests : [],
+    });
+    if (!parsed.success) {
+      throw new InputError(zodMessage(parsed.error, `Question ${index + 1}: `));
+    }
+    const question = parsed.data;
 
     questionRows.push({
-      id: qId,
+      id: question.id,
       homework_id: id,
-      title: text(q.title, "Question Title", 200),
-      question_markdown: multiline(q.question_markdown, "Question Markdown", 50_000, true),
-      standard_solution_script: multiline(
-        q.standard_solution_script,
-        "Standard solution script",
-        50_000,
-        true,
-      ),
+      title: question.title,
+      question_markdown: question.question_markdown,
+      standard_solution_script: question.standard_solution_script.replace(/\r\n/g, "\n"),
+      setup_script: "",
+      time_limit_sec: question.time_limit_sec,
+      compare_json: JSON.stringify(question.compare),
       sequence_order: index,
     });
 
-    const tests = list(q.tests, "Test cases", 100);
-
-    if (tests.length === 0) {
-      throw new InputError(
-        `Question ${index + 1} must have at least one test case.`,
-      );
-    }
-
-    tests.forEach((tValue, testIndex) => {
-      const test = object(tValue);
-
+    question.tests.forEach((test, testIndex) => {
+      // expected_json is written by preparation and left untouched here.
       testRows.push({
-        id: identifier(test.id, "Test case ID"),
+        id: test.id,
         homework_id: id,
-        question_id: qId,
-        setup_script: multiline(
-          test.setup_script,
-          "Test case setup script",
-          50_000,
-          false,
-        ),
-        xp_reward: integer(test.xp_reward, "Test case XP"),
-        is_hidden: boolean(test.is_hidden, "Hidden test case") ? 1 : 0,
+        question_id: question.id,
+        setup_script: test.setup_script.replace(/\r\n/g, "\n"),
+        args: test.args.trim(),
+        stdin: test.stdin.replace(/\r\n/g, "\n"),
+        xp_reward: test.xp_reward,
+        is_hidden: test.is_hidden ? 1 : 0,
         sequence_order: testIndex,
-
-        // A changed definition must never reuse stale expected results.
-        expected_output: null,
-        expected_folder: null,
       });
     });
   });
@@ -544,31 +547,45 @@ function saveHomework(db: Db, id: string, input: Record<string, unknown>) {
   uniqueIds(questionRows, "Questions");
   uniqueIds(testRows, "Test cases");
 
+  const bonus = integer(input.total_base_xp, "Bonus XP");
+  const shares = bonusShares(bonus, questionRows.length);
+  questionRows.forEach((question, index) => {
+    const testXp = testRows
+      .filter((test) => test.question_id === question.id)
+      .reduce((sum, test) => sum + Number(test.xp_reward), 0);
+    if (testXp + (shares[index] ?? 0) < 1) {
+      throw new InputError(`Question ${index + 1} must be worth at least 1 XP (give its tests some XP).`);
+    }
+  });
+
   writeRow(db, "homework", {
     id,
     path_id: parentId(db, "learning_paths", input.path_id, "Learning path"),
     title: text(input.title, "Title", 200),
-
-    // Legacy column. Questions now live in homework_questions.
+    environment_json: JSON.stringify(environment.data),
+    // Legacy columns. Questions and their scripts live in homework_questions.
     question_markdown: "",
-
-    total_base_xp: integer(input.total_base_xp, "Total Base XP"),
+    setup_script: "",
+    total_base_xp: bonus,
   });
 
   syncChildren(db, "homework_questions", "homework_id", id, questionRows);
   syncChildren(db, "homework_test_cases", "homework_id", id, testRows);
-  const now = Date.now();
 
-  db.prepare(`
-    INSERT INTO homework_jobs (
-      kind,
-      homework_id,
-      status,
-      available_at,
-      created_at
-    )
-    VALUES ('prepare_expected', ?, 'queued', ?, ?)
-  `).run(id, now, now);
+  return true;
+}
+
+/** Accept an environment object from the editor, dropping blank list lines. */
+function normalizeEnvironmentInput(value: unknown) {
+  if (!value || typeof value !== "object") return value;
+  const env = value as Record<string, unknown>;
+  return {
+    ...env,
+    packages: Array.isArray(env.packages)
+      ? [...new Set((env.packages as unknown[]).map((p) => String(p).trim()).filter(Boolean))]
+      : [],
+    buildScript: typeof env.buildScript === "string" ? env.buildScript.replace(/\r\n/g, "\n") : env.buildScript,
+  };
 }
 
 function saveCtfDefinition(db: Db, id: string, input: Record<string, unknown>) {
@@ -669,27 +686,23 @@ function saveLab(
   }
 
   const existing = db.prepare(`
-    SELECT current_build_id, built_recipe_hash
-    FROM labs WHERE id = ?
-  `).get(id) as { current_build_id: number | null; built_recipe_hash: string | null } | undefined;
-
-  const unchanged =
-    existing?.current_build_id != null &&
-    !labNeedsBuild(existing.built_recipe_hash, recipe);
+    SELECT built_recipe_hash FROM labs WHERE id = ?
+  `).get(id) as { built_recipe_hash: string | null } | undefined;
 
   writeRow(db, "labs", {
     id,
     name: text(input.name, "Lab name", 200),
     description: multiline(input.description, "Lab description", 2_000),
     recipe_json: JSON.stringify(recipe),
-    // A changed recipe needs a rebuild before sessions use it.
-    build_status: unchanged ? "ready" : "draft",
 
     // Legacy NOT NULL columns kept satisfied; the runtime no longer reads them.
     base_image: "(recipe)",
     default_user: entry?.mainUser ?? "root",
     whitelist_enabled: recipe.policy.mode === "whitelist" ? 1 : 0,
   });
+
+  // A new or changed recipe is built right after the save commits.
+  return labNeedsBuild(existing?.built_recipe_hash ?? null, recipe);
 }
 
 export async function saveCreatorAction(
@@ -728,6 +741,9 @@ export async function saveCreatorAction(
 
     const db = getDb();
 
+    // Work queued only once the save has committed (lab builds, homework prep).
+    let afterCommit: (() => void) | null = null;
+
     db.transaction(() => {
       if (suppliedId) {
         requireExisting(db, tables[entity], suppliedId, "This record");
@@ -741,7 +757,7 @@ export async function saveCreatorAction(
           savePath(db, id, input);
           break;
         case "homework":
-          saveHomework(db, id, input);
+          if (saveHomework(db, id, input)) afterCommit = () => enqueueHomeworkPrepare(id);
           break;
         case "ctfs":
           saveCtfDefinition(db, id, input);
@@ -753,10 +769,13 @@ export async function saveCreatorAction(
           saveCtf(db, id, input);
           break;
         case "labs":
-          saveLab(db, id, input);
+          if (saveLab(db, id, input)) afterCommit = () => enqueueLabBuild(id);
           break;
       }
     })();
+
+    // TypeScript cannot see the assignment inside the callback above.
+    (afterCommit as (() => void) | null)?.();
 
     destination =
       `/admin/creator/${entity}?edit=${encodeURIComponent(id)}&saved=1`;
@@ -851,6 +870,10 @@ export async function deleteCreatorAction(
 
       db.prepare(`DELETE FROM ${tables[entity]} WHERE id = ?`).run(id);
     })();
+
+    // Free the Docker images that belonged to the deleted item (best effort).
+    if (entity === "labs") void callGateway("/labs/delete", { labId: id });
+    if (entity === "homework") void callGateway("/homework/delete", { homeworkId: id });
   } catch (error) {
     if (error instanceof InputError) {
       return { error: error.message };
@@ -882,15 +905,10 @@ export async function buildLabAction(
     const id = identifier(formData.get("id"), "Lab");
     const db = getDb();
 
-    const lab = db.prepare(`
-      SELECT build_status FROM labs WHERE id = ?
-    `).get(id) as { build_status: string } | undefined;
+    const lab = db.prepare(`SELECT id FROM labs WHERE id = ?`).get(id);
 
     if (!lab) {
       return { error: "This lab no longer exists. Refresh and try again." };
-    }
-    if (lab.build_status === "queued" || lab.build_status === "building") {
-      return { error: "This lab is already building. Wait for it to finish." };
     }
 
     enqueueLabBuild(id);
@@ -904,4 +922,28 @@ export async function buildLabAction(
 
   revalidatePath("/admin/creator/labs", "page");
   redirect(`/admin/creator/labs?edit=${encodeURIComponent(formData.get("id") as string)}&building=1`);
+}
+
+// Re-runs preparation (environment build + reference solution on every test),
+// for example after fixing a failure or to refresh expected results.
+export async function prepareHomeworkAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+
+  let id: string;
+  try {
+    id = identifier(formData.get("id"), "Homework");
+    const exists = getDb().prepare(`SELECT id FROM homework WHERE id = ?`).get(id);
+    if (!exists) return { error: "This homework no longer exists. Refresh and try again." };
+    enqueueHomeworkPrepare(id, { force: true });
+  } catch (error) {
+    if (error instanceof InputError) return { error: error.message };
+    console.error("Homework prepare enqueue failed", error);
+    return { error: "Could not start preparation. Please try again." };
+  }
+
+  revalidatePath("/admin/creator/homework", "page");
+  redirect(`/admin/creator/homework?edit=${encodeURIComponent(id)}`);
 }

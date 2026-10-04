@@ -9,6 +9,7 @@ import {
 } from "@/lib/content-types";
 import type { HomeworkQuestion } from "@/lib/progress-types";
 import { getDb } from "@/server/db";
+import { publicHomeworkForPath } from "@/server/homework-catalog";
 
 type ChapterRow = {
   id: string;
@@ -111,23 +112,7 @@ export function getLessons(): Lesson[] {
 }
 
 export function getPublicHomework(pathId: string): HomeworkQuestion[] {
-  return getDb().prepare(`
-    SELECT
-      h.id AS homeworkId,
-      hq.id AS questionId,
-      hq.title,
-      hq.question_markdown AS objective,
-      0 AS baseXp,
-      COALESCE(SUM(t.xp_reward), 0) AS testXp,
-      COALESCE(SUM(t.xp_reward), 0) AS totalPoints,
-      COUNT(t.id) AS totalTests
-    FROM homework h
-    JOIN homework_questions hq ON h.id = hq.homework_id
-    LEFT JOIN homework_test_cases t ON t.question_id = hq.id
-    WHERE h.path_id = ?
-    GROUP BY h.id, hq.id
-    ORDER BY h.title, h.id, hq.sequence_order
-  `).all(pathId) as HomeworkQuestion[];
+  return publicHomeworkForPath(pathId);
 }
 
 export function getPaths(): LearningPath[] {

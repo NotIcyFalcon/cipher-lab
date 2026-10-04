@@ -56,19 +56,21 @@ export function dockerAPI(method, path, body = null, options = {}) {
 
       response.on("end", () => {
         const buffer = Buffer.concat(chunks);
+        let data = null;
 
-        try {
-          finish(null, {
-            status: response.statusCode,
-            data: raw
-              ? buffer
-              : buffer.length
-                ? JSON.parse(buffer.toString("utf8"))
-                : null,
-          });
-        } catch {
-          finish(new Error("Docker returned invalid JSON."));
+        if (raw) {
+          data = buffer;
+        } else if (buffer.length) {
+          const text = buffer.toString("utf8");
+          try {
+            data = JSON.parse(text);
+          } catch {
+            // Some Docker errors are plain text; keep them readable.
+            data = { message: text.trim() };
+          }
         }
+
+        finish(null, { status: response.statusCode, data });
       });
     });
 
@@ -81,6 +83,83 @@ export function dockerAPI(method, path, body = null, options = {}) {
 
     request.end(payload);
   });
+}
+
+/**
+ * Docker request whose response body is delivered chunk by chunk to onChunk
+ * (for image pulls and exec output). Resolves { status } when the body ends.
+ */
+export function dockerStream(method, path, body, onChunk, options = {}) {
+  const { timeoutMs = 30 * 60_000 } = options;
+
+  const payload = body === null || body === undefined
+    ? undefined
+    : Buffer.isBuffer(body)
+      ? body
+      : Buffer.from(JSON.stringify(body));
+
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let timer;
+
+    const finish = (error, result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (error) reject(error); else resolve(result);
+    };
+
+    const request = http.request({
+      socketPath: process.env.DOCKER_SOCKET || "/var/run/docker.sock",
+      path: `/v${process.env.DOCKER_API_VERSION || "1.44"}${path}`,
+      method,
+      headers: {
+        "Content-Type": Buffer.isBuffer(body) ? "application/x-tar" : "application/json",
+        ...(payload ? { "Content-Length": payload.length } : {}),
+      },
+    }, (response) => {
+      response.on("data", (chunk) => {
+        try {
+          onChunk(chunk, response.statusCode);
+        } catch (error) {
+          finish(error);
+          request.destroy();
+        }
+      });
+      response.on("error", (error) => finish(error));
+      response.on("aborted", () => finish(new Error("Docker response aborted.")));
+      response.on("end", () => finish(null, { status: response.statusCode }));
+    });
+
+    request.on("error", (error) => finish(error));
+
+    timer = setTimeout(() => {
+      finish(new Error("Docker operation timed out."));
+      request.destroy();
+    }, timeoutMs);
+
+    request.end(payload);
+  });
+}
+
+/**
+ * Incremental decoder for Docker's multiplexed (non-TTY) stream format:
+ * 8-byte headers [stream, 0, 0, 0, size(4, big-endian)] followed by payload.
+ */
+export function createDemuxer(onFrame) {
+  let pending = Buffer.alloc(0);
+
+  return (chunk) => {
+    pending = pending.length ? Buffer.concat([pending, chunk]) : chunk;
+
+    while (pending.length >= 8) {
+      const length = pending.readUInt32BE(4);
+      if (pending.length < 8 + length) break;
+      const stream = pending[0] === 2 ? "stderr" : "stdout";
+      onFrame(stream, pending.subarray(8, 8 + length));
+      pending = pending.subarray(8 + length);
+    }
+  };
 }
 
 // Start an exec instance and hijack the connection, returning the raw

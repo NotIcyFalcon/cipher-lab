@@ -12,10 +12,21 @@ function authorized(header: string | null): boolean {
   return supplied.length === expected.length && timingSafeEqual(supplied, expected);
 }
 
-// Called by the lab gateway (not browsers) to get the runtime spec for a lab:
-// the built image for each machine plus the metadata needed to start and
-// connect to a session. proxy.ts lets /api/internal/* through; this bearer
-// token is the only credential, and Caddy refuses these paths from outside.
+function notReady(buildStatus: string) {
+  const message =
+    buildStatus === "queued" || buildStatus === "building"
+      ? "This lab is still being built. Try again in a minute or two."
+      : buildStatus === "failed"
+        ? "This lab's build failed. The owner can see why in Creator → Labs."
+        : "This lab has not been built yet. The owner can build it in Creator → Labs.";
+  return NextResponse.json({ error: message }, { status: 409 });
+}
+
+// Called by the lab gateway (not browsers): the runtime spec of a lab's last
+// successful build. The build's own recipe snapshot is used, so editing a lab
+// never mismatches the images that are already built. proxy.ts lets
+// /api/internal/* through; this bearer token is the only credential, and
+// Caddy refuses these paths from the internet.
 export async function GET(request: Request) {
   if (!authorized(request.headers.get("authorization"))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -29,43 +40,35 @@ export async function GET(request: Request) {
   const db = getDb();
 
   const lab = db.prepare(`
-    SELECT build_status, current_build_id, recipe_json
-    FROM labs WHERE id = ?
+    SELECT l.build_status, l.current_build_id, b.recipe_json, b.images_json
+    FROM labs l
+    LEFT JOIN lab_builds b ON b.id = l.current_build_id
+    WHERE l.id = ?
   `).get(labId) as
-    | { build_status: string; current_build_id: number | null; recipe_json: string }
+    | { build_status: string; current_build_id: number | null; recipe_json: string | null; images_json: string | null }
     | undefined;
 
   if (!lab) {
     return NextResponse.json({ error: "Unknown lab" }, { status: 404 });
   }
-
-  if (!lab.current_build_id || lab.build_status === "draft") {
-    return NextResponse.json({ error: "This lab has not been built yet." }, { status: 409 });
+  if (!lab.current_build_id || !lab.recipe_json || !lab.images_json) {
+    return notReady(lab.build_status);
   }
 
-  const build = db.prepare(`SELECT images_json FROM lab_builds WHERE id = ?`).get(lab.current_build_id) as
-    | { images_json: string }
-    | undefined;
-
-  let images: Record<string, string> = {};
-  try {
-    images = build ? JSON.parse(build.images_json) : {};
-  } catch {
-    images = {};
-  }
-
+  let images: Record<string, string>;
   let recipe;
   try {
+    images = JSON.parse(lab.images_json);
     recipe = recipeSchema.parse(JSON.parse(lab.recipe_json));
   } catch {
-    return NextResponse.json({ error: "This lab needs to be rebuilt." }, { status: 409 });
+    return NextResponse.json({ error: "This lab needs to be rebuilt in Creator → Labs." }, { status: 409 });
   }
 
   const machines = [];
   for (const machine of recipe.machines) {
     const image = images[machine.key];
     if (!image) {
-      return NextResponse.json({ error: "This lab needs to be rebuilt." }, { status: 409 });
+      return NextResponse.json({ error: "This lab needs to be rebuilt in Creator → Labs." }, { status: 409 });
     }
     machines.push({
       key: machine.key,
@@ -78,12 +81,10 @@ export async function GET(request: Request) {
     });
   }
 
-  const entry = recipe.machines.find((m) => m.key === recipe.entryMachine);
-
   return NextResponse.json({
     labId,
+    buildId: lab.current_build_id,
     entryMachine: recipe.entryMachine,
-    entryUser: entry?.mainUser ?? "root",
     policyMode: recipe.policy.mode,
     machines,
   });
