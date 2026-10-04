@@ -83,6 +83,56 @@ export function dockerAPI(method, path, body = null, options = {}) {
   });
 }
 
+// Start an exec instance and hijack the connection, returning the raw
+// bidirectional socket. With Tty:true the stream is not multiplexed, so it can
+// be piped straight to a terminal.
+export function dockerExecStart(execId) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify({ Detach: false, Tty: true });
+
+    const req = http.request({
+      socketPath: process.env.DOCKER_SOCKET || "/var/run/docker.sock",
+      path: `/v${process.env.DOCKER_API_VERSION || "1.44"}/exec/${execId}/start`,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Connection: "Upgrade",
+        Upgrade: "tcp",
+        "Content-Length": Buffer.byteLength(body),
+      },
+    });
+
+    let settled = false;
+
+    req.on("upgrade", (_res, socket) => {
+      if (settled) return;
+      settled = true;
+      resolve(socket);
+    });
+
+    req.on("response", (res) => {
+      // Some daemons answer 200 and hijack the same socket without an upgrade.
+      if (settled) return;
+      if (res.statusCode === 200) {
+        settled = true;
+        resolve(res.socket);
+        return;
+      }
+      settled = true;
+      reject(new Error(`exec start failed: HTTP ${res.statusCode}`));
+    });
+
+    req.on("error", (error) => {
+      if (!settled) {
+        settled = true;
+        reject(error);
+      }
+    });
+
+    req.end(body);
+  });
+}
+
 export function decodeDockerOutput(buffer) {
   const stdout = [];
   const stderr = [];

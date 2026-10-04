@@ -62,7 +62,18 @@ export default async function CreatorSectionPage({
       .all() as ChapterRow[],
 
     labs: db
-      .prepare("SELECT * FROM labs ORDER BY name COLLATE NOCASE, id")
+      .prepare(`
+        SELECT
+          l.id, l.name, l.description, l.recipe_json, l.build_status,
+          l.current_build_id, l.built_recipe_hash,
+          b.status AS last_build_status,
+          b.error AS last_build_error,
+          substr(b.log, -6000) AS last_build_log
+        FROM labs l
+        LEFT JOIN lab_builds b
+          ON b.id = (SELECT id FROM lab_builds WHERE lab_id = l.id ORDER BY id DESC LIMIT 1)
+        ORDER BY l.name COLLATE NOCASE, l.id
+      `)
       .all() as LabRow[],
 
     homework: db

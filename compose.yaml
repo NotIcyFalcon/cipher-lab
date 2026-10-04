@@ -12,65 +12,22 @@ x-runtime: &runtime
       max-size: "5m"
       max-file: "2"
 
-# Shared lab container config — reused by all lab services
-x-lab: &lab-defaults
-  <<: *runtime
-  build:
-    context: ./lab
-  read_only: true
-  cpus: 0.50
-  mem_limit: 256m
-  memswap_limit: 256m
-  pids_limit: 96
-  shm_size: 8m
-  cap_add:
-    - CHOWN
-    - DAC_OVERRIDE
-    - FOWNER
-    - SETGID
-    - SETUID
-    - SYS_CHROOT
-    - KILL
-    - AUDIT_WRITE
-  tmpfs:
-    - /run:size=8m,mode=0755,nosuid,nodev
-    - /tmp:size=32m,mode=1777,nosuid,nodev
-    - /home/Ronak:size=64m,mode=0700,uid=1000,gid=1000,nosuid,nodev
-  volumes:
-    - type: bind
-      source: ./.secrets/lab_ed25519.pub
-      target: /etc/ssh/authorized_keys/Ronak
-      read_only: true
-      bind:
-        create_host_path: false
-    - type: bind
-      source: ./.secrets/ssh_host_ed25519
-      target: /run/keys/ssh_host_ed25519
-      read_only: true
-      bind:
-        create_host_path: false
-  dns:
-    - 127.0.0.1
-  networks:
-    - practice
-  healthcheck:
-    test:
-      - CMD-SHELL
-      - test -s /run/sshd.pid && /usr/sbin/sshd -t
-    interval: 10s
-    timeout: 3s
-    retries: 5
-
 services:
   web:
     <<: *runtime
     build:
       context: .
       target: web
-    mem_limit: 512m
+    # Measured runtime peak is ~300 MB; this leaves headroom without
+    # over-committing a 1 GB host.
+    mem_limit: 448m
+    memswap_limit: 448m
     pids_limit: 128
+    # Killed after lab containers but before nothing else important.
+    oom_score_adj: -500
     environment:
       GRADER_INTERNAL_URL: http://gateway:3002/grade-homework
+      LAB_BUILDER_URL: http://gateway:3003/build-lab
       GRADER_INTERNAL_TOKEN: ${GRADER_INTERNAL_TOKEN:?Set GRADER_INTERNAL_TOKEN in .env}
       DATABASE_PATH: /app/data/cyberbox.sqlite
       CYBERBOX_LAB_FLAGS_JSON: '{"terminal-basics:first-terminal":"cyberbox-flag","investigate-files:log-terminal":"cyberbox-flag"}'
@@ -90,38 +47,38 @@ services:
       context: .
       target: gateway
     read_only: true
-    mem_limit: 256m
+    mem_limit: 192m
+    memswap_limit: 192m
     pids_limit: 128
+    oom_score_adj: -300
     # Allow the node user to access the Docker socket (GID 109 = docker group on host)
     group_add:
       - "109"
     tmpfs:
       - /tmp:size=16m,mode=1777,nosuid,nodev
     expose:
+      - "3001"
       - "3002"
+      - "3003"
     environment:
       GRADER_INTERNAL_TOKEN: ${GRADER_INTERNAL_TOKEN:?Set GRADER_INTERNAL_TOKEN in .env}
       GRADER_IMAGE: cyberbox-homework:1
       GRADER_PORT: "3002"
+      LAB_BUILDER_PORT: "3003"
       SITE_ORIGIN: "https://${SITE_DOMAIN:?Set SITE_DOMAIN in .env}"
       GATEWAY_PORT: "3001"
       GATEWAY_BIND_HOST: "0.0.0.0"
+      WEB_INTERNAL_ORIGIN: "http://web:3000"
       LAB_ACCESS_HASH: "${LAB_ACCESS_HASH:?Set LAB_ACCESS_HASH in .env}"
-      LINUX_USER: Ronak
-      LINUX_KEY_FILE: /run/keys/lab_ed25519
-      LINUX_KEY_PASSPHRASE: "${LINUX_KEY_PASSPHRASE:-}"
-      LINUX_HOST_FINGERPRINT: "${LINUX_HOST_FINGERPRINT:?Set the lab fingerprint}"
+      # At most 2 lab sessions at once, and their machines together may use at
+      # most this much memory. Each session's containers run as siblings via
+      # the Docker socket, not inside this container's mem_limit.
+      MAX_RUNNING_LABS: "2"
+      LAB_MEMORY_BUDGET_MB: "384"
       DOCKER_SOCKET: /var/run/docker.sock
       COMPOSE_PROJECT: cipher-lab
-      MAX_RUNNING_LABS: "3"
     volumes:
-      - type: bind
-        source: ./.secrets/lab_ed25519
-        target: /run/keys/lab_ed25519
-        read_only: true
-        bind:
-          create_host_path: false
-      # Docker socket for on-demand container management
+      # Docker socket for on-demand image builds and lab containers.
       - type: bind
         source: /var/run/docker.sock
         target: /var/run/docker.sock
@@ -129,32 +86,6 @@ services:
       net.ipv4.ip_forward: "0"
     networks:
       - edge
-      - practice
-
-  # Lab containers use profiles — they are NOT started by default.
-  # The gateway starts/stops them on demand via the Docker API.
-  # To pre-create them: docker compose --profile labs create
-  linux-basics:
-    <<: *lab-defaults
-    hostname: practice-box
-    profiles:
-      - labs
-
-  # Add more lab containers here. They all share the same image,
-  # SSH keys, and config. Just give them unique service names and
-  # add them to gateway/config.mjs:
-  #
-  # web-exploit:
-  #   <<: *lab-defaults
-  #   hostname: web-box
-  #   profiles:
-  #     - labs
-  #
-  # ctf-forensics:
-  #   <<: *lab-defaults
-  #   hostname: forensics-box
-  #   profiles:
-  #     - labs
 
   proxy:
     <<: *runtime
@@ -163,8 +94,10 @@ services:
       - 8.8.8.8
       - 1.1.1.1
     read_only: true
-    mem_limit: 256m
+    mem_limit: 128m
+    memswap_limit: 128m
     pids_limit: 128
+    oom_score_adj: -200
     cap_add:
       - NET_BIND_SERVICE
     ports:
@@ -187,12 +120,6 @@ services:
 networks:
   edge:
     driver: bridge
-  practice:
-    driver: bridge
-    internal: true
-    enable_ipv6: false
-    driver_opts:
-      com.docker.network.bridge.gateway_mode_ipv4: isolated
 
 volumes:
   cyberbox-data:

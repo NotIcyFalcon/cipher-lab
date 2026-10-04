@@ -2,17 +2,24 @@
 
 import {
   useActionState,
+  useEffect,
   useState,
-  type ReactNode,
 } from "react";
 import Link from "next/link";
-import { Plus, Save, Trash2, ArrowUp, ArrowDown } from "lucide-react";
-import { saveCreatorAction, deleteCreatorAction } from "./actions";
+import { useRouter } from "next/navigation";
+import { Plus, Save, Trash2 } from "lucide-react";
+import { saveCreatorAction, deleteCreatorAction, buildLabAction } from "./actions";
 import {
-  DEFAULT_COMMAND_BLACKLIST,
-  DEFAULT_LAB_USER,
-  learningLabPoints,
-} from "@/lib/creator-defaults";
+  TextField,
+  NumberField,
+  SelectField,
+  CheckField,
+  ListControls,
+  moveItem,
+} from "./fields";
+import LabRecipeEditor from "./LabRecipeEditor";
+import { defaultRecipe, recipeSchema, type LabRecipe } from "@/lib/lab-recipe";
+import { learningLabPoints } from "@/lib/creator-defaults";
 import {
   creatorSections,
   type ActionState,
@@ -156,20 +163,6 @@ function stringArray(json: string | null): string[] {
   return value;
 }
 
-function blacklistText(json: string | null): string {
-  if (!json) return DEFAULT_COMMAND_BLACKLIST.join("\n");
-
-  const value: unknown = JSON.parse(json);
-
-  if (
-    !Array.isArray(value) ||
-    !value.every((item) => typeof item === "string")
-  ) {
-    throw new Error("The lab blacklist is not a JSON array of strings.");
-  }
-
-  return value.join("\n");
-}
 
 type DraftDefaults = {
   pathId: string;
@@ -299,154 +292,25 @@ function makeDraft(
     case "labs": {
       const row = data.labs.find((item) => item.id === editId);
 
+      let recipe: LabRecipe;
+      try {
+        recipe = row ? recipeSchema.parse(JSON.parse(row.recipe_json)) : defaultRecipe();
+      } catch {
+        // A hand-edited or future recipe that this editor cannot represent.
+        recipe = defaultRecipe();
+      }
+
       return {
         entity: "labs",
         id: row?.id ?? "",
         name: row?.name ?? "",
-        default_user: row?.default_user ?? DEFAULT_LAB_USER,
-        whitelist_enabled: row ? row.whitelist_enabled === 1 : false,
-        command_blacklist: blacklistText(
-          row?.command_blacklist_json ?? null,
-        ),
-        command_whitelist: stringArray(row?.command_whitelist_json ?? null).join("\n"),
-        setup_script: row?.setup_script ?? "",
+        description: row?.description ?? "",
+        recipe,
       };
     }
   }
 }
 
-type TextFieldProps = {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  required?: boolean;
-  maxLength?: number;
-  placeholder?: string;
-  multiline?: boolean;
-  code?: boolean;
-  rows?: number;
-};
-
-function TextField({
-  label,
-  value,
-  onChange,
-  required = false,
-  maxLength = 200,
-  placeholder,
-  multiline = false,
-  code = false,
-  rows = 5,
-}: TextFieldProps) {
-  return (
-    <label className="creator-field">
-      <span>
-        {label}
-        {required && <span aria-hidden="true"> *</span>}
-      </span>
-
-      {multiline ? (
-        <textarea
-          value={value}
-          required={required}
-          maxLength={maxLength}
-          placeholder={placeholder}
-          rows={rows}
-          spellCheck={!code}
-          className={code ? "creator-code" : undefined}
-          onChange={(event) => onChange(event.target.value)}
-        />
-      ) : (
-        <input
-          value={value}
-          required={required}
-          maxLength={maxLength}
-          placeholder={placeholder}
-          onChange={(event) => onChange(event.target.value)}
-        />
-      )}
-    </label>
-  );
-}
-
-function NumberField({
-  label,
-  value,
-  onChange,
-  max = 1_000_000,
-}: {
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-  max?: number;
-}) {
-  return (
-    <label className="creator-field">
-      <span>{label}</span>
-      <input
-        type="number"
-        min={0}
-        max={max}
-        step={1}
-        required
-        value={Number.isFinite(value) ? value : ""}
-        onChange={(event) => onChange(event.target.valueAsNumber)}
-      />
-    </label>
-  );
-}
-
-function SelectField({
-  label,
-  value,
-  onChange,
-  children,
-  required = false,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  children: ReactNode;
-  required?: boolean;
-}) {
-  return (
-    <label className="creator-field">
-      <span>
-        {label}
-        {required && <span aria-hidden="true"> *</span>}
-      </span>
-
-      <select
-        value={value}
-        required={required}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {children}
-      </select>
-    </label>
-  );
-}
-
-function CheckField({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <label className="creator-check">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-      />
-      <span>{label}</span>
-    </label>
-  );
-}
 
 function LabSelect({
   labs,
@@ -476,75 +340,6 @@ function LabSelect({
   );
 }
 
-function moveItem<T>(items: T[], index: number, direction: -1 | 1): T[] {
-  const target = index + direction;
-
-  if (target < 0 || target >= items.length) return items;
-
-  const result = [...items];
-  [result[index], result[target]] = [result[target], result[index]];
-  return result;
-}
-
-function ListControls({
-  label,
-  index,
-  length,
-  onMove,
-  onRemove,
-  reorder = true,
-}: {
-  label: string;
-  index: number;
-  length: number;
-  onMove?: (direction: -1 | 1) => void;
-  onRemove: () => void;
-  reorder?: boolean;
-}) {
-  return (
-    <div className="creator-list-controls">
-      {reorder && (
-        <>
-          <button
-            type="button"
-            className="creator-icon-button"
-            aria-label={`Move ${label} up`}
-            disabled={index === 0}
-            onClick={() => onMove?.(-1)}
-          >
-            <ArrowUp size={16} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className="creator-icon-button"
-            aria-label={`Move ${label} down`}
-            disabled={index === length - 1}
-            onClick={() => onMove?.(1)}
-          >
-            <ArrowDown size={16} aria-hidden="true" />
-          </button>
-        </>
-      )}
-
-      <button
-        type="button"
-        className="creator-icon-button creator-danger-text"
-        aria-label={`Remove ${label}`}
-        onClick={() => {
-          if (
-            window.confirm(
-              `Remove ${label}? This removal is applied when you save.`,
-            )
-          ) {
-            onRemove();
-          }
-        }}
-      >
-        <Trash2 size={16} aria-hidden="true" />
-      </button>
-    </div>
-  );
-}
 
 function blockLabel(block: EditorBlock) {
   switch (block.type) {
@@ -1700,58 +1495,23 @@ function DraftFields({
           />
 
           <TextField
-            label="Default Linux user"
-            value={draft.default_user}
-            required
-            maxLength={100}
-            onChange={(default_user) => onChange({ ...draft, default_user })}
-          />
-
-          <CheckField
-            label="Whitelist enabled"
-            checked={draft.whitelist_enabled}
-            onChange={(whitelist_enabled) =>
-              onChange({ ...draft, whitelist_enabled })
-            }
-          />
-
-          <TextField
-            label="Command blacklist — one entry per line"
-            value={draft.command_blacklist}
+            label="Description (admin note)"
+            value={draft.description}
             multiline
-            code
-            maxLength={10_000}
-            onChange={(command_blacklist) =>
-              onChange({ ...draft, command_blacklist })
-            }
+            rows={2}
+            maxLength={2_000}
+            onChange={(description) => onChange({ ...draft, description })}
           />
 
-          <TextField
-            label="Command whitelist — one entry per line"
-            value={draft.command_whitelist}
-            multiline
-            code
-            maxLength={10_000}
-            onChange={(command_whitelist) =>
-              onChange({ ...draft, command_whitelist })
-            }
-          />
-
-          <TextField
-            label="Setup script"
-            value={draft.setup_script}
-            multiline
-            code
-            rows={10}
-            maxLength={50_000}
-            placeholder="#!/usr/bin/env bash\n# Commands to set up the lab environment"
-            onChange={(setup_script) => onChange({ ...draft, setup_script })}
+          <LabRecipeEditor
+            recipe={draft.recipe}
+            onChange={(recipe) => onChange({ ...draft, recipe })}
           />
 
           <p className="creator-help">
-            The setup script defines the lab environment. The runtime must finish
-            preparing that environment before terminal access is allowed.
-            Saving a lab definition does not start an interactive lab session.
+            Save your changes, then build the lab. Building creates a Docker
+            image for each machine. A lab can be assigned to chapters and CTF
+            challenges only after a successful build.
           </p>
         </>
       );
@@ -1772,55 +1532,138 @@ function Editor({
   );
   const [dirty, setDirty] = useState(false);
 
-  return (
-    <form action={formAction} className="creator-editor">
-      <input type="hidden" name="payload" value={JSON.stringify(draft)} />
+  const labRow =
+    draft.entity === "labs" && draft.id
+      ? data.labs.find((lab) => lab.id === draft.id)
+      : undefined;
 
+  return (
+    <>
+      <form action={formAction} className="creator-editor">
+        <input type="hidden" name="payload" value={JSON.stringify(draft)} />
+
+        <div className="creator-section-heading">
+          <div>
+            <span className="creator-kicker">
+              {draft.id ? "EDIT CONTENT" : "NEW CONTENT"}
+            </span>
+            <h2>
+              {draft.id ? "Edit" : "Create"} {singular[draft.entity]}
+            </h2>
+            {draft.id && <p className="creator-record-id">ID: {draft.id}</p>}
+          </div>
+          {dirty && <span className="creator-unsaved">Unsaved changes</span>}
+        </div>
+
+        <fieldset className="creator-fieldset" disabled={pending}>
+          <div className="creator-stack">
+            <DraftFields
+              draft={draft}
+              data={data}
+              onChange={(updated) => {
+                setDraft(updated);
+                setDirty(true);
+              }}
+            />
+          </div>
+        </fieldset>
+
+        {state.error && (
+          <div className="creator-message creator-error" role="alert">
+            {state.error}
+          </div>
+        )}
+
+        <div className="creator-save-bar">
+          <p>
+            {pending
+              ? "Saving changes…"
+              : "Changes are applied only when you save. Leaving discards unsaved edits."}
+          </p>
+
+          <button className="primary-button" type="submit" disabled={pending}>
+            <Save size={16} aria-hidden="true" />
+            {pending ? "Saving…" : "Save changes"}
+          </button>
+        </div>
+      </form>
+
+      {draft.entity === "labs" && labRow && (
+        <LabBuildPanel lab={labRow} dirty={dirty} />
+      )}
+    </>
+  );
+}
+
+function LabBuildPanel({ lab, dirty }: { lab: LabRow; dirty: boolean }) {
+  const [state, action, pending] = useActionState(buildLabAction, initialState);
+  const router = useRouter();
+
+  const inProgress = lab.build_status === "queued" || lab.build_status === "building";
+
+  // While a build runs, refresh the page so status and log update.
+  useEffect(() => {
+    if (!inProgress) return;
+    const timer = setInterval(() => router.refresh(), 3_000);
+    return () => clearInterval(timer);
+  }, [inProgress, router]);
+
+  const statusLabel: Record<LabRow["build_status"], string> = {
+    draft: "Not built yet",
+    queued: "Queued…",
+    building: "Building…",
+    ready: "Ready",
+    failed: "Build failed",
+  };
+
+  return (
+    <section className={`creator-build-panel is-${lab.build_status}`}>
       <div className="creator-section-heading">
         <div>
-          <span className="creator-kicker">
-            {draft.id ? "EDIT CONTENT" : "NEW CONTENT"}
-          </span>
-          <h2>
-            {draft.id ? "Edit" : "Create"} {singular[draft.entity]}
-          </h2>
-          {draft.id && <p className="creator-record-id">ID: {draft.id}</p>}
+          <span className="creator-kicker">LAB IMAGE</span>
+          <h3>Build status: {statusLabel[lab.build_status]}</h3>
         </div>
-        {dirty && <span className="creator-unsaved">Unsaved changes</span>}
+        <form action={action}>
+          <input type="hidden" name="id" value={lab.id} />
+          <button type="submit" className="primary-button" disabled={pending || inProgress}>
+            {inProgress ? "Building…" : lab.build_status === "ready" ? "Rebuild lab" : "Build lab"}
+          </button>
+        </form>
       </div>
 
-      <fieldset className="creator-fieldset" disabled={pending}>
-        <div className="creator-stack">
-          <DraftFields
-            draft={draft}
-            data={data}
-            onChange={(updated) => {
-              setDraft(updated);
-              setDirty(true);
-            }}
-          />
-        </div>
-      </fieldset>
-
-      {state.error && (
-        <div className="creator-message creator-error" role="alert">
-          {state.error}
-        </div>
+      {dirty && (
+        <p className="creator-help">
+          You have unsaved changes. Save first — building uses the last saved recipe.
+        </p>
       )}
 
-      <div className="creator-save-bar">
-        <p>
-          {pending
-            ? "Saving changes…"
-            : "Changes are applied only when you save. Leaving discards unsaved edits."}
-        </p>
+      {state.error && (
+        <p className="creator-inline-error" role="alert">{state.error}</p>
+      )}
 
-        <button className="primary-button" type="submit" disabled={pending}>
-          <Save size={16} aria-hidden="true" />
-          {pending ? "Saving…" : "Save changes"}
-        </button>
-      </div>
-    </form>
+      {inProgress && (
+        <p className="creator-help">
+          This can take a few minutes. The page refreshes automatically.
+        </p>
+      )}
+
+      {lab.build_status === "ready" && !inProgress && (
+        <p className="creator-help">
+          This lab is built and can be assigned to chapters and CTF challenges.
+        </p>
+      )}
+
+      {lab.last_build_error && lab.build_status !== "ready" && (
+        <p className="creator-inline-error">{lab.last_build_error}</p>
+      )}
+
+      {lab.last_build_log && (
+        <details className="creator-build-log">
+          <summary>Build log</summary>
+          <pre>{lab.last_build_log}</pre>
+        </details>
+      )}
+    </section>
   );
 }
 
@@ -1956,11 +1799,27 @@ function catalogItems(section: CreatorSection, data: CreatorData) {
       }));
 
     case "labs":
-      return data.labs.map((lab) => ({
-        id: lab.id,
-        title: lab.name || "Unnamed lab",
-        detail: `${lab.default_user} · ${lab.id.slice(0, 8)}`,
-      }));
+      return data.labs.map((lab) => {
+        const machineCount = (() => {
+          try {
+            return (JSON.parse(lab.recipe_json).machines ?? []).length as number;
+          } catch {
+            return 0;
+          }
+        })();
+        const status: Record<LabRow["build_status"], string> = {
+          draft: "Not built",
+          queued: "Queued",
+          building: "Building",
+          ready: "Ready",
+          failed: "Build failed",
+        };
+        return {
+          id: lab.id,
+          title: lab.name || "Unnamed lab",
+          detail: `${status[lab.build_status]} · ${machineCount} ${machineCount === 1 ? "machine" : "machines"}`,
+        };
+      });
   }
 }
 

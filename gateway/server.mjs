@@ -1,19 +1,18 @@
 import { createServer } from "node:http";
 import { createHash, timingSafeEqual } from "node:crypto";
-import ssh2 from "ssh2";
 import WebSocket, { WebSocketServer } from "ws";
 import {
   accessHashBytes,
   gatewayPort,
-  labs,
   siteOrigin,
-  labSshConfig,
-  labFingerprint,
   maxRunningLabs,
 } from "./config.mjs";
-import { ensureLabRunning, touchLab } from "./docker-manager.mjs";
-
-const { Client } = ssh2;
+import {
+  openLabSession,
+  execShell,
+  touchSession,
+  closeSession,
+} from "./docker-manager.mjs";
 
 const server = createServer((request, response) => {
   request.resume();
@@ -91,20 +90,19 @@ function validAccessCode(code) {
 }
 
 function attachTerminal(ws) {
-  const ssh = new Client();
   const started = Date.now();
 
-  let stream;
+  let stream = null;
+  let resizeShell = null;
+  let sessionId = null;
   let authenticated = false;
   let closed = false;
   let pendingOutput = 0;
   let lastInput = started;
   let lastPong = started;
   let size = { cols: 80, rows: 24 };
-  let connectedService = null;
 
-  // Container start (up to 15s health wait) plus SSH handshake (up to 15s)
-  // must fit inside this window.
+  // Container start (up to ~10s) plus the exec handshake must fit here.
   const setupTimer = setTimeout(
     () => stop("Connection setup timed out.", 1008),
     45_000,
@@ -141,15 +139,22 @@ function attachTerminal(ws) {
     clearTimeout(setupTimer);
     clearInterval(watchdog);
 
-    stream?.destroy();
-    ssh.destroy();
+    if (stream) {
+      stream.destroy();
+      stream = null;
+    }
+
+    // Tear down the lab containers for this session.
+    if (sessionId) {
+      closeSession(sessionId).catch(() => {});
+      sessionId = null;
+    }
 
     if (ws.readyState === WebSocket.OPEN) {
       send({ type: "status", message });
       ws.close(code, "Session ended");
     }
 
-    // Also release connections whose peers never complete the close handshake.
     setTimeout(() => ws.terminate(), 1_000).unref();
   }
 
@@ -158,18 +163,14 @@ function attachTerminal(ws) {
 
     pendingOutput += chunk.length;
 
-    if (
-      pendingOutput > 512 * 1024 ||
-      ws.bufferedAmount > 512 * 1024
-    ) {
+    if (pendingOutput > 512 * 1024 || ws.bufferedAmount > 512 * 1024) {
       return stop("Output buffer limit reached. Please reconnect.", 1008);
     }
 
     ws.send(chunk, { binary: true });
 
-    if (pendingOutput >= 128 * 1024) {
+    if (pendingOutput >= 128 * 1024 && stream) {
       stream.pause();
-      stream.stderr.pause();
     }
   }
 
@@ -180,39 +181,52 @@ function attachTerminal(ws) {
   ws.on("close", () => stop("Disconnected."));
   ws.on("error", () => stop("Connection interrupted.", 1011));
 
-  ssh.on("error", (error) => {
-    console.error("[SSH connection]", error.message);
-    stop("Could not open the lab. Ask the owner to check its configuration.", 1011);
-  });
-
-  ssh.on("close", () => stop("The SSH connection has closed."));
-
-  ssh.on("ready", () => {
-    if (closed) return;
-
-    ssh.shell({ ...size, term: "xterm-256color" }, (error, channel) => {
+  async function openShell(labId) {
+    try {
+      send({ type: "status", message: "Starting lab environment..." });
+      const session = await openLabSession(labId);
       if (closed) {
-        channel?.destroy();
+        closeSession(session.sessionId).catch(() => {});
+        return;
+      }
+      sessionId = session.sessionId;
+
+      send({ type: "status", message: "Connecting to lab..." });
+
+      const shell = await execShell({
+        containerId: session.containerId,
+        user: session.user,
+        policyMode: session.policyMode,
+        cols: size.cols,
+        rows: size.rows,
+      });
+
+      if (closed) {
+        shell.socket.destroy();
         return;
       }
 
-      if (error) {
-        console.error("[SSH shell]", error.message);
-        return stop("The lab could not start a shell.", 1011);
-      }
-
-      stream = channel;
+      stream = shell.socket;
+      resizeShell = shell.resize;
       clearTimeout(setupTimer);
 
+      stream.on("data", output);
       stream.on("error", () => stop("Shell interrupted.", 1011));
-      stream.stderr.on("error", () => stop("Shell interrupted.", 1011));
       stream.on("close", () => stop("Shell finished. You can connect again."));
 
       send({ type: "ready" });
-      stream.on("data", output);
-      stream.stderr.on("data", output);
-    });
-  });
+    } catch (error) {
+      console.error("[Lab session]", error.message);
+
+      if (error.code === "UNKNOWN_LAB") {
+        return stop("This lab no longer exists. Ask the owner to check the chapter.", 1008);
+      }
+      if (error.code === "NOT_READY") {
+        return stop("This lab has not been built yet. Ask the owner to build it.", 1008);
+      }
+      stop("Could not start the lab environment. " + error.message, 1011);
+    }
+  }
 
   ws.on("message", (raw, binary) => {
     if (closed) return;
@@ -227,67 +241,19 @@ function attachTerminal(ws) {
       }
 
       if (!authenticated) {
-        if (
-          message.type !== "auth" ||
-          !validAccessCode(message.code)
-        ) {
+        if (message.type !== "auth" || !validAccessCode(message.code)) {
           return stop("Access code not accepted.", 1008);
         }
-
         if (!validLabId(message.labId)) {
           return stop("Unknown lab.", 1008);
         }
-
         if (!validSize(message)) {
           return stop("Invalid terminal size.", 1008);
         }
 
         authenticated = true;
         size = { cols: message.cols, rows: message.rows };
-
-        // Tell the frontend we're starting the container
-        send({ type: "status", message: "Starting lab environment..." });
-
-        // Start the container on-demand, then SSH into it
-        ensureLabRunning(message.labId)
-          .then(({ host, service }) => {
-            if (closed) return;
-            connectedService = service;
-
-            send({ type: "status", message: "Connecting to lab..." });
-
-            ssh.connect({
-              host,
-              port: labSshConfig.port,
-              username: labSshConfig.username,
-              privateKey: labSshConfig.privateKey,
-              passphrase: labSshConfig.passphrase,
-              readyTimeout: 15_000,
-              keepaliveInterval: 15_000,
-              keepaliveCountMax: 2,
-              algorithms: {
-                serverHostKey: ["ssh-ed25519"],
-              },
-              hostVerifier(key) {
-                const digest = createHash("sha256")
-                  .update(key)
-                  .digest("base64")
-                  .replace(/=+$/, "");
-
-                return `SHA256:${digest}` === labFingerprint;
-              },
-            });
-          })
-          .catch((err) => {
-            console.error("[Docker]", err.message);
-
-            if (err.code === "UNKNOWN_LAB") {
-              return stop("This lab no longer exists. Ask the owner to check the chapter.", 1008);
-            }
-
-            stop("Could not start the lab environment. " + err.message, 1011);
-          });
-
+        void openShell(message.labId);
         return;
       }
 
@@ -301,19 +267,19 @@ function attachTerminal(ws) {
         message.data.length <= 4096
       ) {
         const queued = stream.writableLength + Buffer.byteLength(message.data);
-
         if (queued > 64 * 1024) {
           return stop("Input buffer limit reached.", 1008);
         }
 
         lastInput = Date.now();
-        if (connectedService) touchLab(connectedService);
+        if (sessionId) touchSession(sessionId);
         stream.write(message.data);
         return;
       }
 
       if (message.type === "resize" && validSize(message)) {
-        stream.setWindow(message.rows, message.cols, 0, 0);
+        size = { cols: message.cols, rows: message.rows };
+        resizeShell?.(message.cols, message.rows);
         return;
       }
 
@@ -324,12 +290,9 @@ function attachTerminal(ws) {
         message.bytes <= pendingOutput
       ) {
         pendingOutput -= message.bytes;
-
-        if (pendingOutput < 64 * 1024) {
+        if (pendingOutput < 64 * 1024 && stream) {
           stream.resume();
-          stream.stderr.resume();
         }
-
         return;
       }
 
@@ -345,5 +308,5 @@ const bindHost = process.env.GATEWAY_BIND_HOST || "127.0.0.1";
 
 server.listen(gatewayPort, bindHost, () => {
   console.log(`Lab gateway listening on ${bindHost}:${gatewayPort}`);
-  console.log(`Max concurrent labs: ${labs.size} defined, ${maxRunningLabs} max running`);
+  console.log(`Max concurrent lab sessions: ${maxRunningLabs}`);
 });

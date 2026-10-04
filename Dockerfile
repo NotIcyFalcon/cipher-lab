@@ -12,8 +12,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_LAB_WS_URL=/lab-socket
 RUN mkdir -p public \
-    && node --check gateway/config.mjs \
-    && node --check gateway/server.mjs \
+    && for f in gateway/*.mjs; do node --check "$f"; done \
     && npx eslint . \
     && npm run build
 

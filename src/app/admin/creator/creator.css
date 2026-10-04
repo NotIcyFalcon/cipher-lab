@@ -571,3 +571,60 @@
       border-color 0.15s ease;
   }
 }
+
+/* Lab recipe builder + build panel (Batch: image-per-lab labs) */
+.creator-recipe .creator-machine {
+  border-color: #3a4b57;
+}
+.creator-machine .creator-section-heading p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.creator-build-panel {
+  margin-top: 18px;
+  padding: 18px 20px;
+  border: 1px solid #384450;
+  border-radius: 14px;
+  background: #101922;
+}
+.creator-build-panel.is-ready {
+  border-color: #35603f;
+  background: #0f1d16;
+}
+.creator-build-panel.is-failed {
+  border-color: #6b2f36;
+  background: #1d1215;
+}
+.creator-build-panel.is-building,
+.creator-build-panel.is-queued {
+  border-color: #5a5330;
+  background: #1b1810;
+}
+.creator-build-panel h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.creator-build-log {
+  margin-top: 12px;
+}
+.creator-build-log summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+}
+.creator-build-log pre {
+  margin-top: 10px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid #263039;
+  border-radius: 8px;
+  background: #070c10;
+  color: #c7d2da;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

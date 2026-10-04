@@ -1,42 +1,60 @@
 export const DEFAULT_LAB_POINTS = 100;
-export const DEFAULT_LAB_USER = "Ronak";
+export const DEFAULT_LAB_USER = "ronak";
 
+/**
+ * Default "Block listed commands" policy for new labs. Entries are matched
+ * against the command name (glob patterns such as mkfs* are allowed) or, for
+ * entries containing a space, against the start of the typed command line.
+ * This is a teaching guardrail; for hard limits, leave the program out of the
+ * machine (or delete it in the build script).
+ */
 export const DEFAULT_COMMAND_BLACKLIST = [
   "sudo",
   "su",
   "passwd",
   "chpasswd",
+  "chsh",
+  "chfn",
   "shutdown",
   "reboot",
   "poweroff",
   "halt",
   "init",
+  "telinit",
   "systemctl",
   "service",
   "mount",
   "umount",
-  "mkfs",
+  "mkfs*",
   "fdisk",
+  "sfdisk",
   "parted",
   "dd",
-  "iptables",
+  "iptables*",
+  "ip6tables*",
   "nft",
   "ufw",
   "useradd",
   "adduser",
   "userdel",
   "deluser",
+  "usermod",
   "groupadd",
   "groupdel",
   "visudo",
   "crontab",
+  "insmod",
+  "rmmod",
+  "modprobe",
+  "chroot",
+  "nsenter",
+  "unshare",
+  "docker",
+  "containerd",
+  "ctr",
   "kill",
   "killall",
   "pkill",
-  "docker",
-  "containerd",
-  "nsenter",
-  "unshare",
   "chmod 777",
   "rm -rf /",
   "rm -rf /*",

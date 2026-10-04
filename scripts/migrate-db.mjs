@@ -95,9 +95,13 @@ const migrations = [
     before: ensureColumns,
     file: new URL("../migrations/014_schema_reconciliation.sql", import.meta.url),
   },
+  {
+    version: 15,
+    file: new URL("../migrations/015_lab_recipes.sql", import.meta.url),
+  },
 ];
 
-const latestVersion = 14;
+const latestVersion = 15;
 
 const databasePath = resolve(
   process.env.DATABASE_PATH || "./data/cyberbox.sqlite",
@@ -187,6 +191,26 @@ try {
           finished_at = ?
       WHERE status = 'pending'
     `).run(Date.now());
+  }
+
+  if (process.argv.includes("--recover")) {
+    // A lab build cannot survive a restart of the web container.
+    const interrupted = db.prepare(`
+      UPDATE lab_builds
+      SET status = 'failed',
+          error = 'The server restarted before the build finished. Build again.',
+          finished_at = ?
+      WHERE status = 'building'
+    `).run(Date.now());
+
+    if (interrupted.changes > 0) {
+      // Queued builds still run after the restart; only in-progress ones fail.
+      db.prepare(`
+        UPDATE labs
+        SET build_status = 'failed'
+        WHERE build_status = 'building'
+      `).run();
+    }
   }
 
   console.log(`Cyber Box database ready (schema v${version}).`);

@@ -1,3 +1,5 @@
+import type { LabRecipe } from "@/lib/lab-recipe";
+
 export const creatorSections = [
   "topics",
   "paths",
@@ -41,13 +43,15 @@ export type ChapterRow = {
 export type LabRow = {
   id: string;
   name: string;
-  base_image: string;
-  snapshot_image: string | null;
-  default_user: string;
-  whitelist_enabled: number;
-  command_blacklist_json: string | null;
-  command_whitelist_json: string | null;
-  setup_script: string | null;
+  description: string;
+  recipe_json: string;
+  build_status: "draft" | "queued" | "building" | "ready" | "failed";
+  current_build_id: number | null;
+  built_recipe_hash: string | null;
+  // Latest build (joined in the page query); null when never built.
+  last_build_status: "queued" | "building" | "succeeded" | "failed" | null;
+  last_build_error: string | null;
+  last_build_log: string | null;
 };
 
 export type HomeworkRow = {
@@ -258,11 +262,8 @@ export type LabDraft = {
   entity: "labs";
   id: string;
   name: string;
-  default_user: string;
-  whitelist_enabled: boolean;
-  command_blacklist: string;
-  command_whitelist: string;
-  setup_script: string;
+  description: string;
+  recipe: LabRecipe;
 };
 
 export type CreatorDraft =

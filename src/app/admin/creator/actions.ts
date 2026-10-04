@@ -13,6 +13,8 @@ import {
   type EditorBlock,
 } from "./types";
 import { hashLabAnswer, hashCtfFlag } from "@/server/flags";
+import { recipeSchema, normalizeRecipe, totalMemoryMb, DEFAULT_LAB_MEMORY_BUDGET_MB } from "@/lib/lab-recipe";
+import { enqueueLabBuild, labNeedsBuild } from "@/server/lab-builds";
 
 type Db = ReturnType<typeof getDb>;
 type Value = string | number | null;
@@ -651,84 +653,42 @@ function saveLab(
   id: string,
   input: Record<string, unknown>,
 ) {
-  function commandList(value: unknown, label: string): string[] {
-    const commands = multiline(value, label, 10_000)
-      .split(/\\r?\\n/)
-      .map((command) => command.trim())
-      .filter(Boolean);
+  const parsed = recipeSchema.safeParse(normalizeRecipe(input.recipe));
 
-    const unique = [...new Set(commands)];
-
-    if (unique.length > 200) {
-      throw new InputError(`${label} supports at most 200 entries.`);
-    }
-
-    return unique;
+  if (!parsed.success) {
+    throw new InputError(parsed.error.issues[0]?.message ?? "The lab recipe is invalid.");
   }
 
-  const username = text(input.default_user, "Default user", 32);
+  const recipe = parsed.data;
+  const entry = recipe.machines.find((m) => m.key === recipe.entryMachine);
 
-  // Uppercase is allowed here because the existing image uses "Ronak".
-  if (!/^[A-Za-z_][A-Za-z0-9_-]{0,31}$/.test(username)) {
+  if (totalMemoryMb(recipe) > DEFAULT_LAB_MEMORY_BUDGET_MB) {
     throw new InputError(
-      "Default user must be a valid Linux username.",
-    );
-  }
-
-  const setupScript = multiline(
-    input.setup_script,
-    "Setup script",
-    50_000,
-  );
-
-  if (setupScript.includes("\\0")) {
-    throw new InputError("Setup script cannot contain NUL characters.");
-  }
-
-  const blacklist = commandList(
-    input.command_blacklist,
-    "Command blacklist",
-  );
-
-  const whitelist = commandList(
-    input.command_whitelist,
-    "Command whitelist",
-  );
-
-  const whitelistEnabled = boolean(
-    input.whitelist_enabled,
-    "Whitelist enabled",
-  );
-
-  if (whitelistEnabled && whitelist.length === 0) {
-    throw new InputError(
-      "Add at least one allowed command before enabling the whitelist.",
+      `The machines request ${totalMemoryMb(recipe)} MB total, above the ${DEFAULT_LAB_MEMORY_BUDGET_MB} MB a session may use. Reduce machine memory.`,
     );
   }
 
   const existing = db.prepare(`
-    SELECT base_image
-    FROM labs
-    WHERE id = ?
-  `).get(id) as { base_image: string } | undefined;
+    SELECT current_build_id, built_recipe_hash
+    FROM labs WHERE id = ?
+  `).get(id) as { current_build_id: number | null; built_recipe_hash: string | null } | undefined;
+
+  const unchanged =
+    existing?.current_build_id != null &&
+    !labNeedsBuild(existing.built_recipe_hash, recipe);
 
   writeRow(db, "labs", {
     id,
     name: text(input.name, "Lab name", 200),
-    base_image: existing?.base_image ?? "ubuntu:latest",
+    description: multiline(input.description, "Lab description", 2_000),
+    recipe_json: JSON.stringify(recipe),
+    // A changed recipe needs a rebuild before sessions use it.
+    build_status: unchanged ? "ready" : "draft",
 
-    // An edited definition invalidates any previously prepared snapshot.
-    snapshot_image: null,
-
-    default_user: username,
-    whitelist_enabled: whitelistEnabled ? 1 : 0,
-    command_blacklist_json: JSON.stringify(blacklist),
-    command_whitelist_json: JSON.stringify(whitelist),
-
-    // Transitional compatibility while both columns exist.
-    // Runtime and editor must eventually use setup_script exclusively.
-    setup_script: setupScript,
-    initial_setup_script: setupScript,
+    // Legacy NOT NULL columns kept satisfied; the runtime no longer reads them.
+    base_image: "(recipe)",
+    default_user: entry?.mainUser ?? "root",
+    whitelist_enabled: recipe.policy.mode === "whitelist" ? 1 : 0,
   });
 }
 
@@ -908,4 +868,40 @@ export async function deleteCreatorAction(
 
   revalidatePath("/", "layout");
   redirect(`/admin/creator/${entity}?deleted=1`);
+}
+
+// Queues a Docker build of a lab's current recipe. The gateway does the build;
+// the web app only enqueues it and shows progress.
+export async function buildLabAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+
+  try {
+    const id = identifier(formData.get("id"), "Lab");
+    const db = getDb();
+
+    const lab = db.prepare(`
+      SELECT build_status FROM labs WHERE id = ?
+    `).get(id) as { build_status: string } | undefined;
+
+    if (!lab) {
+      return { error: "This lab no longer exists. Refresh and try again." };
+    }
+    if (lab.build_status === "queued" || lab.build_status === "building") {
+      return { error: "This lab is already building. Wait for it to finish." };
+    }
+
+    enqueueLabBuild(id);
+  } catch (error) {
+    if (error instanceof InputError) {
+      return { error: error.message };
+    }
+    console.error("Lab build enqueue failed", error);
+    return { error: "Could not start the build. Please try again." };
+  }
+
+  revalidatePath("/admin/creator/labs", "page");
+  redirect(`/admin/creator/labs?edit=${encodeURIComponent(formData.get("id") as string)}&building=1`);
 }
