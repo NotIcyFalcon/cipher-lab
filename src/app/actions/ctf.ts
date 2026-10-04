@@ -1,6 +1,5 @@
 "use server";
 
-import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -8,6 +7,7 @@ import type { CTFActionReply } from "@/lib/ctf-types";
 import { getCTFChallengeState, getCTFChallenge } from "@/server/ctf";
 import { requireRonakId } from "@/server/current-user";
 import { getDb } from "@/server/db";
+import { hashCtfFlag, matchesDigest } from "@/server/flags";
 
 const challengeIdSchema = z
   .string()
@@ -25,9 +25,9 @@ const flagSchema = z.object({
   flag: z.string().trim().min(1).max(512),
 });
 
-function verifyFlag(submitted: string, expectedHash: string): boolean {
-  const submittedHash = createHash("sha256").update(submitted).digest("hex");
-  return submittedHash === expectedHash;
+// Must hash exactly like the Creator does when it stores the raw flag.
+function verifyFlag(submitted: string, expectedHash: string | null): boolean {
+  return matchesDigest(hashCtfFlag(submitted), expectedHash);
 }
 
 function refreshCTFPages(categoryId: string, challengeId: string) {
@@ -55,7 +55,7 @@ export async function buyCTFHint(
     return { ok: false, error: "Challenge not found." };
   }
 
-  const { challenge, ctf } = entry;
+  const { challenge, category } = entry;
   const index = parsed.data.hintIndex;
 
   const hint = challenge.hints[index];
@@ -115,7 +115,7 @@ export async function buyCTFHint(
   }
 
   if (reply.ok) {
-    refreshCTFPages(ctf.id, challenge.id);
+    refreshCTFPages(category.id, challenge.id);
   }
 
   return reply;
@@ -144,7 +144,14 @@ export async function submitCTFFlag(
     return { ok: false, error: "Challenge not found." };
   }
 
-  const { challenge, ctf } = entry;
+  const { challenge, category } = entry;
+
+  if (!challenge.flag_hash) {
+    return {
+      ok: false,
+      error: "This challenge does not have a flag configured yet.",
+    };
+  }
 
   if (!verifyFlag(parsed.data.flag, challenge.flag_hash)) {
     return {
@@ -192,6 +199,6 @@ export async function submitCTFFlag(
     };
   }
 
-  refreshCTFPages(ctf.id, challenge.id);
+  refreshCTFPages(category.id, challenge.id);
   return reply;
 }

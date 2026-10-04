@@ -41,11 +41,10 @@ export default async function PathsPage() {
     stats: getPathProgress(path, progress),
   }));
 
-  // Paths currently derive from lesson categories. Do not invent categories
-  // or courses that are not present in the content.
+  // Group by the path's topic (category), including paths with no chapters.
   const groups = new Map<string, PathEntry[]>();
   for (const entry of entries) {
-    const category = entry.stats.lessons[0]?.category ?? entry.path.title;
+    const category = entry.path.topicName;
     const group = groups.get(category) ?? [];
     group.push(entry);
     groups.set(category, group);
@@ -180,7 +179,7 @@ export default async function PathsPage() {
                           </p>
 
                           <div className="paths-course-tags">
-                            <span>{path.difficulty}</span>
+                            {path.difficulty && <span>{path.difficulty}</span>}
                             <span>{path.type}</span>
                             {path.timeDays > 0 && (
                               <span>

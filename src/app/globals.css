@@ -7,6 +7,15 @@
   --muted: #a0afbd;
   --green: #b8f777;
   --purple: #c4b5fd;
+
+  /* Names used by inline styles on the CTF and admin pages. */
+  --color-text-secondary: var(--muted);
+  --color-text-tertiary: #7d8b98;
+  --color-bg-elevated: #131d26;
+  --color-border: var(--border);
+  --color-danger: #ff8f8f;
+  --color-danger-border: #6b2f36;
+  --color-danger-bg: #24141a;
 }
 
 * { box-sizing: border-box; }
@@ -802,3 +811,28 @@ details p { overflow-wrap: anywhere; }
   background: var(--border);
 }
 
+
+/* RichText (src/components/RichText.tsx): Creator note, tip and briefing text */
+.rich-text { display: grid; gap: 14px; min-width: 0; }
+.rich-text > p,
+.rich-text > ul,
+.rich-text > ol {
+  width: auto;
+  max-width: none;
+  margin: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.rich-text > ul,
+.rich-text > ol { display: grid; gap: 8px; padding-left: 24px; }
+.rich-text li::marker { color: var(--green); }
+.rich-text code {
+  padding: 1px 6px;
+  border: 1px solid #2c3d44;
+  border-radius: 5px;
+  background: #0b1418;
+  color: #c9f59f;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.88em;
+}
+.rich-text strong { color: #eef4f6; font-weight: 700; }

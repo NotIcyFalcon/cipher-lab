@@ -8,8 +8,12 @@ CREATE TABLE ctf_completions_new (
   PRIMARY KEY (user_id, challenge_id)
 );
 
+-- Completions for challenges that no longer exist would violate the new
+-- foreign key and abort the whole migration, so they are not copied.
 INSERT INTO ctf_completions_new (user_id, challenge_id, awarded_xp, completed_at)
-SELECT user_id, challenge_id, awarded_xp, completed_at FROM ctf_completions;
+SELECT user_id, challenge_id, awarded_xp, completed_at
+FROM ctf_completions
+WHERE challenge_id IN (SELECT id FROM ctf_challenges);
 
 DROP VIEW user_xp;
 DROP TABLE ctf_completions;

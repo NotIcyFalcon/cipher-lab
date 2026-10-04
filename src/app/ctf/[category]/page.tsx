@@ -11,7 +11,9 @@ import {
   Trophy
 } from "lucide-react";
 
-import { getCTFCatalogProgress } from "@/server/ctf";
+import RecommendedPaths from "@/components/RecommendedPaths";
+import { pathHref } from "@/lib/path-links";
+import { getCTFCatalogProgress, type SuggestedPath } from "@/server/ctf";
 import { requireRonakId } from "@/server/current-user";
 
 export default async function CTFCategoryPage({
@@ -44,7 +46,7 @@ export default async function CTFCategoryPage({
 
       <header className="ctf-category-heading">
         <div>
-          <span className="ctf-kicker">OPERATION FIELD / {category.id}</span>
+          <span className="ctf-kicker">OPERATION FIELD</span>
           <h1>{category.name}</h1>
           <p>{category.description}</p>
         </div>
@@ -92,6 +94,13 @@ export default async function CTFCategoryPage({
                 <h2 style={{ fontSize: "24px", color: "white" }}>{ctf.name}</h2>
                 <p style={{ color: "var(--color-text-secondary)" }}>{ctf.description}</p>
               </header>
+
+              <RecommendedPaths
+                paths={ctf.suggestedPaths.map((path: SuggestedPath) => ({
+                  ...path,
+                  href: pathHref(path.id),
+                }))}
+              />
 
               {ctf.universes.map((universe: any) => (
                 <section

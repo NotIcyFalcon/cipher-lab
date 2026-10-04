@@ -958,6 +958,9 @@
   color: #b9b0ce;
   background: #090f13;
   pointer-events: none;
+  /* Gateway errors can be long; wrap them instead of clipping. */
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .live-lab .lab-terminal-status {
   display: flex;
@@ -1212,4 +1215,104 @@
   .lesson-index-tooltip {
     transition: opacity 0.15s ease;
   }
+}
+
+
+/* Chapter reading layout: objectives card and note/tip text.
+   The objectives rules used to live in batch-eight.css, which only loads on
+   Homework pages, so the card looked different (and the icon sat off-centre)
+   depending on which page was visited first. */
+
+.lesson-stage,
+.lesson-reading-content {
+  min-width: 0;
+}
+
+.workspace-frame .b5-learning .lesson-plan {
+  display: block;
+  margin-bottom: 28px;
+  padding: 24px 28px;
+  border: 1px solid #403255;
+  border-radius: 18px;
+  background: #21172f;
+  color: #eee7f7;
+}
+
+.workspace-frame .b5-learning .lesson-plan-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.workspace-frame .b5-learning .lesson-plan-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid #4c435e;
+  border-radius: 12px;
+  background: #2a2439;
+  color: #c7a4ef;
+  line-height: 0;
+}
+
+.workspace-frame .b5-learning .lesson-plan-icon > svg {
+  display: block;
+  width: 21px;
+  height: 21px;
+  margin: 0;
+}
+
+.workspace-frame .b5-learning .lesson-plan .dashboard-kicker {
+  color: #d8b8fa;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.workspace-frame .b5-learning .lesson-plan h2 {
+  margin: 4px 0 0;
+  font-size: 18px;
+  letter-spacing: -0.3px;
+}
+
+.workspace-frame .b5-learning .lesson-plan ol {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 25px;
+  list-style: decimal;
+}
+
+.workspace-frame .b5-learning .lesson-plan li {
+  display: list-item;
+  margin: 0;
+  padding-left: 7px;
+  color: #ddd3ea;
+  line-height: 1.65;
+}
+
+.workspace-frame .b5-learning .lesson-plan li::marker {
+  color: #c7a4ef;
+  font-weight: 700;
+}
+
+/* Note / tip bodies fill the whole content column. */
+
+.workspace-frame .b5-learning .lesson-stage .note .rich-text > p,
+.workspace-frame .b5-learning .lesson-stage .note .rich-text li {
+  max-width: none;
+  font-size: 17px;
+  line-height: 1.85;
+}
+
+.workspace-frame .b5-learning .lesson-stage .tip .rich-text > p,
+.workspace-frame .b5-learning .lesson-stage .tip .rich-text li {
+  max-width: none;
+  color: #c9c0dc;
+  font-size: 15px;
+  line-height: 1.75;
 }

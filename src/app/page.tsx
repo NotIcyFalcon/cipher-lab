@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import LearningPage from "@/components/LearningPage";
-import { getPaths } from "@/server/catalog";
+import { getPaths, toPublicLesson } from "@/server/catalog";
 import { requireUserId } from "@/server/current-user";
 import { getProgress } from "@/server/progress";
 
@@ -38,7 +38,7 @@ export default async function Page({
   return (
     <LearningPage
       key={`${path.id}:${revision ? "revision" : "learning"}`}
-      lessons={path.lessons}
+      lessons={path.lessons.map(toPublicLesson)}
       progress={progress}
       initialLessonId={initialLessonId}
       revision={revision}

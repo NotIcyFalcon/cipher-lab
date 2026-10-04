@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { HomeworkQuestion } from "@/lib/progress-types";
+import { DEFAULT_LAB_POINTS } from "@/lib/creator-defaults";
 
 const id = z.string().min(1).max(200);
 const text = z.string().max(50_000);
@@ -32,7 +33,8 @@ export const blockSchema = z.discriminatedUnion("type", [
     title: text,
     objective: text,
     hint: text,
-    points: points.default(50),
+    // Same default the Creator shows for blocks saved without points.
+    points: points.default(DEFAULT_LAB_POINTS),
     completionCodeHash: text.optional(),
   }),
   z.object({

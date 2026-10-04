@@ -2,16 +2,33 @@
 // Uses the Docker Engine API over the Unix socket to start/stop
 // containers that were defined in compose.yaml with profiles.
 
-import { startHomeworkGrader } from "./homework-grader.mjs";
+// homework-grader.mjs starts its internal HTTP endpoint when imported.
+// It does not export a starter function; importing a missing named export
+// made Node refuse to load the gateway at all.
+import "./homework-grader.mjs";
 import http from "node:http";
 import {
   dockerSocketPath,
   composeProject,
   maxRunningLabs,
+  labs,
 } from "./config.mjs";
 
-// Track running labs: labId -> { containerId, containerName, startedAt, lastUsed }
+const DEFAULT_SERVICE = "linux-basics";
+const IDLE_TIMEOUT_MS = 15 * 60_000;
+
+// Only compose services declared in config.mjs may be started or stopped.
+// Without this, a lab whose runtime_service named "web" or "proxy" would let
+// the gateway stop core containers when enforcing the lab limit.
+const allowedServices = new Set(
+  [...labs.values()].map((lab) => lab.service),
+);
+
+// Track running lab containers by compose service:
+// service -> { containerId, containerName, host, startedAt, lastUsed }
+// Several lab IDs can share one service, so the limit counts containers.
 const runningLabs = new Map();
+const startingLabs = new Map();
 
 // Make a request to the Docker Engine API via Unix socket
 function dockerAPI(method, path, body = null, options = {}) {
@@ -211,71 +228,95 @@ async function stopContainer(containerId, serviceName) {
 }
 
 // Enforce the max running labs limit. Stops the least-recently-used lab.
-async function enforceLimit(excludeLabId) {
+async function enforceLimit(excludeService) {
   while (runningLabs.size >= maxRunningLabs) {
-    // Find the oldest (least recently used) lab that isn't the one we're starting
-    let oldestId = null;
+    let oldestService = null;
     let oldestTime = Infinity;
 
-    for (const [labId, info] of runningLabs) {
-      if (labId === excludeLabId) continue;
+    for (const [service, info] of runningLabs) {
+      if (service === excludeService) continue;
       if (info.lastUsed < oldestTime) {
         oldestTime = info.lastUsed;
-        oldestId = labId;
+        oldestService = service;
       }
     }
 
-    if (!oldestId) break;
+    if (!oldestService) break;
 
-    const old = runningLabs.get(oldestId);
-    runningLabs.delete(oldestId);
+    const old = runningLabs.get(oldestService);
+    runningLabs.delete(oldestService);
     await stopContainer(old.containerId, old.containerName);
   }
 }
 
-// Public API: ensure a lab is running and return its SSH host
-export async function ensureLabRunning(labId) {
-  let serviceName = "linux-basics";
+// Ask the web app which compose service runs this lab.
+async function resolveService(labId) {
+  const token = process.env.GRADER_INTERNAL_TOKEN;
+  const origin = process.env.WEB_INTERNAL_ORIGIN || "http://web:3000";
+
+  if (!token) return DEFAULT_SERVICE;
 
   try {
-    const res = await fetch(`http://web:3000/api/internal/lab-service?labId=${encodeURIComponent(labId)}`, {
-      headers: { Authorization: `Bearer ${process.env.GRADER_INTERNAL_TOKEN}` }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.service) {
-        serviceName = data.service;
-      }
+    const res = await fetch(
+      `${origin}/api/internal/lab-service?labId=${encodeURIComponent(labId)}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(5_000),
+      },
+    );
+
+    if (res.status === 404) {
+      throw Object.assign(new Error("Unknown lab."), { code: "UNKNOWN_LAB" });
     }
-  } catch (err) {
-    console.error("[Docker] Failed to query lab service mapping:", err.message);
+
+    if (!res.ok) {
+      console.error(`[Docker] Lab service lookup failed: HTTP ${res.status}`);
+      return DEFAULT_SERVICE;
+    }
+
+    const data = await res.json();
+    const service = typeof data.service === "string" ? data.service : "";
+
+    if (allowedServices.has(service)) return service;
+
+    if (service) {
+      console.error(
+        `[Docker] Lab "${labId}" requested undeclared service "${service}". Using ${DEFAULT_SERVICE}.`,
+      );
+    }
+  } catch (error) {
+    if (error.code === "UNKNOWN_LAB") throw error;
+    console.error("[Docker] Failed to query lab service mapping:", error.message);
   }
 
-  // If we already track it as running, refresh lastUsed and verify
-  if (runningLabs.has(labId)) {
-    const info = runningLabs.get(labId);
-    info.lastUsed = Date.now();
+  return DEFAULT_SERVICE;
+}
+
+async function ensureServiceRunning(service) {
+  const tracked = runningLabs.get(service);
+
+  if (tracked) {
+    tracked.lastUsed = Date.now();
 
     // Quick check that it's actually still running
     try {
-      const inspectRes = await dockerAPI("GET", `/containers/${info.containerId}/json`);
+      const inspectRes = await dockerAPI("GET", `/containers/${tracked.containerId}/json`);
       if (inspectRes.status === 200 && inspectRes.data.State?.Running) {
-        return info.host;
+        return tracked.host;
       }
     } catch {
       // Container gone, fall through to restart
     }
 
-    runningLabs.delete(labId);
+    runningLabs.delete(service);
   }
 
-  // Enforce the 3-container limit before starting a new one
-  await enforceLimit(labId);
+  // Enforce the container limit before starting a new one
+  await enforceLimit(service);
 
-  // Start the container
-  const result = await startContainer(serviceName);
+  const result = await startContainer(service);
 
-  runningLabs.set(labId, {
+  runningLabs.set(service, {
     containerId: result.containerId,
     containerName: result.containerName,
     host: result.host,
@@ -286,24 +327,38 @@ export async function ensureLabRunning(labId) {
   return result.host;
 }
 
+// Public API: ensure a lab is running and return its SSH host and service
+export async function ensureLabRunning(labId) {
+  const service = await resolveService(labId);
+
+  // Concurrent connections to the same service share one start attempt.
+  let pending = startingLabs.get(service);
+
+  if (!pending) {
+    pending = ensureServiceRunning(service).finally(() => {
+      startingLabs.delete(service);
+    });
+    startingLabs.set(service, pending);
+  }
+
+  return { host: await pending, service };
+}
+
 // Auto-shutdown: stop labs that haven't been used in 15 minutes
 setInterval(async () => {
   const now = Date.now();
-  const idleTimeout = 15 * 60_000;
 
-  for (const [labId, info] of runningLabs) {
-    if (now - info.lastUsed > idleTimeout) {
-      console.log(`[Docker] Auto-stopping idle lab "${labId}"`);
-      runningLabs.delete(labId);
+  for (const [service, info] of runningLabs) {
+    if (now - info.lastUsed > IDLE_TIMEOUT_MS) {
+      console.log(`[Docker] Auto-stopping idle lab "${service}"`);
+      runningLabs.delete(service);
       await stopContainer(info.containerId, info.containerName);
     }
   }
 }, 60_000);
 
 // Mark a lab as recently used (called when terminal input arrives)
-export function touchLab(labId) {
-  const info = runningLabs.get(labId);
+export function touchLab(service) {
+  const info = runningLabs.get(service);
   if (info) info.lastUsed = Date.now();
 }
-
-startHomeworkGrader(dockerAPI, composeProject);

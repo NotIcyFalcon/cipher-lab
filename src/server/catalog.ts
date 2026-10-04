@@ -3,6 +3,7 @@ import "server-only";
 import {
   blocksSchema,
   objectivesSchema,
+  type ContentBlock,
   type LearningPath,
   type Lesson,
 } from "@/lib/content-types";
@@ -17,9 +18,50 @@ type ChapterRow = {
   content_json: string;
   reading_points: number;
   reading_minutes: number;
-  objectives: string;
+  objectives_json: string;
   topic_name: string;
 };
+
+// The Creator has no reading-time field, so chapters default to 0 minutes.
+// Estimate from the chapter text instead of showing "0 min reading".
+function estimateMinutes(blocks: ContentBlock[], description: string) {
+  const text = [
+    description,
+    ...blocks.map((block) => {
+      switch (block.type) {
+        case "note":
+        case "tip":
+          return `${block.title} ${block.body}`;
+        case "code":
+          return `${block.title} ${block.code} ${block.caption}`;
+        case "quiz":
+          return `${block.question} ${block.options.join(" ")} ${block.explanation}`;
+        case "lab":
+          return `${block.title} ${block.objective}`;
+      }
+    }),
+  ].join(" ");
+
+  const words = text.split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 200));
+}
+
+/**
+ * Lessons as sent to the browser. Completion-code hashes are unsalted
+ * SHA-256 of short answers, so they must stay on the server.
+ */
+export function toPublicLesson(lesson: Lesson): Lesson {
+  return {
+    ...lesson,
+    blocks: lesson.blocks.map((block) => {
+      if (block.type !== "lab") return block;
+
+      const publicBlock = { ...block };
+      delete publicBlock.completionCodeHash;
+      return publicBlock;
+    }),
+  };
+}
 
 type PathRow = {
   id: string;
@@ -34,7 +76,7 @@ export function getLessons(): Lesson[] {
   const rows = getDb().prepare(`
     SELECT
       c.id, c.path_id, c.title, c.description, c.content_json,
-      c.reading_points, c.reading_minutes, c.objectives,
+      c.reading_points, c.reading_minutes, c.objectives_json,
       t.name AS topic_name
     FROM chapters c
     JOIN learning_paths p ON p.id = c.path_id
@@ -47,17 +89,23 @@ export function getLessons(): Lesson[] {
       throw new Error(`Invalid reading XP for chapter ${row.id}`);
     }
 
+    // Explicit schema strips unknown fields before anything reaches React.
+    const blocks = blocksSchema.parse(JSON.parse(row.content_json));
+    const description = row.description ?? "";
+
     return {
       id: row.id,
       pathId: row.path_id,
       title: row.title,
-      description: row.description ?? "",
+      description,
       category: row.topic_name,
-      minutes: row.reading_minutes,
+      minutes: row.reading_minutes > 0
+        ? row.reading_minutes
+        : estimateMinutes(blocks, description),
       xp: row.reading_points,
-      objectives: objectivesSchema.parse(JSON.parse(row.objectives)),
-      // Explicit schema strips unknown fields before anything reaches React.
-      blocks: blocksSchema.parse(JSON.parse(row.content_json)),
+      // objectives_json is the column the Creator edits.
+      objectives: objectivesSchema.parse(JSON.parse(row.objectives_json)),
+      blocks,
     };
   });
 }

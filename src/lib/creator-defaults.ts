@@ -1,5 +1,5 @@
 export const DEFAULT_LAB_POINTS = 100;
-export const DEFAULT_LAB_USER = "ronak";
+export const DEFAULT_LAB_USER = "Ronak";
 
 export const DEFAULT_COMMAND_BLACKLIST = [
   "sudo",

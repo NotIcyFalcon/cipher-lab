@@ -2,6 +2,41 @@ import Database from "better-sqlite3";
 import { mkdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
+const JSON_ARRAY = (column) =>
+  `TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(${column}) AND json_type(${column}) = 'array')`;
+
+// Columns the application relies on. Some databases reached schema v13 through
+// hand edits, so these are added only when missing.
+const reconciledColumns = [
+  ["homework", "setup_script", "TEXT NOT NULL DEFAULT ''"],
+  ["homework_test_cases", "question_id", "TEXT"],
+  ["homework_test_cases", "expected_output", "TEXT"],
+  ["homework_test_cases", "expected_folder", "TEXT"],
+  ["chapters", "objectives", JSON_ARRAY("objectives")],
+  ["chapters", "objectives_json", JSON_ARRAY("objectives_json")],
+  ["chapters", "reading_minutes", "INTEGER NOT NULL DEFAULT 0 CHECK (reading_minutes >= 0)"],
+  ["ctfs", "suggested_paths_json", JSON_ARRAY("suggested_paths_json")],
+  ["ctf_challenges", "suggested_paths_json", JSON_ARRAY("suggested_paths_json")],
+  ["labs", "name", "TEXT NOT NULL DEFAULT ''"],
+  ["labs", "initial_setup_script", "TEXT NOT NULL DEFAULT ''"],
+  ["labs", "setup_script", "TEXT"],
+  ["labs", "command_whitelist_json", JSON_ARRAY("command_whitelist_json")],
+  ["labs", "runtime_service", "TEXT"],
+];
+
+function ensureColumns(db) {
+  for (const [table, column, definition] of reconciledColumns) {
+    const existing = db
+      .prepare(`PRAGMA table_info(${table})`)
+      .all()
+      .map((row) => row.name);
+
+    if (!existing.includes(column)) {
+      db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    }
+  }
+}
+
 const migrations = [
   {
     version: 1,
@@ -55,9 +90,14 @@ const migrations = [
     version: 13,
     file: new URL("../migrations/013_ctf_reconciliation.sql", import.meta.url),
   },
+  {
+    version: 14,
+    before: ensureColumns,
+    file: new URL("../migrations/014_schema_reconciliation.sql", import.meta.url),
+  },
 ];
 
-const latestVersion = 13;
+const latestVersion = 14;
 
 const databasePath = resolve(
   process.env.DATABASE_PATH || "./data/cyberbox.sqlite",
@@ -127,6 +167,7 @@ try {
 
       const sql = readFileSync(migration.file, "utf8");
 
+      migration.before?.(db);
       db.exec(sql);
       db.pragma(`user_version = ${migration.version}`);
 

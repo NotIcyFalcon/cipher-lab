@@ -1,6 +1,7 @@
 "use server";
 
-import { createHash, timingSafeEqual } from "node:crypto";
+import { timingSafeEqual } from "node:crypto";
+import { hashLabAnswer } from "@/server/flags";
 import { z } from "zod";
 import { getLessons } from "@/server/catalog";
 import { requireUserId } from "@/server/current-user";
@@ -31,50 +32,128 @@ export async function completeLab(
   submittedFlag: string,
 ) {
   const userId = await requireUserId();
-  const lessonKey = idSchema.parse(lessonId);
-  const blockKey = idSchema.parse(blockId);
-  const flag = z.string().max(1024).parse(submittedFlag);
 
-  const lesson = getLessons().find((item) => item.id === lessonKey);
-  const block = lesson?.blocks.find((item) => item.id === blockKey);
+  const parsed = z.object({
+    lessonId: idSchema,
+    blockId: idSchema,
+    flag: z.string().min(1).max(1024),
+  }).safeParse({
+    lessonId,
+    blockId,
+    flag: submittedFlag,
+  });
+
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Enter a valid completion code.",
+    };
+  }
+
+  const {
+    lessonId: lessonKey,
+    blockId: blockKey,
+    flag,
+  } = parsed.data;
+
+  const lesson = getLessons().find(
+    (item) => item.id === lessonKey,
+  );
+
+  const block = lesson?.blocks.find(
+    (item) => item.id === blockKey,
+  );
 
   if (!block || block.type !== "lab") {
     return { ok: false, error: "Unknown lab." };
   }
 
   const challengeId = `${lessonKey}:${blockKey}`;
+  let expectedHash = block.completionCodeHash;
 
-  const flags = z.record(z.string(), z.string()).parse(
-    JSON.parse(process.env.CYBERBOX_LAB_FLAGS_JSON || "{}"),
-  );
+  // Transitional support for existing environment-configured labs.
+  // Do not parse legacy configuration when a chapter hash exists.
+  if (!expectedHash) {
+    let decodedFlags: unknown;
 
-  const hash = (value: string) =>
-    createHash("sha256").update(value.trim().toLowerCase()).digest();
+    try {
+      decodedFlags = JSON.parse(
+        process.env.CYBERBOX_LAB_FLAGS_JSON || "{}",
+      );
+    } catch {
+      console.error("Invalid CYBERBOX_LAB_FLAGS_JSON");
 
-  let isCorrect = false;
-
-  if (block.completionCodeHash) {
-    const submittedHash = hash(flag).toString("hex");
-    isCorrect = submittedHash === block.completionCodeHash.toLowerCase();
-  } else {
-    const expected = flags[challengeId];
-    if (!expected) {
-      return { ok: false, error: "This lab has no completion code configured." };
+      return {
+        ok: false,
+        error: "Lab completion configuration is invalid.",
+      };
     }
-    isCorrect = timingSafeEqual(hash(flag), hash(expected));
+
+    const flags = z.record(
+      z.string(),
+      z.string(),
+    ).safeParse(decodedFlags);
+
+    if (!flags.success) {
+      return {
+        ok: false,
+        error: "Lab completion configuration is invalid.",
+      };
+    }
+
+    const legacyAnswer = flags.data[challengeId];
+
+    if (!legacyAnswer) {
+      return {
+        ok: false,
+        error: "This lab has no completion code configured.",
+      };
+    }
+
+    expectedHash = hashLabAnswer(legacyAnswer);
   }
 
-  if (!isCorrect) {
+  const submittedHash = hashLabAnswer(flag);
+
+  // The existing content/database contract expects SHA-256 hex.
+  const validHash = /^[a-f0-9]{64}$/i;
+
+  if (
+    !validHash.test(expectedHash) ||
+    !validHash.test(submittedHash)
+  ) {
+    console.error(
+      "Invalid lab completion hash format",
+      { lessonKey, blockKey },
+    );
+
+    return {
+      ok: false,
+      error: "Lab completion configuration is invalid.",
+    };
+  }
+
+  const correct = timingSafeEqual(
+    Buffer.from(expectedHash, "hex"),
+    Buffer.from(submittedHash, "hex"),
+  );
+
+  if (!correct) {
     return { ok: false, error: "Incorrect answer." };
   }
 
   getDb().prepare(`
-    INSERT INTO lab_completions(user_id, challenge_id, xp)
+    INSERT INTO lab_completions (
+      user_id,
+      challenge_id,
+      xp
+    )
     VALUES (?, ?, ?)
     ON CONFLICT(user_id, challenge_id) DO NOTHING
   `).run(userId, challengeId, block.points);
 
   refreshProgress();
+
   return { ok: true };
 }
 

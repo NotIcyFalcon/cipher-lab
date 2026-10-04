@@ -30,6 +30,7 @@ import {
 import type { Lesson, ContentBlock } from "@/lib/content-types";
 import WorkspaceShell from "@/components/WorkspaceShell";
 import LabTerminal from "@/components/LabTerminal";
+import RichText from "@/components/RichText";
 import type { Progress } from "@/lib/progress-types";
 import {
   markReadingComplete,
@@ -211,7 +212,7 @@ function LabBlock({
 }) {
   const [retrying, setRetrying] = useState(revision);
   const [flagInput, setFlagInput] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [submitting, startSubmitting] = useTransition();
 
   const inputId = useId();
@@ -224,14 +225,18 @@ function LabBlock({
     startSubmitting(async () => {
       try {
         const result = await completeLab(lessonId, block.id, flagInput);
-        setError(!result.ok);
+        setError(
+          result.ok
+            ? null
+            : result.error || "The completion code could not be checked.",
+        );
 
         if (result.ok) {
           setRetrying(false);
           setFlagInput("");
         }
       } catch {
-        setError(true);
+        setError("Submission could not finish. Please try again.");
       }
     });
   }
@@ -245,7 +250,7 @@ function LabBlock({
           </span>
           <div>
             <strong>Practice completed</strong>
-            <p>{block.title} · {block.points ?? 50} lab points earned</p>
+            <p>{block.title} · {block.points} lab points earned</p>
           </div>
         </div>
 
@@ -285,11 +290,11 @@ function LabBlock({
               value={flagInput}
               onChange={(event) => {
                 setFlagInput(event.target.value);
-                setError(false);
+                setError(null);
               }}
               placeholder="Enter your completion code"
               disabled={submitting}
-              aria-invalid={error || undefined}
+              aria-invalid={Boolean(error) || undefined}
               aria-describedby={error ? errorId : undefined}
               autoComplete="off"
               spellCheck={false}
@@ -306,7 +311,7 @@ function LabBlock({
 
           {error && (
             <p id={errorId} className="lesson-lab-error" role="alert">
-              Incorrect answer or submission could not finish.
+              {error}
             </p>
           )}
         </form>
@@ -351,7 +356,7 @@ function LessonBlock({
       return (
         <section className="note">
           <h2>{block.title}</h2>
-          <p>{block.body}</p>
+          <RichText text={block.body} />
         </section>
       );
 
@@ -361,7 +366,7 @@ function LessonBlock({
           <FlaskConical size={21} aria-hidden="true" />
           <div>
             <h3>{block.title}</h3>
-            <p>{block.body}</p>
+            <RichText text={block.body} />
           </div>
         </aside>
       );
@@ -374,7 +379,9 @@ function LessonBlock({
             <span className="eyebrow">BASH</span>
           </div>
           <pre><code>{block.code}</code></pre>
-          <p className="code-caption">{block.caption}</p>
+          {block.caption.trim() && (
+            <p className="code-caption">{block.caption}</p>
+          )}
         </section>
       );
 
@@ -555,7 +562,7 @@ export default function LearningPage(props: LearningPageProps) {
                 const showWarning = readingDone && unfinishedLabs;
                 const current = lesson.id === item.id;
                 const locked = !accessibleIds.has(item.id);
-                const labPointsSum = labs.reduce((sum, lab) => sum + (lab.points ?? 50), 0);
+                const labPointsSum = labs.reduce((sum, lab) => sum + lab.points, 0);
                 const lessonPoints = item.xp + labPointsSum;
                 const tooltipId = `${sidebarId}-lab-warning-${index}`;
 
@@ -704,30 +711,32 @@ export default function LearningPage(props: LearningPageProps) {
               {lessonLabs.length > 0 && (
                 <span>
                   <Terminal size={14} aria-hidden="true" />
-                  {lessonLabs.reduce((sum, lab) => sum + (lab.points ?? 50), 0)} lab pts
+                  {lessonLabs.reduce((sum, lab) => sum + lab.points, 0)} lab pts
                 </span>
               )}
             </div>
           </header>
 
-          <aside className="lesson-plan" aria-label="Chapter objectives">
-            <div className="lesson-plan-heading">
-              <span className="lesson-plan-icon" aria-hidden="true">
-                <FlaskConical size={20} />
-              </span>
-              <div>
-                <span className="dashboard-kicker">OBJECTIVES</span>
-                <h2>What you will learn</h2>
+          {lesson.objectives.length > 0 && (
+            <aside className="lesson-plan" aria-label="Chapter objectives">
+              <div className="lesson-plan-heading">
+                <span className="lesson-plan-icon" aria-hidden="true">
+                  <FlaskConical size={20} />
+                </span>
+                <div>
+                  <span className="dashboard-kicker">OBJECTIVES</span>
+                  <h2>What you will learn</h2>
+                </div>
               </div>
-            </div>
-            <ol>
-              {lesson.objectives.map((objective, index) => (
-                <li key={`${lesson.id}:objective:${index}`}>
-                  {objective}
-                </li>
-              ))}
-            </ol>
-          </aside>
+              <ol>
+                {lesson.objectives.map((objective, index) => (
+                  <li key={`${lesson.id}:objective:${index}`}>
+                    {objective}
+                  </li>
+                ))}
+              </ol>
+            </aside>
+          )}
 
           <article
             className="lesson-content lesson-reading-content"

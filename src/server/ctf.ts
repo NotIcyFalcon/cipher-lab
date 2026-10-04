@@ -4,6 +4,45 @@ import "server-only";
 import type { CTFChallengeState } from "@/lib/ctf-types";
 import { getDb } from "@/server/db";
 
+export type SuggestedPath = {
+  id: string;
+  title: string;
+  difficulty: string | null;
+};
+
+/** Resolve a CTF definition's suggested_paths_json to existing paths. */
+function resolveSuggestedPaths(json: string | null): SuggestedPath[] {
+  let decoded: unknown;
+
+  try {
+    decoded = JSON.parse(json || "[]");
+  } catch {
+    decoded = [];
+  }
+
+  const ids = Array.isArray(decoded)
+    ? [...new Set(
+        decoded.filter(
+          (value): value is string =>
+            typeof value === "string" &&
+            value.length > 0 &&
+            value.length <= 128,
+        ),
+      )].slice(0, 10)
+    : [];
+
+  const statement = getDb().prepare(`
+    SELECT id, title, difficulty
+    FROM learning_paths
+    WHERE id = ?
+  `);
+
+  return ids.flatMap((id) => {
+    const row = statement.get(id) as SuggestedPath | undefined;
+    return row ? [row] : [];
+  });
+}
+
 export function readCTFAccountData(userId: string) {
   const db = getDb();
   const completions = db
@@ -83,7 +122,7 @@ export function getCTFCatalogProgress(userId: string) {
 
       return {
         ...ctf,
-        suggestedPaths: JSON.parse(ctf.suggested_paths_json || '[]'),
+        suggestedPaths: resolveSuggestedPaths(ctf.suggested_paths_json),
         universes: ctfUniverses,
         challengeCount: ctfUniverses.reduce((sum, u) => sum + u.challengeCount, 0),
         completedCount: ctfUniverses.reduce((sum, u) => sum + u.completedCount, 0),
@@ -118,10 +157,8 @@ export function getCTFChallenge(challengeId: string) {
   const ctf = db.prepare("SELECT * FROM ctfs WHERE id = ?").get(universe.ctf_id) as any;
   const topic = db.prepare("SELECT * FROM topics WHERE id = ?").get(ctf.topic_id) as any;
 
-  const pathIds = JSON.parse(challenge.suggested_paths_json || '[]');
-  const suggestedPaths = pathIds.length > 0 
-    ? db.prepare(`SELECT id, title, description FROM learning_paths WHERE id IN (${pathIds.map(() => '?').join(',')})`).all(...pathIds) as any[]
-    : [];
+  // Recommended paths are authored on the CTF definition.
+  const suggestedPaths = resolveSuggestedPaths(ctf.suggested_paths_json);
 
   return {
     challenge: {

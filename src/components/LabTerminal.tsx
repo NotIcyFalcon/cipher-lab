@@ -11,6 +11,12 @@ import { Terminal as TerminalIcon, Trophy } from "lucide-react";
 import { getLabAccessCode } from "@/app/actions";
 import "@/app/batch-two.css";
 
+// Must stay inside the gateway's validSize() range (1-500 cols, 1-200 rows).
+const MIN_COLS = 20;
+const MAX_COLS = 300;
+const MIN_ROWS = 5;
+const MAX_ROWS = 120;
+
 type Props = {
   labId: string;
   title: string;
@@ -94,7 +100,30 @@ export default function LabTerminal({
         const fit = new FitAddon();
         terminal.loadAddon(fit);
         terminal.open(host!);
-        fit.fit();
+
+        // The remote shell must use exactly the size xterm draws. Fit to the
+        // panel, but keep within the gateway's accepted range by resizing
+        // xterm itself, so the reported size never differs from the screen.
+        function fitTerminal() {
+          const proposed = fit.proposeDimensions();
+
+          if (
+            !proposed ||
+            !Number.isFinite(proposed.cols) ||
+            !Number.isFinite(proposed.rows)
+          ) {
+            return;
+          }
+
+          const cols = Math.max(MIN_COLS, Math.min(MAX_COLS, proposed.cols));
+          const rows = Math.max(MIN_ROWS, Math.min(MAX_ROWS, proposed.rows));
+
+          if (cols !== terminal.cols || rows !== terminal.rows) {
+            terminal.resize(cols, rows);
+          }
+        }
+
+        fitTerminal();
 
         const url = new URL(
           process.env.NEXT_PUBLIC_LAB_WS_URL || "/lab-socket",
@@ -130,12 +159,14 @@ export default function LabTerminal({
           }
         }
 
+        // Slightly longer than the gateway's 45s setup window, so its own
+        // status message arrives first when a cold start fails.
         const connectionTimer = window.setTimeout(() => {
           if (ready || disposed) return;
           closeMessage = "Connection timed out. Check that the gateway is running.";
           setStatus(closeMessage);
           socket.close();
-        }, 30_000);
+        }, 50_000);
 
         cleanup.push(() => window.clearTimeout(connectionTimer));
 
@@ -170,7 +201,7 @@ export default function LabTerminal({
               ready = true;
               window.clearTimeout(connectionTimer);
               terminal.options.disableStdin = false;
-              fit.fit();
+              fitTerminal();
               send({
                 type: "resize",
                 cols: terminal.cols,
@@ -229,7 +260,7 @@ export default function LabTerminal({
             host!.clientWidth > 0 &&
             host!.clientHeight > 0
           ) {
-            fit.fit();
+            fitTerminal();
           }
         });
         observer.observe(host!);

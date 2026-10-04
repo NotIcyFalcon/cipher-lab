@@ -26,7 +26,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Ronak's Profile | Cyber Box",
+  title: "Profile | Cyber Box",
   description: "Celebrate your progress and discover your next learning step.",
 };
 

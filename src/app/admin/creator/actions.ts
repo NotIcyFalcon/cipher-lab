@@ -46,6 +46,34 @@ const tables: Record<CreatorSection, Table> = {
 
 class InputError extends Error {}
 
+/**
+ * Turn SQLite constraint failures into messages the admin can act on instead
+ * of the generic "Unable to save" text.
+ */
+function constraintMessage(error: unknown): string | null {
+  if (!(error instanceof Error)) return null;
+
+  const code = (error as { code?: unknown }).code;
+
+  switch (code) {
+    case "SQLITE_CONSTRAINT_UNIQUE":
+    case "SQLITE_CONSTRAINT_PRIMARYKEY":
+      return error.message.includes("labs.name")
+        ? "Another lab already uses this name. Choose a different lab name."
+        : "Another item already uses one of these values.";
+
+    case "SQLITE_CONSTRAINT_FOREIGNKEY":
+      return "A linked item no longer exists or is still in use. Refresh the page and try again.";
+
+    case "SQLITE_CONSTRAINT_CHECK":
+    case "SQLITE_CONSTRAINT_NOTNULL":
+      return "Some values are not in the expected format. Review the form and try again.";
+
+    default:
+      return null;
+  }
+}
+
 async function requireAdmin() {
   const user = await requireUserId();
 
@@ -394,15 +422,17 @@ function saveTopic(db: Db, id: string, input: Record<string, unknown>) {
     .get(id) as { type: string } | undefined;
 
   if (old && old.type !== type) {
+    // CTF challenges belong to topics through ctfs (006 removed
+    // ctf_challenges.topic_id).
     const references = db.prepare(`
       SELECT
         (SELECT COUNT(*) FROM learning_paths WHERE topic_id = ?) +
-        (SELECT COUNT(*) FROM ctf_challenges WHERE topic_id = ?) AS count
+        (SELECT COUNT(*) FROM ctfs WHERE topic_id = ?) AS count
     `).get(id, id) as { count: number };
 
     if (references.count > 0) {
       throw new InputError(
-        "A topic containing paths or challenges cannot change type.",
+        "A topic containing learning paths or CTFs cannot change type.",
       );
     }
   }
@@ -451,6 +481,11 @@ function savePath(db: Db, id: string, input: Record<string, unknown>) {
 
 function saveHomework(db: Db, id: string, input: Record<string, unknown>) {
   const questions = list(input.questions, "Questions", 10);
+
+  if (questions.length === 0) {
+    throw new InputError("Add at least one homework question.");
+  }
+
   const questionRows: Row[] = [];
   const testRows: Row[] = [];
 
@@ -463,38 +498,75 @@ function saveHomework(db: Db, id: string, input: Record<string, unknown>) {
       homework_id: id,
       title: text(q.title, "Question Title", 200),
       question_markdown: multiline(q.question_markdown, "Question Markdown", 50_000, true),
-      standard_solution_script: multiline(q.standard_solution_script, "Standard solution script", 50_000, false),
+      standard_solution_script: multiline(
+        q.standard_solution_script,
+        "Standard solution script",
+        50_000,
+        true,
+      ),
       sequence_order: index,
     });
 
     const tests = list(q.tests, "Test cases", 100);
-    tests.forEach((tValue) => {
+
+    if (tests.length === 0) {
+      throw new InputError(
+        `Question ${index + 1} must have at least one test case.`,
+      );
+    }
+
+    tests.forEach((tValue, testIndex) => {
       const test = object(tValue);
+
       testRows.push({
         id: identifier(test.id, "Test case ID"),
         homework_id: id,
         question_id: qId,
-        setup_script: multiline(test.setup_script, "Test case setup script", 50_000, false),
+        setup_script: multiline(
+          test.setup_script,
+          "Test case setup script",
+          50_000,
+          false,
+        ),
         xp_reward: integer(test.xp_reward, "Test case XP"),
         is_hidden: boolean(test.is_hidden, "Hidden test case") ? 1 : 0,
+        sequence_order: testIndex,
+
+        // A changed definition must never reuse stale expected results.
+        expected_output: null,
+        expected_folder: null,
       });
     });
   });
+
+  uniqueIds(questionRows, "Questions");
+  uniqueIds(testRows, "Test cases");
 
   writeRow(db, "homework", {
     id,
     path_id: parentId(db, "learning_paths", input.path_id, "Learning path"),
     title: text(input.title, "Title", 200),
+
+    // Legacy column. Questions now live in homework_questions.
+    question_markdown: "",
+
     total_base_xp: integer(input.total_base_xp, "Total Base XP"),
   });
 
   syncChildren(db, "homework_questions", "homework_id", id, questionRows);
   syncChildren(db, "homework_test_cases", "homework_id", id, testRows);
-  
+  const now = Date.now();
+
   db.prepare(`
-    INSERT INTO homework_jobs (kind, homework_id, available_at, created_at)
-    VALUES ('prepare_expected', ?, strftime('%s', 'now'), strftime('%s', 'now'))
-  `).run(id);
+    INSERT INTO homework_jobs (
+      kind,
+      homework_id,
+      status,
+      available_at,
+      created_at
+    )
+    VALUES ('prepare_expected', ?, 'queued', ?, ?)
+  `).run(id, now, now);
 }
 
 function saveCtfDefinition(db: Db, id: string, input: Record<string, unknown>) {
@@ -505,9 +577,20 @@ function saveCtfDefinition(db: Db, id: string, input: Record<string, unknown>) {
     description: multiline(input.description, "CTF description", 10_000),
     difficulty: text(input.difficulty, "Difficulty", 80, false),
     suggested_paths_json: JSON.stringify(
-      list(input.suggested_path_ids, "Suggested paths", 10).map((id) =>
-        identifier(id, "Suggested path ID"),
-      ),
+      [...new Set(
+        list(
+          input.suggested_path_ids,
+          "Suggested paths",
+          10,
+        ).map((value) =>
+          parentId(
+            db,
+            "learning_paths",
+            value,
+            "Recommended learning path",
+          ),
+        ),
+      )],
     ),
   });
 }
@@ -563,34 +646,89 @@ function saveCtf(db: Db, id: string, input: Record<string, unknown>) {
   syncChildren(db, "ctf_hints", "challenge_id", id, hints);
 }
 
-function saveLab(db: Db, id: string, input: Record<string, unknown>) {
-  const blacklist = multiline(
+function saveLab(
+  db: Db,
+  id: string,
+  input: Record<string, unknown>,
+) {
+  function commandList(value: unknown, label: string): string[] {
+    const commands = multiline(value, label, 10_000)
+      .split(/\\r?\\n/)
+      .map((command) => command.trim())
+      .filter(Boolean);
+
+    const unique = [...new Set(commands)];
+
+    if (unique.length > 200) {
+      throw new InputError(`${label} supports at most 200 entries.`);
+    }
+
+    return unique;
+  }
+
+  const username = text(input.default_user, "Default user", 32);
+
+  // Uppercase is allowed here because the existing image uses "Ronak".
+  if (!/^[A-Za-z_][A-Za-z0-9_-]{0,31}$/.test(username)) {
+    throw new InputError(
+      "Default user must be a valid Linux username.",
+    );
+  }
+
+  const setupScript = multiline(
+    input.setup_script,
+    "Setup script",
+    50_000,
+  );
+
+  if (setupScript.includes("\\0")) {
+    throw new InputError("Setup script cannot contain NUL characters.");
+  }
+
+  const blacklist = commandList(
     input.command_blacklist,
     "Command blacklist",
-    10_000,
-  )
-    .split(/\r?\n/)
-    .map((command) => command.trim())
-    .filter(Boolean);
+  );
 
-  if (blacklist.length > 200) {
-    throw new InputError("The blacklist supports at most 200 entries.");
+  const whitelist = commandList(
+    input.command_whitelist,
+    "Command whitelist",
+  );
+
+  const whitelistEnabled = boolean(
+    input.whitelist_enabled,
+    "Whitelist enabled",
+  );
+
+  if (whitelistEnabled && whitelist.length === 0) {
+    throw new InputError(
+      "Add at least one allowed command before enabling the whitelist.",
+    );
   }
+
+  const existing = db.prepare(`
+    SELECT base_image
+    FROM labs
+    WHERE id = ?
+  `).get(id) as { base_image: string } | undefined;
 
   writeRow(db, "labs", {
     id,
     name: text(input.name, "Lab name", 200),
-    base_image: "ubuntu:latest",
+    base_image: existing?.base_image ?? "ubuntu:latest",
+
+    // An edited definition invalidates any previously prepared snapshot.
     snapshot_image: null,
-    default_user: text(input.default_user, "Default user", 100),
-    whitelist_enabled: boolean(
-      input.whitelist_enabled,
-      "Whitelist enabled",
-    )
-      ? 1
-      : 0,
+
+    default_user: username,
+    whitelist_enabled: whitelistEnabled ? 1 : 0,
     command_blacklist_json: JSON.stringify(blacklist),
-    initial_setup_script: multiline(input.setup_script, "Setup script", 50_000),
+    command_whitelist_json: JSON.stringify(whitelist),
+
+    // Transitional compatibility while both columns exist.
+    // Runtime and editor must eventually use setup_script exclusively.
+    setup_script: setupScript,
+    initial_setup_script: setupScript,
   });
 }
 
@@ -669,6 +807,9 @@ export async function saveCreatorAction(
 
     console.error("Creator save failed", error);
 
+    const constraint = constraintMessage(error);
+    if (constraint) return { error: constraint };
+
     return {
       error: "Unable to save this item. Please refresh and try again.",
     };
@@ -704,7 +845,7 @@ export async function deleteCreatorAction(
 
         if (relational.count > 0) {
           throw new InputError(
-            "Unassign this lab from homework and CTF challenges first.",
+            "Unassign this lab from its CTF challenges first.",
           );
         }
 
@@ -756,6 +897,9 @@ export async function deleteCreatorAction(
     }
 
     console.error("Creator delete failed", error);
+
+    const constraint = constraintMessage(error);
+    if (constraint) return { error: constraint };
 
     return {
       error: "Unable to delete this item. Please refresh and try again.",

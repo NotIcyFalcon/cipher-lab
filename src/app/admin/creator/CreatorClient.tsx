@@ -171,12 +171,18 @@ function blacklistText(json: string | null): string {
   return value.join("\n");
 }
 
+type DraftDefaults = {
+  pathId: string;
+  topicId: string;
+  ctfId: string;
+  universeId: string;
+};
+
 function makeDraft(
   section: CreatorSection,
   data: CreatorData,
   editId: string,
-  pathId: string,
-  topicId: string,
+  { pathId, topicId, ctfId, universeId }: DraftDefaults,
 ): CreatorDraft {
   switch (section) {
     case "topics": {
@@ -261,7 +267,7 @@ function makeDraft(
       return {
         entity: "universes",
         id: row?.id ?? "",
-        ctf_id: row?.ctf_id ?? "",
+        ctf_id: row?.ctf_id ?? ctfId,
         name: row?.name ?? "",
         description: row?.description ?? "",
       };
@@ -273,7 +279,7 @@ function makeDraft(
       return {
         entity: "ctf",
         id: row?.id ?? "",
-        universe_id: row?.universe_id ?? "",
+        universe_id: row?.universe_id ?? universeId,
         title: row?.title ?? "",
         description: row?.description ?? "",
         points: row?.points ?? 100,
@@ -1743,9 +1749,9 @@ function DraftFields({
           />
 
           <p className="creator-help">
-            This registers lab metadata. Image creation, container
-            initialization, and command-policy enforcement belong to the lab
-            runtime batch.
+            The setup script defines the lab environment. The runtime must finish
+            preparing that environment before terminal access is allowed.
+            Saving a lab definition does not start an interactive lab session.
           </p>
         </>
       );
@@ -1939,7 +1945,14 @@ function catalogItems(section: CreatorSection, data: CreatorData) {
       return data.challenges.map((challenge) => ({
         id: challenge.id,
         title: challenge.title,
-        detail: `${challenge.points} points · ${challenge.difficulty || "Unspecified difficulty"}`,
+        detail: [
+          data.universes.find((universe) => universe.id === challenge.universe_id)?.name,
+          `${challenge.points} points`,
+          challenge.difficulty || "Unspecified difficulty",
+          challenge.flag_hash ? null : "No flag set",
+        ]
+          .filter(Boolean)
+          .join(" · "),
       }));
 
     case "labs":
@@ -1958,6 +1971,8 @@ export default function CreatorClient({
   creating,
   pathId,
   topicId,
+  ctfId,
+  universeId,
   saved,
   deleted,
 }: {
@@ -1967,6 +1982,8 @@ export default function CreatorClient({
   creating: boolean;
   pathId: string;
   topicId: string;
+  ctfId: string;
+  universeId: string;
   saved: boolean;
   deleted: boolean;
 }) {
@@ -1980,7 +1997,12 @@ export default function CreatorClient({
 
     try {
       return {
-        draft: makeDraft(section, data, editId, pathId, topicId),
+        draft: makeDraft(section, data, editId, {
+          pathId,
+          topicId,
+          ctfId,
+          universeId,
+        }),
         error: "",
       };
     } catch (error) {
@@ -2104,18 +2126,39 @@ export default function CreatorClient({
 
                   {section === "topics" && (
                     <div className="creator-record-links">
+                      {/* CTF topics hold CTFs; challenges live in universes. */}
                       <Link
                         href={
                           data.topics.find((topic) => topic.id === item.id)
                             ?.type === "ctf"
-                            ? `/admin/creator/ctf?new=1&topicId=${encodeURIComponent(item.id)}`
+                            ? `/admin/creator/ctfs?new=1&topicId=${encodeURIComponent(item.id)}`
                             : `/admin/creator/paths?new=1&topicId=${encodeURIComponent(item.id)}`
                         }
                       >
                         {data.topics.find((topic) => topic.id === item.id)
                           ?.type === "ctf"
-                          ? "Create challenge"
+                          ? "Create CTF"
                           : "Create learning path"}
+                      </Link>
+                    </div>
+                  )}
+
+                  {section === "ctfs" && (
+                    <div className="creator-record-links">
+                      <Link
+                        href={`/admin/creator/universes?new=1&ctfId=${encodeURIComponent(item.id)}`}
+                      >
+                        Create universe
+                      </Link>
+                    </div>
+                  )}
+
+                  {section === "universes" && (
+                    <div className="creator-record-links">
+                      <Link
+                        href={`/admin/creator/ctf?new=1&universeId=${encodeURIComponent(item.id)}`}
+                      >
+                        Create challenge
                       </Link>
                     </div>
                   )}

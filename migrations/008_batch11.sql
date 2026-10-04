@@ -41,10 +41,9 @@ ALTER TABLE ctf_challenges
 ADD COLUMN suggested_paths_json TEXT NOT NULL DEFAULT '[]'
 CHECK (json_valid(suggested_paths_json) AND json_type(suggested_paths_json) = 'array');
 
--- Add flag hash for CTF Challenges
-ALTER TABLE ctf_challenges
-ADD COLUMN flag_hash TEXT
-CHECK (flag_hash IS NULL OR length(flag_hash) >= 1);
+-- ctf_challenges.flag_hash already exists since 006 (64-char hex SHA-256).
+-- Re-adding it here made every fresh migration fail with
+-- "duplicate column name: flag_hash".
 
 -- Add Chapter Goals (objectives) to Chapters
 ALTER TABLE chapters

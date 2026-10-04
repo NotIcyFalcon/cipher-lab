@@ -1,13 +1,8 @@
--- Add suggested paths to CTFs and CTF Challenges
-ALTER TABLE ctfs
-ADD COLUMN suggested_paths_json TEXT NOT NULL DEFAULT '[]'
-CHECK (json_valid(suggested_paths_json) AND json_type(suggested_paths_json) = 'array');
-
-ALTER TABLE ctf_challenges
-ADD COLUMN suggested_paths_json TEXT NOT NULL DEFAULT '[]'
-CHECK (json_valid(suggested_paths_json) AND json_type(suggested_paths_json) = 'array');
-
--- Add Chapter Goals (objectives) to Chapters
-ALTER TABLE chapters
-ADD COLUMN objectives_json TEXT NOT NULL DEFAULT '[]'
-CHECK (json_valid(objectives_json) AND json_type(objectives_json) = 'array');
+-- migrations/009_batch11_part2.sql
+--
+-- Intentionally empty. This file used to repeat the columns that
+-- 008_batch11.sql already adds (ctfs.suggested_paths_json,
+-- ctf_challenges.suggested_paths_json, chapters.objectives_json), which made
+-- fresh migrations fail with "duplicate column name". The version number is
+-- kept so existing databases at user_version >= 9 stay in sequence.
+SELECT 1;

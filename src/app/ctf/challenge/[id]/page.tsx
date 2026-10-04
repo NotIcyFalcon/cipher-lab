@@ -12,6 +12,9 @@ import {
 
 import CTFChallengePanel from "@/components/CTFChallengePanel";
 import LabTerminal from "@/components/LabTerminal";
+import RecommendedPaths from "@/components/RecommendedPaths";
+import RichText from "@/components/RichText";
+import { pathHref } from "@/lib/path-links";
 import { getCTFChallengeState, getCTFChallenge } from "@/server/ctf";
 import { requireRonakId } from "@/server/current-user";
 
@@ -104,37 +107,21 @@ export default async function CTFChallengePage({
         </div>
 
         <div className="ctf-briefing-body">
-          <p>{challenge.description}</p>
+          <RichText text={challenge.description} />
         </div>
       </section>
 
-      {challenge.suggestedPaths?.length > 0 && (
-        <section className="ctf-briefing" aria-labelledby="ctf-suggested-paths-title">
-          <div className="ctf-panel-bar">
-            <span className="ctf-panel-label" id="ctf-suggested-paths-title">
-              <FileSearch size={15} aria-hidden="true" />
-              RECOMMENDED PREPARATION
-            </span>
-            <span className="ctf-mono-note">OPTIONAL BACKGROUND</span>
-          </div>
-
-          <div className="ctf-briefing-body">
-            <p>The following learning paths provide useful context for this mission:</p>
-            <ul style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              {challenge.suggestedPaths.map((path: { id: string; title: string; description: string }) => (
-                <li key={path.id}>
-                  <Link href={`/learning/${path.id}`} className="ctf-text-link">
-                    <strong>{path.title}</strong>
-                  </Link>
-                  <p style={{ fontSize: "14px", color: "var(--color-text-secondary)", marginTop: "4px" }}>
-                    {path.description}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
+      {/* Recommended paths are set on the CTF definition, not per challenge. */}
+      <RecommendedPaths
+        paths={challenge.suggestedPaths.map((path: {
+          id: string;
+          title: string;
+          difficulty: string | null;
+        }) => ({
+          ...path,
+          href: pathHref(path.id),
+        }))}
+      />
 
       {challenge.labId && (
         <section

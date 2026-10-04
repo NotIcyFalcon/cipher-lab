@@ -62,7 +62,7 @@ export default async function CreatorSectionPage({
       .all() as ChapterRow[],
 
     labs: db
-      .prepare("SELECT * FROM labs ORDER BY base_image COLLATE NOCASE, id")
+      .prepare("SELECT * FROM labs ORDER BY name COLLATE NOCASE, id")
       .all() as LabRow[],
 
     homework: db
@@ -118,6 +118,8 @@ export default async function CreatorSectionPage({
         single(search.new),
         single(search.pathId),
         single(search.topicId),
+        single(search.ctfId),
+        single(search.universeId),
         single(search.saved),
         single(search.deleted),
       ].join(":")}
@@ -127,6 +129,8 @@ export default async function CreatorSectionPage({
       creating={single(search.new) === "1"}
       pathId={single(search.pathId)}
       topicId={single(search.topicId)}
+      ctfId={single(search.ctfId)}
+      universeId={single(search.universeId)}
       saved={single(search.saved) === "1"}
       deleted={single(search.deleted) === "1"}
     />

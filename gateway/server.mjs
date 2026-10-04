@@ -76,6 +76,11 @@ function validSize(message) {
   );
 }
 
+// Lab IDs come from the Creator (UUIDs) or older content (slugs).
+function validLabId(labId) {
+  return typeof labId === "string" && /^[A-Za-z0-9][A-Za-z0-9:_.-]{0,127}$/.test(labId);
+}
+
 function validAccessCode(code) {
   if (typeof code !== "string" || !/^[a-f0-9]{64}$/.test(code)) {
     return false;
@@ -96,11 +101,13 @@ function attachTerminal(ws) {
   let lastInput = started;
   let lastPong = started;
   let size = { cols: 80, rows: 24 };
-  let connectedLabId = null;
+  let connectedService = null;
 
+  // Container start (up to 15s health wait) plus SSH handshake (up to 15s)
+  // must fit inside this window.
   const setupTimer = setTimeout(
     () => stop("Connection setup timed out.", 1008),
-    30_000, // Increased from 20s to allow for container startup
+    45_000,
   );
 
   const watchdog = setInterval(() => {
@@ -227,12 +234,15 @@ function attachTerminal(ws) {
           return stop("Access code not accepted.", 1008);
         }
 
+        if (!validLabId(message.labId)) {
+          return stop("Unknown lab.", 1008);
+        }
+
         if (!validSize(message)) {
           return stop("Invalid terminal size.", 1008);
         }
 
         authenticated = true;
-        connectedLabId = message.labId;
         size = { cols: message.cols, rows: message.rows };
 
         // Tell the frontend we're starting the container
@@ -240,8 +250,9 @@ function attachTerminal(ws) {
 
         // Start the container on-demand, then SSH into it
         ensureLabRunning(message.labId)
-          .then((host) => {
+          .then(({ host, service }) => {
             if (closed) return;
+            connectedService = service;
 
             send({ type: "status", message: "Connecting to lab..." });
 
@@ -269,6 +280,11 @@ function attachTerminal(ws) {
           })
           .catch((err) => {
             console.error("[Docker]", err.message);
+
+            if (err.code === "UNKNOWN_LAB") {
+              return stop("This lab no longer exists. Ask the owner to check the chapter.", 1008);
+            }
+
             stop("Could not start the lab environment. " + err.message, 1011);
           });
 
@@ -291,7 +307,7 @@ function attachTerminal(ws) {
         }
 
         lastInput = Date.now();
-        if (connectedLabId) touchLab(connectedLabId);
+        if (connectedService) touchLab(connectedService);
         stream.write(message.data);
         return;
       }

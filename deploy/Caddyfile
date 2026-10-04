@@ -4,6 +4,10 @@
         X-Frame-Options DENY
         Referrer-Policy no-referrer
     }
+    # Internal service routes are reached container-to-container only.
+    handle /api/internal/* {
+        respond 404
+    }
     handle /lab-socket {
         reverse_proxy gateway:3001 {
             header_up -Authorization

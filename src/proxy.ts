@@ -6,6 +6,11 @@ export async function proxy(request: NextRequest) {
 
   if (path === "/login") return NextResponse.next();
 
+  // Service-to-service routes (lab gateway → web) have no browser session.
+  // Each handler checks its own bearer token, and Caddy refuses these paths
+  // from the internet.
+  if (path.startsWith("/api/internal/")) return NextResponse.next();
+
   const token = request.cookies.get(SESSION_COOKIE)?.value;
 
   if (await verifySession(token)) return NextResponse.next();
