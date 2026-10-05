@@ -26,8 +26,8 @@
 }
 
 .workspace-frame .workspace-profile.is-active {
-  border-color: #56509a;
-  background: #1c1a2d;
+  border-color: #f91206;
+  background: #15161b;
 }
 
 .workspace-frame .workspace-nav-link {
@@ -91,7 +91,7 @@
 }
 
 .workspace-frame .b5-learning .lesson-stage p {
-  color: #b9c7d2;
+  color: #cec8bd;
 }
 
 .workspace-frame .b5-learning .lesson-stage .note {
@@ -257,7 +257,7 @@
 .workspace-frame .paths-page .dashboard-path-icon {
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: 2px;
 }
 
 /* A single real path stays compact instead of becoming a full-width banner. */
@@ -288,15 +288,15 @@
 }
 
 .workspace-frame .b5-quiz .quiz-option.selected {
-  border-color: #a89add;
-  background: #252035;
-  color: #efe9ff;
+  border-color: #c5bfb2;
+  background: #191a21;
+  color: #f6f5f2;
 }
 
 .workspace-frame .b5-quiz .quiz-option.is-correct {
-  border-color: #6bc98d;
-  background: #1d1b32;
-  color: #d4f8e1;
+  border-color: #6dc788;
+  background: #16181e;
+  color: #dbf1e2;
 }
 
 .workspace-frame .b5-quiz .quiz-option.is-incorrect {
@@ -306,7 +306,7 @@
 }
 
 .workspace-frame .b5-quiz .quiz-option.is-correct > svg {
-  color: #81eda9;
+  color: #97d7aa;
 }
 
 .workspace-frame .b5-quiz .quiz-option.is-incorrect > svg {
@@ -322,7 +322,7 @@
 }
 
 .b5-quiz-actions > span {
-  color: #b1becb;
+  color: #c7c1b5;
   font-size: 13px;
 }
 
@@ -332,7 +332,7 @@
 }
 
 .workspace-frame .b5-quiz .quiz-feedback.is-correct {
-  color: #b4efca;
+  color: #bde6c9;
 }
 
 .workspace-frame .b5-quiz .quiz-feedback.is-incorrect {
@@ -385,17 +385,17 @@
 }
 
 .workspace-frame .b5-homework .hw-chapter-card.is-locked {
-  background: linear-gradient(145deg, #121325, #0d0f1f);
-  border-color: #292b4d;
+  background: linear-gradient(145deg, #101115, #0d0e11);
+  border-color: #333543;
   box-shadow: none;
 }
 
 .workspace-frame .b5-homework .hw-chapter-card.is-locked .paths-course-body h3 {
-  color: #b1bdc8;
+  color: #c6c0b3;
 }
 
 .workspace-frame .b5-homework .hw-chapter-card.is-locked .paths-course-body p {
-  color: #9eacb9;
+  color: #b7afa0;
 }
 
 .workspace-frame .b5-homework .hw-chapter-card.is-locked .paths-course-tags {
@@ -407,7 +407,7 @@
   align-items: flex-start;
   gap: 10px;
   margin: 0;
-  color: #b2bfca;
+  color: #c7c1b5;
   font-size: 13px;
   line-height: 1.7;
 }
@@ -415,7 +415,7 @@
 .b5-homework-lock-message > svg {
   flex-shrink: 0;
   margin-top: 3px;
-  color: #a2afbc;
+  color: #bab3a4;
 }
 
 .b5-topic-empty {
@@ -423,10 +423,10 @@
   align-items: center;
   gap: 13px;
   padding: 22px;
-  border: 1px dashed #2c2f56;
-  border-radius: 12px;
-  color: #a0aab7;
-  background: #0d0f25;
+  border: 1px dashed #383a4a;
+  border-radius: 2px;
+  color: #b7afa0;
+  background: #0f0f14;
 }
 
 .b5-topic-empty p {
@@ -451,7 +451,7 @@
 
 .workspace-frame .b5-ctf .b5-ctf-card:hover,
 .workspace-frame .b5-ctf .b5-ctf-card:focus-within {
-  border-color: #6d85a7;
+  border-color: #9a8f7a;
   box-shadow: 0 8px 30px #00000025;
 }
 
@@ -462,7 +462,7 @@
 .b5-ctf-card-link:focus-visible::after {
   outline: 2px solid var(--green);
   outline-offset: -4px;
-  border-radius: 14px;
+  border-radius: 2px;
 }
 
 .b5-ctf-suggested a {
@@ -473,7 +473,7 @@
 .b5-ctf-challenges {
   margin-top: 22px;
   padding-top: 17px;
-  border-top: 1px solid #24274b;
+  border-top: 1px solid #30323f;
 }
 
 .b5-ctf-universe-preview {
@@ -482,7 +482,7 @@
 
 .b5-ctf-universe-preview h4 {
   margin: 0 0 10px;
-  color: #c6d4de;
+  color: #d8d4cc;
   font-size: 12px;
   font-weight: 650;
 }
@@ -500,14 +500,14 @@
   align-items: flex-start;
   gap: 10px;
   padding: 11px;
-  border: 1px solid #23264a;
-  border-radius: 8px;
-  background: #090a1e;
+  border: 1px solid #2f313e;
+  border-radius: 2px;
+  background: #0c0c0f;
 }
 
 .b5-ctf-challenge-status {
   margin-top: 2px;
-  color: #a892db;
+  color: #fa4238;
 }
 
 .b5-ctf-universe-preview li > span:last-child {
@@ -521,20 +521,20 @@
 }
 
 .b5-ctf-universe-preview strong {
-  color: #d0d7e3;
+  color: #dfdbd4;
   font-size: 12px;
 }
 
 .b5-ctf-universe-preview li > span:last-child > span {
   margin-top: 3px;
-  color: #b2c1cd;
+  color: #c8c2b7;
   font-size: 12px;
   overflow-wrap: anywhere;
 }
 
 .b5-ctf-universe-preview small {
   margin-top: 5px;
-  color: #969eaa;
+  color: #aaa396;
   font-size: 11px;
 }
 
@@ -549,12 +549,12 @@
   align-items: center;
   gap: 26px;
   padding: 30px;
-  border: 1px solid #3c3956;
-  border-radius: 20px;
+  border: 1px solid #3d4052;
+  border-radius: 2px;
   background:
-    radial-gradient(ellipse at 0% 0%, #9d77f716, transparent 65%),
-    radial-gradient(ellipse at 100% 100%, #c4b5fd10, transparent 65%),
-    #0e0f26;
+    radial-gradient(ellipse at 0% 0%, #fa423816, transparent 65%),
+    radial-gradient(ellipse at 100% 100%, #dedbd410, transparent 65%),
+    #0f1014;
 }
 
 .b5-profile-avatar {
@@ -563,8 +563,8 @@
   flex-shrink: 0;
   width: 100px;
   height: 110px;
-  color: #d5c6f7;
-  background: linear-gradient(145deg, #393564, #242335);
+  color: #e3e0da;
+  background: linear-gradient(145deg, #424557, #1a1b22);
   clip-path: polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
 }
 
@@ -581,7 +581,7 @@
 .b5-profile-intro > p {
   max-width: 760px;
   margin: 0;
-  color: #b9c9d3;
+  color: #cec9be;
   font-size: 15px;
   line-height: 1.85;
 }
@@ -602,17 +602,17 @@
   align-items: center;
   gap: 7px;
   padding: 6px 10px;
-  border: 1px solid #383651;
-  border-radius: 999px;
-  color: #cfc3eb;
-  background: #1d1c2c;
+  border: 1px solid #3a3d4d;
+  border-radius: 2px;
+  color: #ddd9d1;
+  background: #15161c;
   font-size: 12px;
 }
 
 .b5-profile-chips > span:last-child {
-  border-color: #454056;
-  color: #d7caee;
-  background: #262234;
+  border-color: #414356;
+  color: #e1ded7;
+  background: #191b21;
 }
 
 .b5-profile-stats {
@@ -625,26 +625,26 @@
 .b5-profile-stats > div {
   min-width: 0;
   padding: 23px;
-  border: 1px solid #272a4e;
-  border-radius: 14px;
-  background: linear-gradient(145deg, #11132d, #0d0f23);
+  border: 1px solid #323443;
+  border-radius: 2px;
+  background: linear-gradient(145deg, #121318, #0e0f12);
 }
 
 .b5-profile-stats dt {
   display: flex;
   align-items: center;
   gap: 9px;
-  color: #c0ced7;
+  color: #d3cec4;
   font-size: 13px;
 }
 
 .b5-profile-stats dt > svg {
-  color: #a3b2c8;
+  color: #c0b9ab;
 }
 
 .b5-profile-stats dd {
   margin: 15px 0 9px;
-  color: #eceff4;
+  color: #f2f1ee;
   font-size: 36px;
   font-weight: 750;
   line-height: 1.1;
@@ -653,14 +653,14 @@
 }
 
 .b5-profile-stats dd > span {
-  color: #959ca7;
+  color: #a7a195;
   font-size: 18px;
   font-weight: 500;
 }
 
 .b5-profile-stats p {
   margin: 0;
-  color: #a7b8c4;
+  color: #c0b9ab;
   font-size: 12px;
   line-height: 1.75;
 }
@@ -671,9 +671,9 @@
   align-items: center;
   gap: 30px;
   padding: 25px 28px;
-  border: 1px solid #4b405d;
-  border-radius: 15px;
-  background: linear-gradient(115deg, #252137, #111229);
+  border: 1px solid #444659;
+  border-radius: 2px;
+  background: linear-gradient(115deg, #1a1b22, #111216);
 }
 
 .b5-level-panel h2 {
@@ -684,7 +684,7 @@
 
 .b5-level-panel p {
   margin: 0;
-  color: #beb8ce;
+  color: #cbc6bb;
   font-size: 13px;
 }
 
@@ -693,7 +693,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px;
-  color: #d5c6ee;
+  color: #dfdcd5;
   font-size: 12px;
 }
 
@@ -714,9 +714,9 @@
 .b5-profile-panel {
   min-width: 0;
   padding: 28px;
-  border: 1px solid #282a50;
-  border-radius: 17px;
-  background: linear-gradient(145deg, #10112a, #0c0e23);
+  border: 1px solid #343644;
+  border-radius: 2px;
+  background: linear-gradient(145deg, #111216, #0e0e12);
 }
 
 .b5-profile-panel-heading {
@@ -735,12 +735,12 @@
 }
 
 .b5-profile-panel-heading > svg {
-  color: #a6b5ca;
+  color: #c2bbae;
 }
 
 .b5-panel-intro {
   margin: 0 0 24px;
-  color: #b8c7d2;
+  color: #cdc8bd;
   font-size: 14px;
   line-height: 1.85;
 }
@@ -759,31 +759,31 @@
 }
 
 .b5-radar-grid {
-  fill: #9d77f703;
-  stroke: #34324d;
+  fill: #fa423803;
+  stroke: #373948;
   stroke-width: 1;
 }
 
 .b5-radar-axis {
-  stroke: #333149;
+  stroke: #343746;
   stroke-width: 1;
 }
 
 .b5-radar-value {
-  fill: #9d77f730;
-  stroke: #9d77f7;
+  fill: #fa423830;
+  stroke: #fa4238;
   stroke-width: 2.5;
   stroke-linejoin: round;
 }
 
 .b5-radar-dot {
-  fill: #cdb9fb;
-  stroke: #0d0f23;
+  fill: #dfdcd5;
+  stroke: #15161b;
   stroke-width: 1.5;
 }
 
 .b5-radar-label {
-  fill: #ccd5e1;
+  fill: #dcd8d1;
   font-family: inherit;
   font-size: 14px;
   font-weight: 750;
@@ -792,7 +792,7 @@
 .b5-radar-figure figcaption {
   max-width: 430px;
   margin: 0 auto 22px;
-  color: #b0c0ca;
+  color: #c6c0b4;
   text-align: center;
   font-size: 13px;
   line-height: 1.75;
@@ -803,7 +803,7 @@
   justify-items: center;
   gap: 16px;
   padding: 36px 20px;
-  color: #a9b8cc;
+  color: #c4beb1;
   text-align: center;
 }
 
@@ -825,9 +825,9 @@
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border: 1px solid #25284c;
-  border-radius: 9px;
-  background: #0a0c21;
+  border: 1px solid #313340;
+  border-radius: 2px;
+  background: #0c0d11;
 }
 
 .b5-field-number {
@@ -836,10 +836,10 @@
   flex-shrink: 0;
   width: 30px;
   height: 30px;
-  border: 1px solid #3c3a56;
-  border-radius: 8px;
-  color: #cbbee9;
-  background: #222131;
+  border: 1px solid #3e4152;
+  border-radius: 2px;
+  color: #dad6cd;
+  background: #181920;
   font-size: 11px;
   font-weight: 700;
 }
@@ -861,12 +861,12 @@
 
 .b5-field-list li > div > span {
   margin-top: 2px;
-  color: #a2b4c0;
+  color: #bcb5a6;
   font-size: 11px;
 }
 
 .b5-field-list li > strong {
-  color: #bda9eb;
+  color: #d1ccc3;
   font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
@@ -874,8 +874,8 @@
 .b5-profile-note {
   margin: 20px 0 0;
   padding-top: 17px;
-  border-top: 1px solid #24274c;
-  color: #a1b2bf;
+  border-top: 1px solid #303240;
+  color: #bbb4a5;
   font-size: 12px;
   line-height: 1.85;
 }
@@ -884,7 +884,7 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  color: #b7c7d1;
+  color: #ccc7bc;
   font-size: 12px;
 }
 
@@ -902,40 +902,40 @@
   place-items: center;
   min-height: 46px;
   aspect-ratio: 1;
-  border: 1px solid #272a4f;
-  border-radius: 9px;
-  color: #aabecb;
-  background: #0e1028;
+  border: 1px solid #333543;
+  border-radius: 2px;
+  color: #c4beb1;
+  background: #101015;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
 .b5-activity-day[data-intensity="1"],
 .b5-activity-swatch[data-intensity="1"] {
-  border-color: #413e63;
-  color: #dcd3f0;
-  background: #292649;
+  border-color: #45485c;
+  color: #e6e3dd;
+  background: #21222b;
 }
 
 .b5-activity-day[data-intensity="2"],
 .b5-activity-swatch[data-intensity="2"] {
-  border-color: #524d85;
-  color: #e6dff7;
-  background: #3b366e;
+  border-color: #5a5e78;
+  color: #eeece8;
+  background: #474a5d;
 }
 
 .b5-activity-day[data-intensity="3"],
 .b5-activity-swatch[data-intensity="3"] {
-  border-color: #896bce;
-  color: #0d0c1c;
-  background: #7c92b0;
+  border-color: #fa4238;
+  color: #111217;
+  background: #a59b87;
 }
 
 .b5-activity-day[data-intensity="4"],
 .b5-activity-swatch[data-intensity="4"] {
-  border-color: #bea5fa;
-  color: #0c0a1e;
-  background: #9d77f7;
+  border-color: #d6d2c9;
+  color: #111217;
+  background: #fa4238;
 }
 
 .b5-activity-legend {
@@ -944,16 +944,16 @@
   justify-content: flex-end;
   gap: 6px;
   margin-top: 13px;
-  color: #a3b4c0;
+  color: #bcb5a7;
   font-size: 11px;
 }
 
 .b5-activity-swatch {
   width: 13px;
   height: 13px;
-  border: 1px solid #272a4f;
+  border: 1px solid #333543;
   border-radius: 3px;
-  background: #0e1028;
+  background: #101015;
 }
 
 .b5-activity-summary {
@@ -965,19 +965,19 @@
 
 .b5-activity-summary > div {
   padding: 17px;
-  border: 1px solid #272a4f;
-  border-radius: 10px;
-  background: #0d0f26;
+  border: 1px solid #333543;
+  border-radius: 2px;
+  background: #0f1014;
 }
 
 .b5-activity-summary dt {
-  color: #aebfcb;
+  color: #c6c0b3;
   font-size: 12px;
 }
 
 .b5-activity-summary dd {
   margin: 8px 0 0;
-  color: #d7ceef;
+  color: #e3e0da;
   font-size: 26px;
   font-weight: 700;
 }
@@ -988,10 +988,10 @@
   gap: 11px;
   margin: 23px 0;
   padding: 17px;
-  border: 1px solid #48405b;
-  border-radius: 11px;
-  color: #d1bfe9;
-  background: #252034;
+  border: 1px solid #434658;
+  border-radius: 2px;
+  color: #dad6ce;
+  background: #181a21;
 }
 
 .b5-profile-kind-note > svg {
@@ -1000,7 +1000,7 @@
 
 .b5-profile-kind-note p {
   margin: 0;
-  color: #c9bdd8;
+  color: #d2cdc3;
   font-size: 13px;
   line-height: 1.8;
 }
@@ -1021,14 +1021,14 @@
 .b5-milestone {
   min-width: 0;
   padding: 21px;
-  border: 1px solid #2d3056;
-  border-radius: 14px;
-  background: #0f1029;
+  border: 1px solid #383b4b;
+  border-radius: 2px;
+  background: #101116;
 }
 
 .b5-milestone.is-earned {
-  border-color: #433e79;
-  background: linear-gradient(145deg, #1f1d37, #0e0f25);
+  border-color: #4f5268;
+  background: linear-gradient(145deg, #181a21, #0f1014);
 }
 
 .b5-milestone-icon {
@@ -1037,23 +1037,23 @@
   width: 47px;
   height: 47px;
   margin-bottom: 16px;
-  border: 1px solid #3c3956;
-  border-radius: 13px;
-  color: #b1bed0;
-  background: #222131;
+  border: 1px solid #3d4052;
+  border-radius: 2px;
+  color: #c9c3b8;
+  background: #181920;
 }
 
 .b5-milestone.is-earned .b5-milestone-icon {
-  border-color: #534c9d;
-  color: #bdf6d2;
-  background: #205533;
+  border-color: #f91206;
+  color: #c9ead3;
+  background: #2f4636;
 }
 
 .b5-milestone-state {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #aab5c5;
+  color: #c2bbad;
   font-size: 11px;
 }
 
@@ -1064,7 +1064,7 @@
 
 .b5-milestone p {
   margin: 0;
-  color: #aebec9;
+  color: #c5bfb2;
   font-size: 13px;
   line-height: 1.7;
 }
@@ -1082,19 +1082,19 @@
 
 .b5-xp-breakdown > div {
   padding: 15px;
-  border: 1px solid #2b2d51;
-  border-radius: 10px;
-  background: #0b0d23;
+  border: 1px solid #353847;
+  border-radius: 2px;
+  background: #0e0e12;
 }
 
 .b5-xp-breakdown dt {
-  color: #b4c4ce;
+  color: #cac4b8;
   font-size: 13px;
 }
 
 .b5-xp-breakdown dd {
   margin: 8px 0 0;
-  color: #d2c7ed;
+  color: #dfdcd5;
   font-size: 24px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -1286,7 +1286,7 @@
 
   .b5-activity-day {
     min-height: 35px;
-    border-radius: 7px;
+    border-radius: 2px;
     font-size: 11px;
   }
 

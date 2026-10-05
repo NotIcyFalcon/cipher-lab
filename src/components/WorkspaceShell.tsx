@@ -3,8 +3,7 @@ import Link from "next/link";
 import { Box } from "lucide-react";
 import SiteNav from "@/components/ui/SiteNav";
 import PageTransition from "@/components/ui/PageTransition";
-import AmbientBackground from "@/components/ui/AmbientBackground";
-import PointerSpotlight from "@/components/ui/PointerSpotlight";
+import SiteBackdrop from "@/components/ui/SiteBackdrop";
 
 export default function WorkspaceShell({
   current,
@@ -25,12 +24,7 @@ export default function WorkspaceShell({
         Skip to content
       </a>
 
-      {!immersive && (
-        <>
-          <AmbientBackground />
-          <PointerSpotlight />
-        </>
-      )}
+      {!immersive && <SiteBackdrop />}
 
       <SiteNav current={current} userId={userId} />
 

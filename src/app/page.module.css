@@ -76,7 +76,7 @@
   align-items: center;
   height: 40px;
   padding: 0 16px;
-  border-radius: 128px;
+  border-radius: 2px;
   border: 1px solid transparent;
   transition: 0.2s;
   cursor: pointer;
@@ -146,5 +146,5 @@ a.secondary {
   font-size: 0.9em;
   background: color-mix(in srgb, currentColor 8%, transparent);
   padding: 0.1em 0.4em;
-  border-radius: 6px;
+  border-radius: 2px;
 }

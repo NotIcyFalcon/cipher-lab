@@ -19,10 +19,8 @@
   min-width: 0;
 }
 .cat-hero .ui-title {
-  font-size: clamp(44px, 6.2vw, 92px);
-  font-weight: 450;
-  letter-spacing: -0.045em;
-  line-height: 0.95;
+  font-size: clamp(52px, 7.2vw, 112px);
+  line-height: 0.92;
   overflow-wrap: anywhere;
 }
 .cat-hero .ui-lede {
@@ -42,41 +40,31 @@
 .cat-hero-stats > div {
   position: relative;
   display: grid;
-  gap: 6px;
-  padding: 16px 18px;
-  overflow: hidden;
+  gap: 4px;
+  padding: 14px 16px;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-lg);
   background: var(--ui-card);
-}
-.cat-hero-stats > div::after {
-  content: "";
-  position: absolute;
-  inset: auto -30% -60% auto;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgb(167 139 250 / 0.18), transparent 70%);
-  pointer-events: none;
 }
 .cat-hero-stats dt {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   color: var(--ui-text-3);
   font-family: var(--ui-font-mono);
-  font-size: var(--ui-text-2xs);
+  font-size: 11px;
   letter-spacing: var(--ui-tracking-label);
   text-transform: uppercase;
 }
 .cat-hero-stats dt svg {
-  color: var(--ui-accent);
+  color: var(--ui-accent-strong);
 }
 .cat-hero-stats dd {
   margin: 0;
-  font-size: var(--ui-text-2xl);
-  font-weight: 450;
-  letter-spacing: var(--ui-tracking-tight);
+  color: var(--ui-text);
+  font-family: var(--ui-font-display);
+  font-size: 38px;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
   font-variant-numeric: tabular-nums;
 }
 .cat-hero-stats dd span {
@@ -105,13 +93,13 @@
   align-items: center;
 }
 .cat-topic .ui-acc-title h2 {
-  font-size: clamp(22px, 2.2vw, 30px);
+  font-size: clamp(26px, 2.6vw, 36px);
 }
 .cat-topic-index {
-  color: var(--ui-accent);
+  color: var(--ui-accent-strong);
   font-family: var(--ui-font-mono);
-  font-size: var(--ui-text-xs);
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  letter-spacing: 0.12em;
 }
 .cat-topic .ui-acc-body {
   padding: 4px 0 var(--ui-space-8);
@@ -140,16 +128,13 @@
 .cat-card-icon {
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
-  border: 1px solid rgb(196 181 253 / 0.22);
-  border-radius: 12px;
-  background: linear-gradient(140deg, rgb(124 58 237 / 0.3), rgb(162 28 175 / 0.12));
-  color: var(--ui-accent);
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--ui-border-strong);
+  color: var(--ui-accent-strong);
 }
 .cat-card-icon.is-complete {
-  border-color: rgb(74 222 128 / 0.3);
-  background: var(--ui-success-soft);
+  border-color: rgb(143 212 164 / 0.4);
   color: var(--ui-success);
 }
 .cat-card-icon.is-locked {
@@ -163,33 +148,26 @@
 .cat-state-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 26px;
-  padding: 0 10px;
+  gap: 6px;
+  height: 24px;
+  padding: 0 9px;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-pill);
   color: var(--ui-text-2);
   font-family: var(--ui-font-mono);
-  font-size: var(--ui-text-2xs);
-  letter-spacing: 0.05em;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   white-space: nowrap;
 }
 .cat-state-badge.is-complete {
-  border-color: rgb(74 222 128 / 0.3);
-  background: var(--ui-success-soft);
+  border-color: rgb(143 212 164 / 0.4);
   color: var(--ui-success);
 }
 .cat-state-badge.is-progress,
-.cat-state-badge.is-practice {
-  border-color: rgb(196 181 253 / 0.3);
-  background: var(--ui-accent-soft);
-  color: var(--ui-accent);
-}
+.cat-state-badge.is-practice,
 .cat-state-badge.is-locked {
-  border-color: rgb(251 191 36 / 0.3);
-  background: var(--ui-warning-soft);
-  color: var(--ui-warning);
+  border-color: rgb(255 33 26 / 0.5);
+  color: var(--ui-accent);
 }
 
 .cat-card-body {
@@ -233,18 +211,18 @@
 .cat-card-tags span {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 24px;
-  padding: 0 9px;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-xs);
-  background: rgb(255 255 255 / 0.03);
   color: var(--ui-text-2);
-  font-size: var(--ui-text-xs);
+  font-family: var(--ui-font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 .cat-card-tags span.is-accent {
-  border-color: rgb(196 181 253 / 0.3);
-  background: var(--ui-accent-soft);
+  border-color: rgb(255 33 26 / 0.45);
   color: var(--ui-accent);
 }
 
@@ -299,7 +277,7 @@
   white-space: nowrap;
 }
 .cat-card-questions li span {
-  color: var(--ui-accent);
+  color: var(--ui-accent-strong);
   font-family: var(--ui-font-mono);
   font-size: var(--ui-text-2xs);
   line-height: 1.9;
@@ -333,7 +311,7 @@
   font-weight: 400;
 }
 .cat-card-progress .ui-meter {
-  height: 5px;
+  height: 3px;
 }
 .cat-card-progress p {
   margin: 0;
@@ -349,23 +327,24 @@
   padding-top: 14px;
   border-top: 1px solid var(--ui-border);
 }
+/* Quiet outline at rest; turns signal red when the card is hovered. */
 .cat-card-cta {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   height: 36px;
   padding: 0 14px;
-  border-radius: var(--ui-radius-sm);
-  background: var(--ui-text);
-  color: var(--ui-text-inverse);
+  border: 1px solid var(--ui-border-strong);
+  color: var(--ui-text);
   font-family: var(--ui-font-mono);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   transition:
     background-color var(--ui-dur-fast) var(--ui-ease-out),
-    box-shadow var(--ui-dur) var(--ui-ease-out);
+    border-color var(--ui-dur-fast) var(--ui-ease-out),
+    color var(--ui-dur-fast) var(--ui-ease-out);
 }
 .cat-card-cta svg {
   transition: transform var(--ui-dur) var(--ui-ease-out);
@@ -376,8 +355,9 @@
   margin-left: auto;
 }
 .ui-tile:hover .cat-card-cta {
-  background: #fff;
-  box-shadow: 0 0 0 4px rgb(255 255 255 / 0.08), 0 8px 26px rgb(167 139 250 / 0.3);
+  border-color: var(--ui-accent-strong);
+  background: var(--ui-accent-strong);
+  color: var(--ui-text-inverse);
 }
 .ui-tile:hover .cat-card-cta svg {
   transform: translateX(3px);
@@ -391,7 +371,10 @@
   min-height: 36px;
   padding: 0 6px;
   color: var(--ui-text-2);
-  font-size: var(--ui-text-sm);
+  font-family: var(--ui-font-mono);
+  font-size: 11px;
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
   transition: color var(--ui-dur-fast) var(--ui-ease-out);
 }
 .cat-card-link:hover {
@@ -405,8 +388,8 @@
 .cat-card-done {
   color: var(--ui-success);
   font-family: var(--ui-font-mono);
-  font-size: var(--ui-text-xs);
-  letter-spacing: 0.06em;
+  font-size: 11px;
+  letter-spacing: var(--ui-tracking-label);
   text-transform: uppercase;
 }
 
@@ -414,16 +397,19 @@
 .cat-lock-message {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
   margin: 0;
   padding: 12px 14px;
-  border: 1px solid rgb(251 191 36 / 0.3);
-  border-radius: var(--ui-radius);
-  background: var(--ui-warning-soft);
-  color: var(--ui-warning);
-  font-size: var(--ui-text-sm);
+  border: 1px solid rgb(255 33 26 / 0.4);
+  border-left-width: 2px;
+  background: rgb(255 33 26 / 0.06);
+  color: var(--ui-accent);
+  font-family: var(--ui-font-mono);
+  font-size: 11px;
   font-weight: 500;
-  line-height: 1.4;
+  letter-spacing: 0.14em;
+  line-height: 1.6;
+  text-transform: uppercase;
 }
 .cat-lock-message svg {
   margin-top: 2px;
@@ -467,9 +453,12 @@
 }
 .cat-ctf-head h2 {
   margin: 0;
-  font-size: clamp(26px, 2.8vw, 38px);
-  font-weight: 450;
-  letter-spacing: -0.03em;
+  font-family: var(--ui-font-display);
+  font-size: clamp(32px, 3.6vw, 52px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 .cat-ctf-head p {
   max-width: 70ch;
@@ -511,12 +500,11 @@
   place-items: center;
   width: 42px;
   height: 42px;
-  border-radius: 11px;
-  background: var(--ui-accent-soft);
-  color: var(--ui-accent);
+  border: 1px solid var(--ui-border-strong);
+  color: var(--ui-accent-strong);
 }
 .cat-mission.is-complete .cat-mission-mark {
-  background: var(--ui-success-soft);
+  border-color: rgb(143 212 164 / 0.4);
   color: var(--ui-success);
 }
 .cat-mission-copy {
@@ -527,8 +515,8 @@
 .cat-mission-copy small {
   color: var(--ui-text-3);
   font-family: var(--ui-font-mono);
-  font-size: var(--ui-text-2xs);
-  letter-spacing: 0.06em;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 .cat-mission-copy strong {
@@ -542,9 +530,9 @@
 .cat-mission-xp {
   display: grid;
   justify-items: end;
-  font-size: var(--ui-text-lg);
-  font-weight: 500;
-  line-height: 1.1;
+  font-family: var(--ui-font-display);
+  font-size: 24px;
+  line-height: 1;
 }
 .cat-mission-xp small {
   color: var(--ui-text-3);
@@ -579,7 +567,7 @@
   margin: 0;
 }
 .recommended-strip h3 svg {
-  color: var(--ui-accent);
+  color: var(--ui-accent-strong);
 }
 .recommended-strip ul {
   display: flex;
@@ -596,8 +584,7 @@
   min-height: 34px;
   padding: 0 12px;
   border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius-sm);
-  background: var(--ui-surface);
+  background: var(--ui-card);
   color: var(--ui-text-2);
   font-size: var(--ui-text-xs);
   font-weight: 500;
@@ -619,4 +606,11 @@
 
 .ctf-challenge-page .recommended-strip {
   margin-block: var(--ui-space-3);
+}
+
+/* Long catalogs: sections off screen skip rendering until scrolled near. */
+.cat-topic > .ui-acc-body,
+.cat-universe > .ui-acc-body {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 720px;
 }

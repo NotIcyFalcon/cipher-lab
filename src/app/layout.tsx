@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import SmoothScroll from "@/components/ui/SmoothScroll";
+import { displayFont } from "@/components/showcase/fonts";
 import "@xterm/xterm/css/xterm.css";
 import "./globals.css";
 import "./workspace.css";
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000120",
+  themeColor: "#05060a",
   colorScheme: "dark",
 };
 
@@ -48,7 +49,7 @@ export default function RootLayout({
   children: ReactNode;
 }) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={`${sans.variable} ${mono.variable} ${displayFont.variable}`}>
       <body>
         <SmoothScroll />
         {children}

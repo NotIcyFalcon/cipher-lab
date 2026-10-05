@@ -157,7 +157,7 @@ export default async function CTFPage() {
                               data-filter-category={topic.id}
                               data-filter-text={`${ctf.name} ${topic.name} ${ctf.difficulty ?? ""} ${challengeTitles}`}
                             >
-                              <article className="ui-tile cat-card" data-spot>
+                              <article className="ui-tile cat-card">
                                 <div className="cat-card-top">
                                   <span className={`cat-card-icon${complete ? " is-complete" : ""}`} aria-hidden="true">
                                     {complete ? <CheckCircle2 size={20} /> : <Icon size={20} strokeWidth={1.7} />}

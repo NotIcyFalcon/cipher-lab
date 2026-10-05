@@ -155,7 +155,7 @@ export default async function CTFCategoryPage({
                                     <Link
                                       href={`/ctf/challenge/${challenge.id}`}
                                       className={`ui-tile cat-mission${completed ? " is-complete" : ""}`}
-                                      data-spot
+                                     
                                       aria-label={`${challenge.title}, ${
                                         completed ? `captured, ${xp} XP earned, re-attempt` : `${xp} XP available`
                                       }`}

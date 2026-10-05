@@ -85,13 +85,15 @@ export default function LabTerminal({
           fontFamily: '"SFMono-Regular", Consolas, monospace',
           scrollback: 2000,
           theme: {
-            background: "#090f13",
-            foreground: "#e1eadf",
-            cursor: "#b8f777",
-            selectionBackground: "#3a573d",
-            green: "#b8f777",
-            cyan: "#86d9dc",
-            magenta: "#c4b5fd",
+            background: "#05060a",
+            foreground: "#e8e4dc",
+            cursor: "#ff211a",
+            cursorAccent: "#05060a",
+            selectionBackground: "#5a1512",
+            red: "#ff3b30",
+            green: "#8fd4a4",
+            cyan: "#9fb3c8",
+            magenta: "#e8e4dc",
           },
         });
 

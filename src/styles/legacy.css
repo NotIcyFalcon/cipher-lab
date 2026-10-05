@@ -1,23 +1,22 @@
-/* Brings the older page styles (dashboard, chapter reader, CTF challenge,
-   homework questions, Creator, settings, login) in line with the new design
-   language without touching their layouts. New pages should use the ui-*
-   components instead of these class names.
+/* Brings the older page styles (chapter reader, CTF challenge, homework
+   questions, Creator, settings, login) in line with the showcase language
+   without touching their layouts. New pages should use the ui-* components.
 
    The :root prefix only raises specificity, so these rules win over the
    page-level sheets that load after the root layout's CSS. */
 
-/* Buttons */
+/* Buttons: signal-red primary, hairline secondary, mono labels. */
 :root .primary-button,
 :root .secondary-button,
 :root .ctf-button {
   min-height: 40px;
   padding: 0 16px;
   border: 1px solid transparent;
-  border-radius: var(--ui-radius-sm);
+  border-radius: 0;
   font-family: var(--ui-font-mono);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.03em;
+  letter-spacing: var(--ui-tracking-label);
   text-transform: uppercase;
   box-shadow: none;
   transition:
@@ -36,26 +35,26 @@
 :root .primary-button,
 :root .ctf-button-primary {
   border-color: transparent;
-  background: var(--ui-text);
+  background: var(--ui-accent-strong);
   color: var(--ui-text-inverse);
 }
 :root .primary-button:hover:not(:disabled),
 :root .ctf-button-primary:hover:not(:disabled) {
-  background: #fff;
+  background: #ff3a2e;
   color: var(--ui-text-inverse);
-  box-shadow: 0 0 0 4px rgb(255 255 255 / 0.08), 0 8px 30px rgb(167 139 250 / 0.25);
+  box-shadow: 0 0 26px rgb(255 33 26 / 0.3);
 }
 
 :root .secondary-button,
 :root .ctf-button-quiet {
   border-color: var(--ui-border-strong);
-  background: rgb(255 255 255 / 0.02);
+  background: transparent;
   color: var(--ui-text);
 }
 :root .secondary-button:hover:not(:disabled),
 :root .ctf-button-quiet:hover:not(:disabled) {
-  border-color: rgb(255 255 255 / 0.34);
-  background: var(--ui-surface-hover);
+  border-color: var(--ui-text);
+  background: var(--ui-surface-strong);
   color: var(--ui-text);
 }
 
@@ -65,16 +64,20 @@
 :root .eyebrow {
   color: var(--ui-text-3);
   font-family: var(--ui-font-mono);
-  font-size: var(--ui-text-2xs);
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: var(--ui-tracking-label);
   text-transform: uppercase;
 }
 
-/* Page headings that were not rebuilt follow the light, tight display style. */
-.workspace-frame h1:not(.ui-title) {
-  font-weight: 450;
-  letter-spacing: -0.03em;
+/* Page headings: the condensed display face, uppercase. */
+.workspace-frame h1:not(.ui-title):not(.sc-title) {
+  color: var(--ui-text);
+  font-family: var(--ui-font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 /* Inline code and code blocks */
@@ -83,27 +86,43 @@ code {
   font-family: var(--ui-font-mono);
 }
 pre {
-  background: #03041f;
-  border-radius: var(--ui-radius-sm);
+  border-radius: 0;
+  background: #030407;
 }
 
 /* Native progress bars */
 progress {
-  height: 4px;
-  background: rgb(255 255 255 / 0.08);
+  height: 3px;
+  border-radius: 0;
+  background: rgb(232 228 220 / 0.1);
   accent-color: var(--ui-accent-strong);
 }
 progress::-webkit-progress-bar {
-  background: rgb(255 255 255 / 0.08);
+  background: rgb(232 228 220 / 0.1);
 }
 progress::-webkit-progress-value {
-  background: var(--ui-gradient);
+  background: var(--ui-accent-strong);
 }
 progress::-moz-progress-bar {
-  background: var(--ui-gradient);
+  background: var(--ui-accent-strong);
 }
 
 /* The old global summary colour, kept for content that still uses it. */
 summary {
   color: var(--ui-accent);
+}
+
+/* Sign-in card: same display heading and mono labels as the rest. */
+.login-card h1 {
+  color: var(--ui-text);
+  font-family: var(--ui-font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.login-card .terminal-code {
+  font-family: var(--ui-font-mono);
+  font-size: 11px;
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
 }

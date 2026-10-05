@@ -15,7 +15,7 @@
   --color-bg-elevated: var(--ui-surface-strong);
   --color-border: var(--ui-border);
   --color-danger: var(--ui-danger);
-  --color-danger-border: rgb(251 113 133 / 0.35);
+  --color-danger-border: rgb(255 33 26 / 0.35);
   --color-danger-bg: var(--ui-danger-soft);
 }
 
@@ -82,8 +82,8 @@ samp {
 }
 
 ::selection {
-  background: rgb(167 139 250 / 0.4);
-  color: var(--ui-text);
+  background: rgb(255 33 26 / 0.45);
+  color: #fff;
 }
 
 :focus-visible {
@@ -94,7 +94,7 @@ samp {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+  scrollbar-color: rgb(232 228 220 / 0.2) transparent;
 }
 
 .ui-sr-only,

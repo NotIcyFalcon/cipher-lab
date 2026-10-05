@@ -214,7 +214,7 @@ function HomeworkCard({ item }: { item: Assignment }) {
   const label = complete ? "Complete" : earned > 0 ? "In progress" : "Not started";
 
   return (
-    <article className="ui-tile cat-card" data-spot>
+    <article className="ui-tile cat-card">
       <div className="cat-card-top">
         <span className={`cat-card-icon${complete ? " is-complete" : ""}`} aria-hidden="true">
           {complete ? <Check size={20} /> : <FileCode2 size={20} />}
@@ -282,7 +282,7 @@ function LockedCard({ item }: { item: Assignment }) {
   const { path, available, readingCount, lessonCount } = item;
 
   return (
-    <article className="ui-tile cat-card is-locked" data-spot>
+    <article className="ui-tile cat-card is-locked">
       <div className="cat-card-top">
         <span className="cat-card-icon is-locked" aria-hidden="true">
           <Lock size={18} />

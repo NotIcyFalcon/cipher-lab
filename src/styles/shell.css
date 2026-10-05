@@ -1,4 +1,7 @@
-/* App shell: fixed top navigation, mobile menu, page container, footer. */
+/* App shell: top navigation, mobile menu, background, page container, footer.
+   Same language as the dashboard showcase: near-black, warm white, mono
+   uppercase labels, a little signal red. No backdrop blur anywhere: blur
+   over moving layers is what made scrolling heavy. */
 
 .ui-shell {
   display: flex;
@@ -12,11 +15,11 @@
   left: 12px;
   z-index: calc(var(--ui-z-menu) + 1);
   padding: 10px 16px;
-  border-radius: var(--ui-radius-sm);
   background: var(--ui-text);
   color: var(--ui-text-inverse);
   font-family: var(--ui-font-mono);
-  font-size: var(--ui-text-xs);
+  font-size: var(--ui-text-2xs);
+  letter-spacing: var(--ui-tracking-label);
   text-transform: uppercase;
   transform: translateY(-160%);
   transition: transform var(--ui-dur) var(--ui-ease-out);
@@ -36,13 +39,14 @@
   transition: height var(--ui-dur-slow) var(--ui-ease-out);
 }
 
-/* A soft fade so content scrolling under the bar never reads as clipped. */
+/* Solid strip once the page scrolls (fades in; no blur). */
 .ui-nav::before {
   content: "";
   position: absolute;
-  inset: 0 0 -24px;
+  inset: 0;
   z-index: -1;
-  background: linear-gradient(to bottom, rgb(0 1 32 / 0.88), rgb(0 1 32 / 0));
+  border-bottom: 1px solid var(--ui-border);
+  background: rgb(5 6 10 / 0.94);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--ui-dur-slow) var(--ui-ease-out);
@@ -71,7 +75,6 @@
   gap: 10px;
   min-height: 44px;
   color: var(--ui-text);
-  border-radius: var(--ui-radius-sm);
 }
 .ui-brand-mark {
   display: grid;
@@ -79,12 +82,8 @@
   width: 34px;
   height: 34px;
   flex-shrink: 0;
-  border: 1px solid var(--ui-border-strong);
-  border-radius: 9px;
-  background:
-    linear-gradient(var(--ui-bg-raised), var(--ui-bg-raised)) padding-box,
-    var(--ui-gradient) border-box;
-  border-color: transparent;
+  border: 1px solid rgb(255 33 26 / 0.7);
+  background: #0b0c12;
   color: var(--ui-text);
   transition: transform var(--ui-dur) var(--ui-ease-out);
 }
@@ -103,33 +102,17 @@
     opacity var(--ui-dur) var(--ui-ease-out);
 }
 .ui-brand-word span {
-  color: var(--ui-accent);
+  color: var(--ui-accent-strong);
 }
 .ui-nav[data-scrolled] .ui-nav-inner > .ui-brand .ui-brand-word {
   max-width: 0;
   opacity: 0;
 }
 
-/* The translucent bar holding links, account and the primary CTA. */
 .ui-nav-bar {
   display: flex;
   align-items: center;
   gap: var(--ui-space-1);
-  padding: 5px;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
-  background: var(--ui-overlay);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  backdrop-filter: blur(16px) saturate(140%);
-  transition:
-    background-color var(--ui-dur) var(--ui-ease-out),
-    border-color var(--ui-dur) var(--ui-ease-out),
-    box-shadow var(--ui-dur) var(--ui-ease-out);
-}
-.ui-nav[data-scrolled] .ui-nav-bar {
-  border-color: var(--ui-border-strong);
-  background: rgb(5 7 44 / 0.92);
-  box-shadow: var(--ui-shadow);
 }
 
 .ui-nav-links {
@@ -149,13 +132,12 @@
   height: 38px;
   padding: 0 14px;
   border: 0;
-  border-radius: var(--ui-radius-sm);
   background: transparent;
   color: var(--ui-text-2);
-  font: inherit;
-  font-size: 13px;
+  font-family: var(--ui-font-mono);
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ui-tracking-label);
   text-transform: uppercase;
   white-space: nowrap;
   cursor: pointer;
@@ -163,23 +145,18 @@
     color var(--ui-dur-fast) var(--ui-ease-out),
     background-color var(--ui-dur-fast) var(--ui-ease-out);
 }
-.ui-nav-link:hover {
-  color: var(--ui-text);
-  background: var(--ui-surface-hover);
-}
+.ui-nav-link:hover,
 .ui-nav-link[aria-current="page"] {
   color: var(--ui-text);
-  background: var(--ui-surface-strong);
 }
 .ui-nav-link[aria-current="page"]::after {
   content: "";
   position: absolute;
   left: 14px;
   right: 14px;
-  bottom: 4px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--ui-gradient);
+  bottom: 6px;
+  height: 1px;
+  background: var(--ui-accent-strong);
 }
 
 .ui-nav-account {
@@ -208,9 +185,8 @@
   width: 26px;
   height: 26px;
   flex-shrink: 0;
-  border-radius: 7px;
-  background: var(--ui-gradient);
-  color: #fff;
+  background: rgb(255 33 26 / 0.14);
+  color: var(--ui-accent-strong);
   font-family: var(--ui-font-mono);
   font-size: 12px;
   font-weight: 600;
@@ -218,7 +194,7 @@
 }
 
 .ui-nav-cta {
-  margin-left: var(--ui-space-1);
+  margin-left: var(--ui-space-2);
 }
 
 /* Dropdown panel (account menu). */
@@ -232,7 +208,6 @@
   min-width: 260px;
   padding: 6px;
   border: 1px solid var(--ui-border-strong);
-  border-radius: var(--ui-radius);
   background: var(--ui-surface-solid);
   box-shadow: var(--ui-shadow-lg);
   transform-origin: top right;
@@ -248,7 +223,6 @@
   width: 100%;
   padding: 10px 12px;
   border: 0;
-  border-radius: var(--ui-radius-sm);
   background: transparent;
   color: var(--ui-text-2);
   font: inherit;
@@ -259,7 +233,7 @@
 .ui-dropdown-item > svg {
   margin-top: 3px;
   flex-shrink: 0;
-  color: var(--ui-accent);
+  color: var(--ui-accent-strong);
 }
 .ui-dropdown-item span {
   display: grid;
@@ -276,14 +250,14 @@
 }
 .ui-dropdown-item:hover,
 .ui-dropdown-item:focus-visible {
-  background: var(--ui-surface-hover);
+  background: var(--ui-surface-strong);
   color: var(--ui-text);
 }
 
 @keyframes ui-pop {
   from {
     opacity: 0;
-    transform: translateY(-6px) scale(0.98);
+    transform: translateY(-6px);
   }
 }
 
@@ -295,12 +269,9 @@
   width: 44px;
   height: 44px;
   border: 1px solid var(--ui-border-strong);
-  border-radius: var(--ui-radius-sm);
-  background: var(--ui-overlay);
+  background: rgb(5 6 10 / 0.8);
   color: var(--ui-text);
   cursor: pointer;
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
 }
 
 /* Full-screen sheet behind the header's brand and close button (z-index -1
@@ -315,7 +286,9 @@
   gap: var(--ui-space-8);
   padding: calc(var(--ui-nav-h) + var(--ui-space-4)) var(--ui-gutter) var(--ui-space-8);
   overflow-y: auto;
-  background: var(--ui-glow-violet) no-repeat, var(--ui-bg);
+  background:
+    radial-gradient(60% 40% at 15% 0%, rgb(255 33 26 / 0.12), transparent 70%) no-repeat,
+    var(--ui-bg);
   animation: ui-fade-in var(--ui-dur) var(--ui-ease-out) both;
 }
 .ui-mobile-menu[hidden] {
@@ -337,11 +310,12 @@
   display: flex;
   align-items: baseline;
   gap: 16px;
-  padding: 18px 4px;
+  padding: 16px 4px;
   color: var(--ui-text-2);
-  font-size: clamp(24px, 6.5vw, 34px);
-  font-weight: 450;
-  letter-spacing: var(--ui-tracking-tight);
+  font-family: var(--ui-font-display);
+  font-size: clamp(30px, 8vw, 42px);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
 }
 .ui-mobile-links a[aria-current="page"],
 .ui-mobile-links a:hover {
@@ -349,8 +323,9 @@
 }
 .ui-mobile-index {
   font-family: var(--ui-font-mono);
-  font-size: var(--ui-text-xs);
-  color: var(--ui-accent);
+  font-size: var(--ui-text-2xs);
+  letter-spacing: 0.1em;
+  color: var(--ui-accent-strong);
 }
 
 .ui-mobile-footer {
@@ -381,14 +356,6 @@
   .ui-nav-bar {
     display: none;
   }
-  /* Without the floating bar, the whole header turns opaque on scroll. */
-  .ui-nav[data-scrolled]::before {
-    inset: 0;
-    background: rgb(0 1 32 / 0.86);
-    border-bottom: 1px solid var(--ui-border);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
-  }
   .ui-nav-toggle {
     display: grid;
   }
@@ -404,15 +371,73 @@
   }
 }
 
-/* ---------- Animated background (AmbientBackground.tsx) ---------- */
+/* ---------- Background (SiteBackdrop.tsx) ---------- */
 
-.ui-ambient {
+/* Fog banks and grain in one static layer, painted once. */
+.ui-backdrop {
   position: fixed;
   inset: 0;
   z-index: 0;
-  width: 100%;
-  height: 100%;
+  overflow: hidden;
   pointer-events: none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E") 0 0 / 180px,
+    radial-gradient(45% 40% at 18% 8%, rgb(150 165 190 / 0.06), transparent 70%),
+    radial-gradient(50% 45% at 85% 100%, rgb(255 33 26 / 0.07), transparent 70%),
+    radial-gradient(35% 30% at 50% 0%, rgb(255 33 26 / 0.05), transparent 70%);
+  contain: strict;
+}
+
+/* A soft headlight that follows the pointer; transform only. */
+.ui-backdrop-light {
+  position: absolute;
+  top: -340px;
+  left: -340px;
+  width: 680px;
+  height: 680px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(214 222 236 / 0.06), rgb(255 33 26 / 0.02) 55%, transparent);
+  opacity: 0;
+  transition: opacity 600ms var(--ui-ease-out);
+  will-change: transform;
+}
+.ui-backdrop-light[data-live] {
+  opacity: 1;
+}
+
+/* A few embers rising through the dark (transform + opacity only). */
+.ui-backdrop-embers i {
+  position: absolute;
+  bottom: -10px;
+  left: var(--x);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: #ff3b2f;
+  opacity: 0;
+  animation: ui-ember var(--duration) linear var(--delay) infinite;
+}
+@keyframes ui-ember {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  10% {
+    opacity: 0.75;
+  }
+  60% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(30px, -105vh, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-backdrop-embers {
+    display: none;
+  }
 }
 
 /* ---------- Main content & page transitions ---------- */
@@ -453,9 +478,7 @@
   }
 }
 
-/* Scroll-linked reveal: elements rise into place as they enter the viewport.
-   Only where the browser supports scroll-driven animations; otherwise they
-   are simply visible. */
+/* Scroll-linked reveal for [data-reveal] where supported. */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     [data-reveal] {
@@ -479,9 +502,7 @@
   z-index: 1;
   margin-top: auto;
   border-top: 1px solid var(--ui-border);
-  background: rgb(0 1 32 / 0.6);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  background: var(--ui-bg);
 }
 .ui-footer-inner {
   display: flex;
@@ -498,7 +519,6 @@
 .ui-brand-footer .ui-brand-mark {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
 }
 .ui-footer-tag {
   margin: 0;
@@ -519,7 +539,10 @@
   align-items: center;
   min-height: 32px;
   color: var(--ui-text-3);
-  font-size: var(--ui-text-sm);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
   transition: color var(--ui-dur-fast) var(--ui-ease-out);
 }
 .ui-footer-links a:hover {

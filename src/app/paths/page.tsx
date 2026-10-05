@@ -202,7 +202,7 @@ function PathCard({ path, stats }: PathEntry) {
   const isComplete = state.key === "complete";
 
   return (
-    <article className="ui-tile cat-card" data-spot>
+    <article className="ui-tile cat-card">
       <div className="cat-card-top">
         <span className={`cat-card-icon${isComplete ? " is-complete" : ""}`} aria-hidden="true">
           {isComplete ? <Check size={20} /> : stats.labCount > 0 ? <Terminal size={20} /> : <BookOpen size={20} />}
