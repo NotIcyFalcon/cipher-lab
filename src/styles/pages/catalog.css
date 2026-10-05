@@ -1,0 +1,242 @@
+/* Catalog pages: Learning Paths, Homework, CTF topics and CTF detail.
+   Layout only; rows, accordions, badges and meters live in components.css. */
+
+/* Status text inside a row's meta line (paired with the row icon, so the
+   colour is never the only signal). */
+.cat-state {
+  font-weight: 500;
+}
+.cat-state.is-complete {
+  color: var(--ui-success);
+}
+.cat-state.is-progress,
+.cat-state.is-practice {
+  color: var(--ui-accent);
+}
+
+/* Points on the right of a row: "120/300". */
+.cat-points {
+  display: inline-flex;
+  align-items: baseline;
+  color: var(--ui-text);
+  font-size: var(--ui-text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.cat-points small {
+  color: var(--ui-text-3);
+  font-size: var(--ui-text-xs);
+  font-weight: 400;
+}
+
+.cat-review {
+  --btn-h: 30px;
+  padding-inline: 8px;
+  font-size: 11px;
+}
+
+@media (max-width: 520px) {
+  .cat-points small,
+  .cat-review {
+    display: none;
+  }
+}
+
+.cat-topic-desc {
+  font-size: var(--ui-text-sm);
+}
+
+.cat-none {
+  margin: 0;
+  padding: 4px 0;
+}
+
+.cat-footnote {
+  margin: var(--ui-space-10) 0 0;
+}
+
+/* ---------- Homework ---------- */
+
+.cat-homework .ui-lock-note {
+  margin: 4px 0 0;
+  width: fit-content;
+}
+
+.cat-locked {
+  flex-wrap: wrap;
+  align-items: center;
+}
+.cat-locked > div {
+  flex: 1 1 280px;
+}
+
+.cat-questions {
+  display: grid;
+  gap: var(--ui-space-4);
+}
+
+/* ---------- CTF detail ---------- */
+
+.cat-ctf-list {
+  display: grid;
+  gap: var(--ui-space-12);
+}
+
+.cat-ctf-block {
+  display: grid;
+  gap: var(--ui-space-4);
+  scroll-margin-top: calc(var(--ui-nav-h) + 16px);
+}
+
+.cat-ctf-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ui-space-3) var(--ui-space-6);
+  padding-bottom: var(--ui-space-2);
+}
+.cat-ctf-head h2 {
+  margin: 0;
+  font-size: var(--ui-text-2xl);
+  font-weight: 450;
+  letter-spacing: var(--ui-tracking-tight);
+}
+.cat-ctf-head p {
+  max-width: 70ch;
+  margin: 6px 0 0;
+  color: var(--ui-text-2);
+}
+
+.cat-universe > summary {
+  min-height: 56px;
+}
+.cat-universe .ui-acc-title h3 {
+  font-size: var(--ui-text-lg);
+}
+
+/* Dense challenge tiles: many per row, one line each. */
+.cat-challenges {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cat-challenge {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  transition:
+    border-color var(--ui-dur-fast) var(--ui-ease-out),
+    background-color var(--ui-dur-fast) var(--ui-ease-out),
+    transform var(--ui-dur-fast) var(--ui-ease-out);
+}
+.cat-challenge:hover {
+  border-color: var(--ui-border-strong);
+  background: var(--ui-surface-hover);
+  transform: translateY(-1px);
+}
+.cat-challenge:active {
+  transform: translateY(0) scale(0.99);
+}
+.cat-challenge-mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-accent-soft);
+  color: var(--ui-accent);
+}
+.cat-challenge.is-complete .cat-challenge-mark {
+  background: var(--ui-success-soft);
+  color: var(--ui-success);
+}
+.cat-challenge-title {
+  overflow: hidden;
+  font-size: var(--ui-text-sm);
+  font-weight: 500;
+  line-height: var(--ui-leading-snug);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cat-challenge-xp {
+  display: grid;
+  justify-items: end;
+  font-size: var(--ui-text-sm);
+  font-weight: 500;
+  line-height: 1.1;
+}
+.cat-challenge-xp small {
+  color: var(--ui-text-3);
+  font-family: var(--ui-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* Recommended reading strip (RecommendedPaths.tsx), used on CTF pages. */
+.recommended-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.recommended-strip h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+.recommended-strip h3 svg {
+  color: var(--ui-accent);
+}
+.recommended-strip ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.recommended-strip a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface);
+  color: var(--ui-text-2);
+  font-size: var(--ui-text-xs);
+  font-weight: 500;
+  transition: border-color var(--ui-dur-fast) var(--ui-ease-out), color var(--ui-dur-fast) var(--ui-ease-out);
+}
+.recommended-strip a:hover {
+  border-color: var(--ui-border-strong);
+  color: var(--ui-text);
+}
+.recommended-strip small {
+  color: var(--ui-text-3);
+  font-family: var(--ui-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.recommended-strip a > svg {
+  color: var(--ui-text-3);
+}
+
+.ctf-challenge-page .recommended-strip {
+  margin-block: var(--ui-space-3);
+}

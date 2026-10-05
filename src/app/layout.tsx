@@ -1,9 +1,31 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { Geist, Geist_Mono } from "next/font/google";
+import SmoothScroll from "@/components/ui/SmoothScroll";
 import "@xterm/xterm/css/xterm.css";
 import "./globals.css";
 import "./workspace.css";
 import "./batch-five.css";
+// The design system loads after the older sheets so its tokens and element
+// defaults win; page layouts that were not rebuilt keep working through
+// legacy.css.
+import "@/styles/tokens.css";
+import "@/styles/base.css";
+import "@/styles/shell.css";
+import "@/styles/components.css";
+import "@/styles/legacy.css";
+
+const sans = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist-sans",
+  display: "swap",
+});
+
+const mono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Cyber Box — Learn by doing",
@@ -15,14 +37,22 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#000120",
+  colorScheme: "dark",
+};
+
 export default function RootLayout({
   children,
 }: {
   children: ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+      <body>
+        <SmoothScroll />
+        {children}
+      </body>
     </html>
   );
 }

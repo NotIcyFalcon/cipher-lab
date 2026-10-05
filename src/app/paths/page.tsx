@@ -1,26 +1,24 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
   BookOpen,
+  CalendarDays,
   Check,
-  Clock3,
-  FileCode2,
   FolderOpen,
   Layers3,
   Terminal,
   Trophy,
 } from "lucide-react";
 import WorkspaceShell from "@/components/WorkspaceShell";
+import CatalogFilter from "@/components/ui/CatalogFilter";
 import { pathHref, pathRevisionHref } from "@/lib/path-links";
 import type { LearningPath } from "@/lib/content-types";
 import { getPaths } from "@/server/catalog";
-import {
-  formatLessonDuration,
-  getPathProgress,
-} from "@/lib/path-progress";
+import { getPathProgress } from "@/lib/path-progress";
 import { requireRonakId } from "@/server/current-user";
 import { getProgress } from "@/server/progress";
-import "@/app/batch-two.css";
+import "@/styles/pages/catalog.css";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,262 +28,237 @@ type PathEntry = {
   stats: ReturnType<typeof getPathProgress>;
 };
 
+type TopicGroup = {
+  id: string;
+  name: string;
+  entries: PathEntry[];
+};
+
+function pathState(stats: PathEntry["stats"]) {
+  const complete = stats.readingComplete && stats.available > 0 && stats.earned >= stats.available;
+  if (complete) return { key: "complete", label: "Complete", action: "Revisit" } as const;
+  if (stats.readingComplete) return { key: "practice", label: "Reading done", action: "Practice" } as const;
+  if (stats.started) return { key: "progress", label: "In progress", action: "Continue" } as const;
+  return { key: "new", label: "Not started", action: "Start" } as const;
+}
+
+const plural = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`;
+
 export default async function PathsPage() {
   const userId = await requireRonakId();
   const progress = getProgress(userId);
 
-  const paths = getPaths();
-
-  const entries: PathEntry[] = paths.map((path) => ({
+  const entries: PathEntry[] = getPaths().map((path) => ({
     path,
     stats: getPathProgress(path, progress),
   }));
 
-  // Group by the path's topic (category), including paths with no chapters.
-  const groups = new Map<string, PathEntry[]>();
+  const topics = new Map<string, TopicGroup>();
   for (const entry of entries) {
-    const category = entry.path.topicName;
-    const group = groups.get(category) ?? [];
-    group.push(entry);
-    groups.set(category, group);
+    const topic = topics.get(entry.path.topicId) ?? {
+      id: entry.path.topicId,
+      name: entry.path.topicName,
+      entries: [],
+    };
+    topic.entries.push(entry);
+    topics.set(entry.path.topicId, topic);
   }
+  const groups = [...topics.values()];
 
-  const totalLessons = entries.reduce(
-    (sum, entry) => sum + entry.stats.lessonCount,
-    0,
+  const totals = entries.reduce(
+    (sum, { stats }) => ({
+      lessons: sum.lessons + stats.lessonCount,
+      earned: sum.earned + stats.earned,
+      available: sum.available + stats.available,
+      complete: sum.complete + (pathState(stats).key === "complete" ? 1 : 0),
+    }),
+    { lessons: 0, earned: 0, available: 0, complete: 0 },
   );
-  const totalEarned = entries.reduce(
-    (sum, entry) => sum + entry.stats.earned,
-    0,
+
+  // Open the topics you are working in; otherwise just the first one.
+  const activeTopics = new Set(
+    groups
+      .filter((group) => group.entries.some(({ stats }) => ["progress", "practice"].includes(pathState(stats).key)))
+      .map((group) => group.id),
   );
-  const totalAvailable = entries.reduce(
-    (sum, entry) => sum + entry.stats.available,
-    0,
-  );
+  if (activeTopics.size === 0 && groups[0]) activeTopics.add(groups[0].id);
 
   return (
     <WorkspaceShell current="/paths" userId={userId}>
-      <div className="paths-page">
-        <header className="paths-heading">
+      <header className="ui-page-head">
+        <span className="ui-eyebrow">Learning library</span>
+        <div className="ui-page-head-row">
           <div>
-            <span className="dashboard-kicker">YOUR LEARNING LIBRARY</span>
-            <h1>Learning Paths</h1>
+            <h1 className="ui-title">
+              Learning <em>paths</em>
+            </h1>
+            <p className="ui-lede">
+              Guided chapters with hands-on labs and homework. Each path shows the days it usually takes.
+            </p>
           </div>
-          <span className="paths-heading-icon" aria-hidden="true">
-            <Layers3 size={34} />
-          </span>
-        </header>
-
-        <dl className="paths-summary">
+        </div>
+        <dl className="ui-stats" aria-label="Library overview">
           <div>
             <dt>
-              <FolderOpen size={16} aria-hidden="true" />
-              Learning paths
+              <FolderOpen size={14} aria-hidden="true" />
+              Paths
             </dt>
-            <dd>{paths.length}</dd>
+            <dd>{entries.length}</dd>
           </div>
           <div>
             <dt>
-              <BookOpen size={16} aria-hidden="true" />
-              Chapters to explore
+              <BookOpen size={14} aria-hidden="true" />
+              Chapters
             </dt>
-            <dd>{totalLessons}</dd>
+            <dd>{totals.lessons}</dd>
           </div>
           <div>
             <dt>
-              <Trophy size={16} aria-hidden="true" />
-              Your path points
+              <Check size={14} aria-hidden="true" />
+              Completed
             </dt>
             <dd>
-              {totalEarned} <span>/ {totalAvailable}</span>
+              {totals.complete} <span>/ {entries.length}</span>
+            </dd>
+          </div>
+          <div>
+            <dt>
+              <Trophy size={14} aria-hidden="true" />
+              Points
+            </dt>
+            <dd>
+              {totals.earned} <span>/ {totals.available}</span>
             </dd>
           </div>
         </dl>
+      </header>
 
-        {groups.size > 0 ? (
-          Array.from(groups.entries()).map(([category, categoryPaths], index) => (
-            <section
-              key={category}
-              className="paths-category"
-              aria-labelledby={`path-category-${index}`}
-            >
-              <div className="dashboard-section-heading">
-                <div>
-                  <span className="dashboard-kicker">EXPLORE A CATEGORY</span>
-                  <h2 id={`path-category-${index}`}>{category}</h2>
-                </div>
-                <span className="paths-category-count">
-                  {categoryPaths.length}{" "}
-                  {categoryPaths.length === 1 ? "path" : "paths"}
-                </span>
-              </div>
+      {groups.length === 0 ? (
+        <section className="ui-empty">
+          <Layers3 size={28} aria-hidden="true" />
+          <h2>No learning paths yet</h2>
+          <p>Paths appear here once they are published in Creator.</p>
+        </section>
+      ) : (
+        <CatalogFilter
+          label="Filter learning paths"
+          placeholder="Search paths"
+          categories={groups.map((group) => ({ id: group.id, label: group.name, count: group.entries.length }))}
+        >
+          <div className="ui-accordion">
+            {groups.map((group) => {
+              const complete = group.entries.filter(({ stats }) => pathState(stats).key === "complete").length;
+              const earned = group.entries.reduce((sum, { stats }) => sum + stats.earned, 0);
+              const available = group.entries.reduce((sum, { stats }) => sum + stats.available, 0);
 
-              <ul className="paths-catalog">
-                {categoryPaths.map(({ path, stats }) => {
-                  const allPointsEarned =
-                    stats.available > 0 && stats.earned >= stats.available;
-                  const fullCompletion = stats.readingComplete && allPointsEarned;
+              return (
+                <details
+                  key={group.id}
+                  className="ui-acc"
+                  open={activeTopics.has(group.id)}
+                  data-filter-group
+                >
+                  <summary>
+                    <span className="ui-acc-title">
+                      <h2>{group.name}</h2>
+                      <span className="ui-label">{plural(group.entries.length, "path")}</span>
+                    </span>
+                    <span className="ui-acc-meta">
+                      <span className="ui-badge">
+                        {complete}/{group.entries.length} complete
+                      </span>
+                      <span className="ui-badge ui-num">
+                        {earned}/{available} pts
+                      </span>
+                    </span>
+                    <span className="ui-acc-icon" aria-hidden="true" />
+                  </summary>
 
-                  const stateLabel = fullCompletion
-                    ? "Complete"
-                    : stats.readingComplete
-                      ? "Reading complete"
-                      : stats.started
-                        ? "In progress"
-                        : "Ready to start";
+                  <div className="ui-acc-body">
+                    <ul className="ui-list-grid">
+                      {group.entries.map(({ path, stats }) => {
+                        const state = pathState(stats);
+                        const isComplete = state.key === "complete";
 
-                  const actionLabel = fullCompletion
-                    ? "Revisit path"
-                    : stats.readingComplete
-                      ? "Continue practice"
-                      : stats.started
-                        ? "Continue path"
-                        : "Start path";
-
-                  return (
-                    <li key={path.id}>
-                      <article className="paths-course-card">
-                        <div className="paths-course-top">
-                          <span
-                            className="dashboard-path-icon"
-                            aria-hidden="true"
+                        return (
+                          <li
+                            key={path.id}
+                            data-filter-item
+                            data-filter-category={group.id}
+                            data-filter-text={`${path.title} ${group.name} ${path.difficulty} ${path.type}`}
                           >
-                            {stats.labCount > 0 ? (
-                              <Terminal size={23} />
-                            ) : (
-                              <BookOpen size={23} />
-                            )}
-                          </span>
-                          <span
-                            className={`dashboard-state${
-                              fullCompletion ? " is-complete" : ""
-                            }`}
-                          >
-                            {fullCompletion && (
-                              <Check size={12} aria-hidden="true" />
-                            )}
-                            {stateLabel}
-                          </span>
-                        </div>
-
-                        <div className="paths-course-body">
-                          <span className="dashboard-kicker">LEARNING PATH</span>
-                          <h3>
-                            <Link href={pathHref(path.id)}>{path.title}</Link>
-                          </h3>
-                          <p>
-                            {stats.lessonCount}{" "}
-                            {stats.lessonCount === 1 ? "chapter" : "chapters"}
-                          </p>
-
-                          <div className="paths-course-tags">
-                            {path.difficulty && <span>{path.difficulty}</span>}
-                            <span>{path.type}</span>
-                            {path.timeDays > 0 && (
-                              <span>
-                                <Clock3 size={12} aria-hidden="true" />
-                                {path.timeDays} {path.timeDays === 1 ? "day" : "days"}
+                            <article className="ui-row cat-path">
+                              <span className={`ui-row-icon${isComplete ? " is-complete" : ""}`} aria-hidden="true">
+                                {isComplete ? (
+                                  <Check size={17} />
+                                ) : stats.labCount > 0 ? (
+                                  <Terminal size={17} />
+                                ) : (
+                                  <BookOpen size={17} />
+                                )}
                               </span>
-                            )}
-                            <span>
-                              <BookOpen size={12} aria-hidden="true" />
-                              {formatLessonDuration(stats.minutes)} reading
-                            </span>
-                          </div>
 
-
-                          <dl
-                            className="paths-points-breakdown"
-                            aria-label={`${path.title} points breakdown`}
-                          >
-                            <div>
-                              <dt>
-                                <BookOpen size={14} aria-hidden="true" />
-                                Reading
-                              </dt>
-                              <dd>
-                                {stats.readingEarned}{" "}
-                                <span> / {stats.readingAvailable}</span>
-                              </dd>
-                            </div>
-                            <div>
-                              <dt>
-                                <Terminal size={14} aria-hidden="true" />
-                                Labs
-                              </dt>
-                              <dd>
-                                {stats.labsEarned}{" "}
-                                <span> / {stats.labsAvailable}</span>
-                              </dd>
-                            </div>
-                            {stats.homeworkAvailable > 0 && (
-                              <div>
-                                <dt>
-                                  <FileCode2 size={14} aria-hidden="true" />
-                                  Homework
-                                </dt>
-                                <dd>
-                                  {stats.homeworkEarned}{" "}
-                                  <span> / {stats.homeworkAvailable}</span>
-                                </dd>
+                              <div className="ui-row-main">
+                                <h3 className="ui-row-title">
+                                  <Link
+                                    href={pathHref(path.id)}
+                                    className="ui-stretched"
+                                    aria-label={`${state.action} ${path.title}`}
+                                  >
+                                    {path.title}
+                                  </Link>
+                                </h3>
+                                <div className="ui-row-meta">
+                                  {path.difficulty && <span className="ui-badge">{path.difficulty}</span>}
+                                  <span>{plural(stats.lessonCount, "chapter")}</span>
+                                  {stats.labCount > 0 && <span>{plural(stats.labCount, "lab")}</span>}
+                                  {path.timeDays > 0 && (
+                                    <span>
+                                      <CalendarDays size={12} aria-hidden="true" />
+                                      {plural(path.timeDays, "day")}
+                                    </span>
+                                  )}
+                                  <span className={`cat-state is-${state.key}`}>{state.label}</span>
+                                </div>
+                                <div
+                                  className={`ui-meter${isComplete ? " is-complete" : ""}`}
+                                  role="img"
+                                  aria-label={`${stats.earned} of ${stats.available} points earned`}
+                                >
+                                  <span style={{ "--value": stats.percentage / 100 } as CSSProperties} />
+                                </div>
                               </div>
-                            )}
-                          </dl>
-                        </div>
 
-                        <div className="paths-course-progress">
-                          <div>
-                            <span>Total path points</span>
-                            <strong>
-                              {stats.earned} <span> / {stats.available}</span>
-                            </strong>
-                          </div>
-                          <progress
-                            value={stats.earned}
-                            max={stats.available || 1}
-                            aria-label={`${path.title}: ${stats.earned} of ${stats.available} points earned`}
-                          />
-                          <p>
-                            {stats.percentage}% of points earned ·{" "}
-                            {stats.readingCount}/{stats.lessonCount} chapters read
-                            · {stats.completedLabCount}/{stats.labCount} labs
-                            completed
-                          </p>
-                        </div>
-
-                        <footer className="paths-course-footer">
-                          <Link
-                            href={pathHref(path.id)}
-                            className="primary-button"
-                            aria-label={`${actionLabel}: ${path.title}`}
-                          >
-                            {actionLabel}
-                            <ArrowRight size={15} aria-hidden="true" />
-                          </Link>
-                          {stats.readingComplete && (
-                            <Link
-                              href={pathRevisionHref(path.id)}
-                              className="dashboard-text-link"
-                              aria-label={`Review reading: ${path.title}`}
-                            >
-                              Review reading
-                            </Link>
-                          )}
-                        </footer>
-                      </article>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          ))
-        ) : (
-          <section className="dashboard-empty">
-            <FolderOpen size={30} aria-hidden="true" />
-            <h2>No learning paths yet.</h2>
-          </section>
-        )}
-      </div>
+                              <div className="ui-row-end">
+                                {stats.readingComplete && (
+                                  <Link
+                                    href={pathRevisionHref(path.id)}
+                                    className="ui-btn ui-btn-quiet ui-btn-sm cat-review"
+                                    aria-label={`Review reading: ${path.title}`}
+                                  >
+                                    Review
+                                  </Link>
+                                )}
+                                <span className="cat-points ui-num">
+                                  {stats.earned}
+                                  <small>/{stats.available}</small>
+                                </span>
+                                <span className="ui-arrow" aria-hidden="true">
+                                  <ArrowRight size={16} />
+                                </span>
+                              </div>
+                            </article>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </details>
+              );
+            })}
+          </div>
+        </CatalogFilter>
+      )}
     </WorkspaceShell>
   );
 }

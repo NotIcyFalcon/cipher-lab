@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 import WorkspaceShell from "@/components/WorkspaceShell";
 import { requireRonakId } from "@/server/current-user";
 
-import "@/app/workspace.css";
 import "@/app/batch-four.css";
+import "@/styles/pages/catalog.css";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

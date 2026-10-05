@@ -1,0 +1,509 @@
+/* App shell: fixed top navigation, mobile menu, page container, footer. */
+
+.ui-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.ui-skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: calc(var(--ui-z-menu) + 1);
+  padding: 10px 16px;
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-text);
+  color: var(--ui-text-inverse);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+  text-transform: uppercase;
+  transform: translateY(-160%);
+  transition: transform var(--ui-dur) var(--ui-ease-out);
+}
+.ui-skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* ---------- Top navigation ---------- */
+
+.ui-nav {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: var(--ui-z-nav);
+  height: var(--ui-nav-h);
+  padding: 0 var(--ui-gutter);
+  transition: height var(--ui-dur-slow) var(--ui-ease-out);
+}
+
+/* A soft fade so content scrolling under the bar never reads as clipped. */
+.ui-nav::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -24px;
+  z-index: -1;
+  background: linear-gradient(to bottom, rgb(0 1 32 / 0.88), rgb(0 1 32 / 0));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ui-dur-slow) var(--ui-ease-out);
+}
+.ui-nav[data-scrolled] {
+  height: var(--ui-nav-h-compact);
+}
+.ui-nav[data-scrolled]::before {
+  opacity: 1;
+}
+
+.ui-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-4);
+  height: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+}
+
+/* Brand: the wordmark collapses to the mark once the page scrolls. */
+.ui-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  color: var(--ui-text);
+  border-radius: var(--ui-radius-sm);
+}
+.ui-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: 9px;
+  background:
+    linear-gradient(var(--ui-bg-raised), var(--ui-bg-raised)) padding-box,
+    var(--ui-gradient) border-box;
+  border-color: transparent;
+  color: var(--ui-text);
+  transition: transform var(--ui-dur) var(--ui-ease-out);
+}
+.ui-brand:hover .ui-brand-mark {
+  transform: rotate(-8deg);
+}
+.ui-brand-word {
+  max-width: 160px;
+  overflow: hidden;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  transition:
+    max-width var(--ui-dur-slow) var(--ui-ease-out),
+    opacity var(--ui-dur) var(--ui-ease-out);
+}
+.ui-brand-word span {
+  color: var(--ui-accent);
+}
+.ui-nav[data-scrolled] .ui-nav-inner > .ui-brand .ui-brand-word {
+  max-width: 0;
+  opacity: 0;
+}
+
+/* The translucent bar holding links, account and the primary CTA. */
+.ui-nav-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-1);
+  padding: 5px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-overlay);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  transition:
+    background-color var(--ui-dur) var(--ui-ease-out),
+    border-color var(--ui-dur) var(--ui-ease-out),
+    box-shadow var(--ui-dur) var(--ui-ease-out);
+}
+.ui-nav[data-scrolled] .ui-nav-bar {
+  border-color: var(--ui-border-strong);
+  background: rgb(5 7 44 / 0.92);
+  box-shadow: var(--ui-shadow);
+}
+
+.ui-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--ui-radius-sm);
+  background: transparent;
+  color: var(--ui-text-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color var(--ui-dur-fast) var(--ui-ease-out),
+    background-color var(--ui-dur-fast) var(--ui-ease-out);
+}
+.ui-nav-link:hover {
+  color: var(--ui-text);
+  background: var(--ui-surface-hover);
+}
+.ui-nav-link[aria-current="page"] {
+  color: var(--ui-text);
+  background: var(--ui-surface-strong);
+}
+.ui-nav-link[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 4px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ui-gradient);
+}
+
+.ui-nav-account {
+  position: relative;
+}
+.ui-nav-account-toggle {
+  padding-left: 8px;
+}
+.ui-nav-account-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ui-plus {
+  font-family: var(--ui-font-mono);
+  color: var(--ui-text-3);
+  transition: transform var(--ui-dur) var(--ui-ease-out);
+}
+.ui-nav-account-toggle[aria-expanded="true"] .ui-plus {
+  transform: rotate(45deg);
+}
+
+.ui-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  background: var(--ui-gradient);
+  color: #fff;
+  font-family: var(--ui-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.ui-nav-cta {
+  margin-left: var(--ui-space-1);
+}
+
+/* Dropdown panel (account menu). */
+.ui-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: var(--ui-z-menu);
+  display: grid;
+  gap: 2px;
+  min-width: 260px;
+  padding: 6px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface-solid);
+  box-shadow: var(--ui-shadow-lg);
+  transform-origin: top right;
+  animation: ui-pop var(--ui-dur) var(--ui-ease-out) both;
+}
+.ui-dropdown form {
+  margin: 0;
+}
+.ui-dropdown-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--ui-radius-sm);
+  background: transparent;
+  color: var(--ui-text-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--ui-dur-fast) var(--ui-ease-out), color var(--ui-dur-fast) var(--ui-ease-out);
+}
+.ui-dropdown-item > svg {
+  margin-top: 3px;
+  flex-shrink: 0;
+  color: var(--ui-accent);
+}
+.ui-dropdown-item span {
+  display: grid;
+  gap: 1px;
+}
+.ui-dropdown-item strong {
+  color: var(--ui-text);
+  font-size: var(--ui-text-sm);
+  font-weight: 500;
+}
+.ui-dropdown-item small {
+  color: var(--ui-text-3);
+  font-size: var(--ui-text-xs);
+}
+.ui-dropdown-item:hover,
+.ui-dropdown-item:focus-visible {
+  background: var(--ui-surface-hover);
+  color: var(--ui-text);
+}
+
+@keyframes ui-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+
+/* ---------- Mobile navigation ---------- */
+
+.ui-nav-toggle {
+  display: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-overlay);
+  color: var(--ui-text);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* Full-screen sheet behind the header's brand and close button (z-index -1
+   inside the header's stacking context, still above the page). */
+.ui-mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--ui-space-8);
+  padding: calc(var(--ui-nav-h) + var(--ui-space-4)) var(--ui-gutter) var(--ui-space-8);
+  overflow-y: auto;
+  background: var(--ui-glow-violet) no-repeat, var(--ui-bg);
+  animation: ui-fade-in var(--ui-dur) var(--ui-ease-out) both;
+}
+.ui-mobile-menu[hidden] {
+  display: none;
+}
+
+.ui-mobile-links {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ui-mobile-links li {
+  border-bottom: 1px solid var(--ui-border);
+  animation: ui-rise var(--ui-dur-slow) var(--ui-ease-out) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+.ui-mobile-links a {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 18px 4px;
+  color: var(--ui-text-2);
+  font-size: clamp(24px, 6.5vw, 34px);
+  font-weight: 450;
+  letter-spacing: var(--ui-tracking-tight);
+}
+.ui-mobile-links a[aria-current="page"],
+.ui-mobile-links a:hover {
+  color: var(--ui-text);
+}
+.ui-mobile-index {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+  color: var(--ui-accent);
+}
+
+.ui-mobile-footer {
+  display: grid;
+  gap: var(--ui-space-4);
+}
+.ui-mobile-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ui-text-3);
+  font-size: var(--ui-text-sm);
+}
+.ui-mobile-user strong {
+  color: var(--ui-text);
+  text-transform: capitalize;
+}
+.ui-mobile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+}
+.ui-mobile-actions form {
+  margin: 0;
+}
+
+@media (max-width: 1119px) {
+  .ui-nav-bar {
+    display: none;
+  }
+  /* Without the floating bar, the whole header turns opaque on scroll. */
+  .ui-nav[data-scrolled]::before {
+    inset: 0;
+    background: rgb(0 1 32 / 0.86);
+    border-bottom: 1px solid var(--ui-border);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+  .ui-nav-toggle {
+    display: grid;
+  }
+  .ui-nav[data-scrolled] .ui-nav-inner > .ui-brand .ui-brand-word {
+    max-width: 160px;
+    opacity: 1;
+  }
+}
+
+@media (min-width: 1120px) {
+  .ui-mobile-menu {
+    display: none !important;
+  }
+}
+
+/* ---------- Main content & page transitions ---------- */
+
+.ui-main {
+  flex: 1;
+  padding-top: var(--ui-nav-h);
+}
+.ui-main:focus {
+  outline: none;
+}
+
+.ui-page {
+  width: 100%;
+  max-width: var(--ui-max);
+  margin-inline: auto;
+  padding: var(--ui-space-8) var(--ui-gutter) var(--ui-space-16);
+  animation: ui-page-in var(--ui-dur-slow) var(--ui-ease-out) both;
+}
+
+@keyframes ui-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes ui-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes ui-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* Scroll-linked reveal: elements rise into place as they enter the viewport.
+   Only where the browser supports scroll-driven animations; otherwise they
+   are simply visible. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    [data-reveal] {
+      animation: ui-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+@keyframes ui-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+/* ---------- Footer ---------- */
+
+.ui-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--ui-border);
+}
+.ui-footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-4) var(--ui-space-8);
+  max-width: var(--ui-max);
+  margin-inline: auto;
+  padding: var(--ui-space-6) var(--ui-gutter);
+}
+.ui-brand-footer .ui-brand-word {
+  font-size: 16px;
+}
+.ui-brand-footer .ui-brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+.ui-footer-tag {
+  margin: 0;
+  color: var(--ui-text-3);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+}
+.ui-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-1) var(--ui-space-5);
+  margin-left: auto;
+}
+.ui-footer-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--ui-text-3);
+  font-size: var(--ui-text-sm);
+  transition: color var(--ui-dur-fast) var(--ui-ease-out);
+}
+.ui-footer-links a:hover {
+  color: var(--ui-text);
+}

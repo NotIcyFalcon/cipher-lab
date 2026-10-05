@@ -8,41 +8,31 @@ type RecommendedPath = {
   difficulty?: string | null;
 };
 
+/** A compact strip of learning paths that prepare you for a CTF. */
 export default function RecommendedPaths({
   paths,
+  headingId = "recommended-paths-title",
 }: {
   paths: RecommendedPath[];
+  /** Must be unique when several strips share a page. */
+  headingId?: string;
 }) {
   if (paths.length === 0) return null;
 
   return (
-    <section
-      className="recommended-paths"
-      aria-labelledby="recommended-paths-title"
-    >
-      <div className="recommended-paths-heading">
-        <BookOpen size={20} aria-hidden="true" />
-        <h2 id="recommended-paths-title">
-          Recommended learning paths
-        </h2>
-      </div>
-
-      <p>
-        Build the background knowledge for this CTF with these paths.
-      </p>
+    <section className="recommended-strip" aria-labelledby={headingId}>
+      <h3 id={headingId} className="ui-label">
+        <BookOpen size={13} aria-hidden="true" />
+        Recommended reading
+      </h3>
 
       <ul>
         {paths.map((path) => (
           <li key={path.id}>
             <Link href={path.href}>
-              <span>
-                <strong>{path.title}</strong>
-                {path.difficulty && (
-                  <small>{path.difficulty}</small>
-                )}
-              </span>
-
-              <ArrowUpRight size={18} aria-hidden="true" />
+              <span>{path.title}</span>
+              {path.difficulty && <small>{path.difficulty}</small>}
+              <ArrowUpRight size={14} aria-hidden="true" />
             </Link>
           </li>
         ))}

@@ -1,0 +1,109 @@
+/* Brings the older page styles (dashboard, chapter reader, CTF challenge,
+   homework questions, Creator, settings, login) in line with the new design
+   language without touching their layouts. New pages should use the ui-*
+   components instead of these class names.
+
+   The :root prefix only raises specificity, so these rules win over the
+   page-level sheets that load after the root layout's CSS. */
+
+/* Buttons */
+:root .primary-button,
+:root .secondary-button,
+:root .ctf-button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius-sm);
+  font-family: var(--ui-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  box-shadow: none;
+  transition:
+    background-color var(--ui-dur-fast) var(--ui-ease-out),
+    border-color var(--ui-dur-fast) var(--ui-ease-out),
+    color var(--ui-dur-fast) var(--ui-ease-out),
+    box-shadow var(--ui-dur) var(--ui-ease-out),
+    transform var(--ui-dur-fast) var(--ui-ease-out);
+}
+:root .primary-button:active:not(:disabled),
+:root .secondary-button:active:not(:disabled),
+:root .ctf-button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+:root .primary-button,
+:root .ctf-button-primary {
+  border-color: transparent;
+  background: var(--ui-text);
+  color: var(--ui-text-inverse);
+}
+:root .primary-button:hover:not(:disabled),
+:root .ctf-button-primary:hover:not(:disabled) {
+  background: #fff;
+  color: var(--ui-text-inverse);
+  box-shadow: 0 0 0 4px rgb(255 255 255 / 0.08), 0 8px 30px rgb(167 139 250 / 0.25);
+}
+
+:root .secondary-button,
+:root .ctf-button-quiet {
+  border-color: var(--ui-border-strong);
+  background: rgb(255 255 255 / 0.02);
+  color: var(--ui-text);
+}
+:root .secondary-button:hover:not(:disabled),
+:root .ctf-button-quiet:hover:not(:disabled) {
+  border-color: rgb(255 255 255 / 0.34);
+  background: var(--ui-surface-hover);
+  color: var(--ui-text);
+}
+
+/* Labels */
+:root .dashboard-kicker,
+:root .ctf-kicker,
+:root .eyebrow {
+  color: var(--ui-text-3);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  font-weight: 500;
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+}
+
+/* Page headings that were not rebuilt follow the light, tight display style. */
+.workspace-frame h1:not(.ui-title) {
+  font-weight: 450;
+  letter-spacing: -0.03em;
+}
+
+/* Inline code and code blocks */
+code {
+  color: var(--ui-accent);
+  font-family: var(--ui-font-mono);
+}
+pre {
+  background: #03041f;
+  border-radius: var(--ui-radius-sm);
+}
+
+/* Native progress bars */
+progress {
+  height: 4px;
+  background: rgb(255 255 255 / 0.08);
+  accent-color: var(--ui-accent-strong);
+}
+progress::-webkit-progress-bar {
+  background: rgb(255 255 255 / 0.08);
+}
+progress::-webkit-progress-value {
+  background: var(--ui-gradient);
+}
+progress::-moz-progress-bar {
+  background: var(--ui-gradient);
+}
+
+/* The old global summary colour, kept for content that still uses it. */
+summary {
+  color: var(--ui-accent);
+}

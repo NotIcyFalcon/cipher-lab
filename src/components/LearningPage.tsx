@@ -17,7 +17,6 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  Clock3,
   FlaskConical,
   Lightbulb,
   LockKeyhole,
@@ -699,10 +698,6 @@ export default function LearningPage(props: LearningPageProps) {
               <span>
                 <BookOpen size={14} aria-hidden="true" />
                 Beginner friendly
-              </span>
-              <span>
-                <Clock3 size={14} aria-hidden="true" />
-                {lesson.minutes} min reading
               </span>
               <span>
                 <Trophy size={14} aria-hidden="true" />

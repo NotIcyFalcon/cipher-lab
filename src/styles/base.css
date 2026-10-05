@@ -1,0 +1,122 @@
+/* Element defaults and the bridge from the previous theme's variables. */
+
+:root {
+  /* Older stylesheets read these names; point them at the new tokens so
+     pages that have not been rebuilt still follow the palette. */
+  --bg: var(--ui-bg);
+  --surface: var(--ui-bg-raised);
+  --border: var(--ui-border);
+  --text: var(--ui-text);
+  --muted: var(--ui-text-3);
+  --green: var(--ui-accent);
+  --purple: var(--ui-accent);
+  --color-text-secondary: var(--ui-text-3);
+  --color-text-tertiary: var(--ui-text-3);
+  --color-bg-elevated: var(--ui-surface-strong);
+  --color-border: var(--ui-border);
+  --color-danger: var(--ui-danger);
+  --color-danger-border: rgb(251 113 133 / 0.35);
+  --color-danger-bg: var(--ui-danger-soft);
+}
+
+html {
+  background: var(--ui-bg);
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+}
+
+/* Lenis drives wheel scrolling; native smooth scrolling would fight it. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background:
+    var(--ui-glow-violet) no-repeat,
+    var(--ui-glow-blue) no-repeat,
+    var(--ui-bg);
+  background-size: 100% 720px, 100% 720px, auto;
+  color: var(--ui-text);
+  font-family: var(--ui-font-sans);
+  font-size: var(--ui-text-base);
+  line-height: var(--ui-leading);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--ui-font-sans);
+  font-weight: 500;
+  letter-spacing: var(--ui-tracking-tight);
+  color: var(--ui-text);
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--ui-font-mono);
+}
+
+::selection {
+  background: rgb(167 139 250 / 0.4);
+  color: var(--ui-text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ui-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--ui-radius-xs);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+}
+
+.ui-sr-only,
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,20 +1,22 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-  ChevronRight,
-  Flag,
-  Orbit,
-  Trophy
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2, Flag, Lightbulb, Orbit, Trophy } from "lucide-react";
 
 import RecommendedPaths from "@/components/RecommendedPaths";
 import { pathHref } from "@/lib/path-links";
+import type { CTFChallengeState } from "@/lib/ctf-types";
 import { getCTFCatalogProgress, type SuggestedPath } from "@/server/ctf";
 import { requireRonakId } from "@/server/current-user";
+
+type Challenge = { id: string; title: string; state: CTFChallengeState };
+type Universe = {
+  id: string;
+  name: string;
+  description: string | null;
+  challenges: Challenge[];
+  challengeCount: number;
+  completedCount: number;
+};
 
 export default async function CTFCategoryPage({
   params,
@@ -24,157 +26,166 @@ export default async function CTFCategoryPage({
   const userId = await requireRonakId();
   const { category: categoryId } = await params;
 
-  const topics = getCTFCatalogProgress(userId);
-  const category = topics.find((t: any) => t.id === categoryId);
-
+  const category = getCTFCatalogProgress(userId).find((topic) => topic.id === categoryId);
   if (!category) notFound();
 
   return (
-    <div className="ctf-page">
-      <nav className="ctf-route-bar" aria-label="CTF navigation">
-        <Link href="/ctf" className="ctf-button ctf-button-quiet">
-          <ArrowLeft size={15} aria-hidden="true" />
-          Back to CTFs
-        </Link>
-
-        <div className="ctf-breadcrumb">
-          <Link href="/ctf">CTF</Link>
-          <ChevronRight size={13} aria-hidden="true" />
-          <span aria-current="page">{category.name}</span>
+    <>
+      <header className="ui-page-head">
+        <nav aria-label="Breadcrumb">
+          <ol className="ui-breadcrumb">
+            <li>
+              <Link href="/ctf">
+                <ArrowLeft size={13} aria-hidden="true" />
+                CTF
+              </Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li aria-current="page">{category.name}</li>
+          </ol>
+        </nav>
+        <div className="ui-page-head-row">
+          <div>
+            <h1 className="ui-title">{category.name}</h1>
+            {category.description && <p className="ui-lede">{category.description}</p>}
+          </div>
         </div>
-      </nav>
-
-      <header className="ctf-category-heading">
-        <div>
-          <span className="ctf-kicker">OPERATION FIELD</span>
-          <h1>{category.name}</h1>
-          <p>{category.description}</p>
-        </div>
-        <span className="ctf-heading-symbol" aria-hidden="true">
-          <Orbit size={48} strokeWidth={1.25} />
-        </span>
+        <dl className="ui-stats" aria-label={`${category.name} progress`}>
+          <div>
+            <dt>
+              <Flag size={14} aria-hidden="true" />
+              Captured
+            </dt>
+            <dd>
+              {category.completedCount} <span>/ {category.challengeCount}</span>
+            </dd>
+          </div>
+          <div>
+            <dt>
+              <Trophy size={14} aria-hidden="true" />
+              XP
+            </dt>
+            <dd>
+              {category.earnedXp} <span>/ {category.achievableXp}</span>
+            </dd>
+          </div>
+          <div>
+            <dt>
+              <Lightbulb size={14} aria-hidden="true" />
+              Hint penalties
+            </dt>
+            <dd>{category.penaltyXp}</dd>
+          </div>
+        </dl>
       </header>
 
-      <dl className="ctf-stats">
-        <div>
-          <dt>
-            <Flag size={15} aria-hidden="true" />
-            Captured missions
-          </dt>
-          <dd>
-            {category.completedCount} <span>/ {category.challengeCount}</span>
-          </dd>
-          <p>Choose any mission to investigate</p>
-        </div>
-        <div>
-          <dt>
-            <Trophy size={15} aria-hidden="true" />
-            Field XP
-          </dt>
-          <dd>
-            {category.earnedXp} <span>/ {category.achievableXp}</span>
-          </dd>
-          <p>
-            Earned / achievable
-          </p>
-        </div>
-      </dl>
-
       {category.ctfs.length === 0 ? (
-        <div className="ctf-empty">
-          <Orbit size={30} aria-hidden="true" />
-          <h2>This field is still being mapped.</h2>
-          <p>New missions will appear here.</p>
-        </div>
+        <section className="ui-empty">
+          <Orbit size={28} aria-hidden="true" />
+          <h2>This topic is still being mapped</h2>
+          <p>New CTFs will appear here.</p>
+        </section>
       ) : (
-        <div className="ctf-universe-list">
-          {category.ctfs.map((ctf: any) => (
-            <div key={ctf.id} id={`ctf-${ctf.id}`} className="ctf-definition-block">
-              <header className="ctf-definition-heading" style={{ marginTop: "40px", marginBottom: "20px" }}>
-                <h2 style={{ fontSize: "24px", color: "white" }}>{ctf.name}</h2>
-                <p style={{ color: "var(--color-text-secondary)" }}>{ctf.description}</p>
-              </header>
+        <div className="cat-ctf-list">
+          {category.ctfs.map((ctf) => {
+            const universes = ctf.universes as Universe[];
 
-              <RecommendedPaths
-                paths={ctf.suggestedPaths.map((path: SuggestedPath) => ({
-                  ...path,
-                  href: pathHref(path.id),
-                }))}
-              />
-
-              {ctf.universes.map((universe: any) => (
-                <section
-                  key={universe.id}
-                  className="ctf-universe"
-                  style={{ marginBottom: "30px" }}
-                  aria-labelledby={`universe-${universe.id}`}
-                >
-                  <div className="ctf-universe-heading">
-                    <div className="ctf-universe-copy">
-                      <span className="ctf-kicker">UNIVERSE: {universe.name.toUpperCase()}</span>
-                      <h3 id={`universe-${universe.id}`} style={{ fontSize: "18px" }}>{universe.description || "Challenges"}</h3>
-                    </div>
-                    <span className="ctf-universe-completion">
-                      {universe.completedCount}/{universe.challengeCount} captured
+            return (
+              <section key={ctf.id} id={`ctf-${ctf.id}`} className="cat-ctf-block" aria-labelledby={`ctf-title-${ctf.id}`}>
+                <header className="cat-ctf-head">
+                  <div>
+                    <h2 id={`ctf-title-${ctf.id}`}>{ctf.name}</h2>
+                    {ctf.description && <p>{ctf.description}</p>}
+                  </div>
+                  <div className="ui-acc-meta">
+                    {ctf.difficulty && <span className="ui-badge">{ctf.difficulty}</span>}
+                    <span className="ui-badge ui-num">
+                      {ctf.completedCount}/{ctf.challengeCount} captured
+                    </span>
+                    <span className="ui-badge ui-badge-accent ui-num">
+                      {ctf.earnedXp}/{ctf.achievableXp} XP
                     </span>
                   </div>
-                  <ul className="ctf-mission-grid">
-                    {universe.challenges.map((challenge: any) => (
-                      <li key={challenge.id}>
-                        <Link
-                          href={`/ctf/challenge/${challenge.id}`}
-                          className={`ctf-mission-link${
-                            challenge.state.completed ? " is-complete" : ""
-                          }`}
-                          aria-label={`${challenge.title}, ${
-                            challenge.state.completed
-                              ? `completed, ${challenge.state.awardedXp} XP earned, re-attempt`
-                              : `${challenge.state.achievableXp} XP available`
-                          }`}
-                        >
-                          <span className="ctf-mission-mark" aria-hidden="true">
-                            {challenge.state.completed ? (
-                              <CheckCircle2 size={19} />
-                            ) : (
-                              <Flag size={19} />
-                            )}
-                          </span>
-                          <strong>{challenge.title}</strong>
-                          <span className="ctf-mission-points">
-                            {challenge.state.completed
-                              ? challenge.state.awardedXp
-                              : challenge.state.achievableXp}
-                            <small>
-                              {challenge.state.completed ? "XP EARNED" : "XP"}
-                            </small>
-                          </span>
-                          <ArrowRight
-                            className="ctf-mission-arrow"
-                            size={16}
-                            aria-hidden="true"
-                          />
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
-          ))}
+                </header>
+
+                <RecommendedPaths
+                  headingId={`recommended-${ctf.id}`}
+                  paths={(ctf.suggestedPaths as SuggestedPath[]).map((path) => ({
+                    ...path,
+                    href: pathHref(path.id),
+                  }))}
+                />
+
+                {universes.length === 0 ? (
+                  <p className="ui-muted">No challenges yet.</p>
+                ) : (
+                  <div className="ui-accordion">
+                    {universes.map((universe) => {
+                      const allCaptured =
+                        universe.challengeCount > 0 && universe.completedCount === universe.challengeCount;
+
+                      return (
+                        <details key={universe.id} className="ui-acc cat-universe" open={!allCaptured}>
+                          <summary>
+                            <span className="ui-acc-title">
+                              <h3>{universe.name}</h3>
+                              {universe.description && <span className="ui-muted">{universe.description}</span>}
+                            </span>
+                            <span className="ui-acc-meta">
+                              <span className={`ui-badge ui-num${allCaptured ? " ui-badge-success" : ""}`}>
+                                {universe.completedCount}/{universe.challengeCount} captured
+                              </span>
+                            </span>
+                            <span className="ui-acc-icon" aria-hidden="true" />
+                          </summary>
+
+                          <div className="ui-acc-body">
+                            <ul className="cat-challenges">
+                              {universe.challenges.map((challenge) => {
+                                const { completed, awardedXp, achievableXp, penaltyXp } = challenge.state;
+                                const xp = completed ? awardedXp ?? 0 : achievableXp;
+
+                                return (
+                                  <li key={challenge.id}>
+                                    <Link
+                                      href={`/ctf/challenge/${challenge.id}`}
+                                      className={`cat-challenge${completed ? " is-complete" : ""}`}
+                                      aria-label={`${challenge.title}, ${
+                                        completed ? `captured, ${xp} XP earned` : `${xp} XP available`
+                                      }`}
+                                    >
+                                      <span className="cat-challenge-mark" aria-hidden="true">
+                                        {completed ? <CheckCircle2 size={16} /> : <Flag size={15} />}
+                                      </span>
+                                      <span className="cat-challenge-title">{challenge.title}</span>
+                                      <span className="cat-challenge-xp ui-num" aria-hidden="true">
+                                        {xp}
+                                        <small>{completed ? "XP earned" : penaltyXp > 0 ? `XP · −${penaltyXp}` : "XP"}</small>
+                                      </span>
+                                    </Link>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        </details>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
 
-      <aside className="ctf-rules-note">
-        <CheckCircle2 size={20} aria-hidden="true" />
-        <div>
-          <strong>Captured does not mean closed.</strong>
-          <p>
-            Completed missions stay clickable for re-attempts. Unsolved
-            missions show their currently achievable XP; captured missions
-            show the XP you earned.
-          </p>
-        </div>
-      </aside>
-    </div>
+      <p className="ui-notice cat-footnote">
+        <CheckCircle2 size={16} aria-hidden="true" />
+        <span>
+          <strong>Captured does not mean closed.</strong> Completed challenges stay open for re-attempts. Unsolved ones
+          show the XP still available; captured ones show the XP you earned.
+        </span>
+      </p>
+    </>
   );
 }

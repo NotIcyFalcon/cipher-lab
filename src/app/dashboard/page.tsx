@@ -19,7 +19,6 @@ import {
   pathRevisionHref,
 } from "@/lib/path-links";
 import {
-  formatLessonDuration,
   getPathProgress,
 } from "@/lib/path-progress";
 import { requireRonakId } from "@/server/current-user";
@@ -159,10 +158,12 @@ export default async function DashboardPage() {
             {next && (
               <div className="dashboard-next-meta">
                 <span>{next.path.difficulty}</span>
-                <span>
-                  <Clock3 size={14} aria-hidden="true" />
-                  {formatLessonDuration(next.summary.minutes)} of lessons
-                </span>
+                {next.path.timeDays > 0 && (
+                  <span>
+                    <Clock3 size={14} aria-hidden="true" />
+                    {next.path.timeDays} {next.path.timeDays === 1 ? "day" : "days"}
+                  </span>
+                )}
               </div>
             )}
           </section>
@@ -249,10 +250,12 @@ export default async function DashboardPage() {
 
                       <div className="dashboard-path-tags">
                         <span>{path.difficulty}</span>
-                        <span>
-                          <Clock3 size={13} aria-hidden="true" />
-                          ~{formatLessonDuration(summary.minutes)} of lessons
-                        </span>
+                        {path.timeDays > 0 && (
+                          <span>
+                            <Clock3 size={13} aria-hidden="true" />
+                            {path.timeDays} {path.timeDays === 1 ? "day" : "days"}
+                          </span>
+                        )}
                       </div>
                     </div>
 

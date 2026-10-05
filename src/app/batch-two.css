@@ -27,10 +27,10 @@
   flex-shrink: 0;
   width: 82px;
   height: 82px;
-  border: 1px solid #41563c;
+  border: 1px solid #3c3959;
   border-radius: 23px;
   color: var(--green);
-  background: radial-gradient(circle at 20% 0%, #b8f77715, transparent 75%), #17251e;
+  background: radial-gradient(circle at 20% 0%, #9d77f715, transparent 75%), #171626;
   box-shadow: inset 0 1px 0 #ffffff0a;
 }
 
@@ -39,16 +39,16 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 0;
   overflow: hidden;
-  border: 1px solid var(--workspace-line, #25323d);
+  border: 1px solid var(--workspace-line, #1f2243);
   border-radius: 15px;
-  background: linear-gradient(120deg, #15201d80, #111922);
+  background: linear-gradient(120deg, #15142180, #0e0f25);
 }
 .paths-summary > div {
   min-width: 0;
   padding: 23px 26px;
 }
 .paths-summary > div + div {
-  border-left: 1px solid var(--workspace-line, #25323d);
+  border-left: 1px solid var(--workspace-line, #1f2243);
 }
 .paths-summary dt {
   display: flex;
@@ -58,7 +58,7 @@
   font-size: 12px;
 }
 .paths-summary dt svg {
-  color: #91a88c;
+  color: #8c98a8;
 }
 .paths-summary dd {
   margin: 12px 0 0;
@@ -83,10 +83,10 @@
 }
 .paths-category-count {
   padding: 5px 10px;
-  border: 1px solid #2c3a45;
+  border: 1px solid #25284c;
   border-radius: 7px;
   color: var(--muted);
-  background: #111a23;
+  background: #0e0f26;
   font-size: 11px;
 }
 .paths-catalog {
@@ -107,15 +107,15 @@
   height: 100%;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #2b3943;
+  border: 1px solid #24274a;
   border-radius: 17px;
-  background: radial-gradient(ellipse at 100% 0%, #b8f77709, transparent 65%),
-    linear-gradient(145deg, #121d25, #101820);
+  background: radial-gradient(ellipse at 100% 0%, #9d77f709, transparent 65%),
+    linear-gradient(145deg, #0f1028, #0d0f23);
   box-shadow: inset 0 1px 0 #ffffff04;
 }
 .paths-course-card:hover,
 .paths-course-card:focus-within {
-  border-color: #53684a;
+  border-color: #4a476b;
   box-shadow: 0 10px 30px #00000020;
 }
 .paths-course-top {
@@ -153,9 +153,9 @@
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  border: 1px solid #2c3944;
+  border: 1px solid #25284b;
   border-radius: 5px;
-  background: #0e1720;
+  background: #0b0d23;
   color: #b9c6cf;
   font-size: 10px;
 }
@@ -171,8 +171,8 @@
   gap: 12px;
   margin: 23px 0 0;
   padding: 18px 0;
-  border-top: 1px solid #293741;
-  border-bottom: 1px solid #293741;
+  border-top: 1px solid #232547;
+  border-bottom: 1px solid #232547;
 }
 .paths-points-breakdown > div {
   min-width: 0;
@@ -247,8 +247,8 @@
   flex-wrap: wrap;
   gap: 14px;
   padding: 17px 26px;
-  border-top: 1px solid #2a3741;
-  background: #0a121a80;
+  border-top: 1px solid #242647;
+  background: #08091c80;
 }
 
 .paths-page > .dashboard-empty {
@@ -278,10 +278,10 @@
   max-height: calc(100svh - 130px);
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #384b3d transparent;
-  border: 1px solid #2a3842;
+  scrollbar-color: #37344f transparent;
+  border: 1px solid #242648;
   border-radius: 16px;
-  background: linear-gradient(160deg, #142019, #101922 44%);
+  background: linear-gradient(160deg, #141321, #0d0f25 44%);
 }
 .lesson-index-back {
   display: flex;
@@ -289,14 +289,14 @@
   gap: 9px;
   flex-shrink: 0;
   padding: 19px 20px;
-  border-bottom: 1px solid #2a3842;
-  color: #c2d5ba;
+  border-bottom: 1px solid #242648;
+  color: #bac5d5;
   font-size: 11px;
   font-weight: 650;
 }
 .lesson-index-back:hover {
   color: var(--green);
-  background: #b8f77705;
+  background: #9d77f705;
 }
 
 .lesson-index-heading {
@@ -342,12 +342,12 @@
   border: 1px solid transparent;
   border-radius: 10px;
   color: #b7c5cf;
-  background: #0d161e80;
+  background: #0a0c2180;
   text-align: left;
 }
 .lesson-index-button:hover:not(:disabled) {
-  border-color: #3b4d45;
-  background: #18231f;
+  border-color: #393652;
+  background: #181724;
 }
 .lesson-index-button:focus-visible {
   outline-offset: 2px;
@@ -360,9 +360,9 @@
   height: 29px;
   flex-shrink: 0;
   margin-top: 1px;
-  border: 1px solid #35424d;
+  border: 1px solid #2d3055;
   border-radius: 8px;
-  background: #121d26;
+  background: #0f1029;
   color: #a8bdcb;
   font-size: 10px;
   font-weight: 700;
@@ -388,12 +388,12 @@
 }
 
 .lesson-index-item.is-complete .lesson-index-number {
-  border-color: #3d6149;
-  color: #a5dfb5;
-  background: #1a3024;
+  border-color: #3d3965;
+  color: #a5dfba;
+  background: #1a1832;
 }
 .lesson-index-item.is-complete .lesson-index-copy > strong {
-  color: #b3dbc0;
+  color: #aee0c0;
 }
 
 .lesson-index-item.has-unfinished-labs .lesson-index-button {
@@ -406,32 +406,32 @@
 }
 
 .lesson-index-item.is-current .lesson-index-button {
-  border-color: #597641;
-  background: linear-gradient(110deg, #263721, #19271f);
+  border-color: #413c7b;
+  background: linear-gradient(110deg, #211f39, #191828);
   box-shadow: inset 3px 0 0 var(--green);
 }
 .lesson-index-item.is-current .lesson-index-copy > strong {
-  color: #e0f4d2;
+  color: #dcd2f4;
 }
 .lesson-index-item.is-current .lesson-index-number {
-  border-color: #718b50;
+  border-color: #504a91;
   color: var(--green);
-  background: #31442a;
+  background: #2a2747;
 }
 
 .lesson-index-item.is-locked .lesson-index-button {
   opacity: 1;
   color: #84939f;
-  background: #0b141b80;
+  background: #090a1d80;
   cursor: not-allowed;
 }
 .lesson-index-item.is-locked .lesson-index-copy > span {
   color: #7e909e;
 }
 .lesson-index-item.is-locked .lesson-index-number {
-  border-color: #293640;
+  border-color: #232546;
   color: #7e8d99;
-  background: #101922;
+  background: #0d0f25;
 }
 
 .lesson-index-warning {
@@ -487,8 +487,8 @@
   gap: 9px;
   margin: 0 20px;
   padding-top: 17px;
-  border-top: 1px solid #2a3842;
-  color: #a2b497;
+  border-top: 1px solid #242648;
+  color: #97a3b4;
 }
 .lesson-index-note svg {
   margin-top: 3px;
@@ -514,7 +514,7 @@
   gap: 18px;
   min-height: 48px;
   padding-bottom: 18px;
-  border-bottom: 1px solid #27353f;
+  border-bottom: 1px solid #212345;
 }
 .lesson-breadcrumb-bar .breadcrumb {
   min-width: 0;
@@ -550,7 +550,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 10px 18px;
-  color: #b6c7b2;
+  color: #b2bbc7;
   font-size: 11px;
 }
 .lesson-hero-meta > span {
@@ -559,7 +559,7 @@
   gap: 7px;
 }
 .lesson-hero-meta svg {
-  color: #8ca77e;
+  color: #7e8fa7;
 }
 
 .lesson-plan {
@@ -567,7 +567,7 @@
   padding: 21px 24px;
   border: 1px solid #3b394c;
   border-radius: 14px;
-  background: radial-gradient(ellipse at 0% 0%, #c4b5fd0a, transparent 65%), #131b25;
+  background: radial-gradient(ellipse at 0% 0%, #c4b5fd0a, transparent 65%), #101128;
 }
 .lesson-plan-heading {
   display: flex;
@@ -627,8 +627,8 @@
 }
 
 .lesson-reading-completion {
-  border-color: #3c513b;
-  background: linear-gradient(115deg, #1a291e, #121d21);
+  border-color: #3a3854;
+  background: linear-gradient(115deg, #1a182b, #0f1024);
 }
 .lesson-reading-completion h2 {
   margin: 0 0 6px;
@@ -649,7 +649,7 @@
   padding-top: 17px;
 }
 .lesson-progress-import > summary {
-  color: #a8bb9f;
+  color: #9fabbb;
 }
 
 .lesson-bottom-navigation {
@@ -660,11 +660,11 @@
   gap: 24px;
   margin-top: 5px;
   padding: 26px;
-  border: 1px solid #415637;
+  border: 1px solid #373459;
   border-radius: 16px;
-  background: radial-gradient(ellipse at 100% 0%, #b8f7770d, transparent 65%),
-    linear-gradient(120deg, #17251b, #111b21);
-  box-shadow: inset 0 1px 0 #d5ffc009;
+  background: radial-gradient(ellipse at 100% 0%, #9d77f70d, transparent 65%),
+    linear-gradient(120deg, #171626, #0e0f24);
+  box-shadow: inset 0 1px 0 #d4c3fc09;
 }
 .lesson-bottom-copy {
   flex: 1 1 260px;
@@ -701,7 +701,7 @@
 
 /* Lab completion and submission */
 .lesson-lab-card {
-  border-color: #304534;
+  border-color: #302e47;
   box-shadow: inset 0 1px 0 #ffffff04;
 }
 .lesson-lab-complete {
@@ -711,8 +711,8 @@
   flex-wrap: wrap;
   gap: 16px;
   padding: 20px;
-  border-color: #3b5940;
-  background: linear-gradient(110deg, #192d20, #121e1b);
+  border-color: #3b385c;
+  background: linear-gradient(110deg, #19172f, #12111f);
 }
 .lesson-lab-complete-heading {
   display: flex;
@@ -729,18 +729,18 @@
   width: 38px;
   height: 38px;
   flex-shrink: 0;
-  border: 1px solid #4b6b43;
+  border: 1px solid #433f6f;
   border-radius: 11px;
   color: var(--green);
-  background: #253c26;
+  background: #25233e;
 }
 .lesson-lab-complete strong {
-  color: #c6edb5;
+  color: #b5edca;
   font-size: 14px;
 }
 .lesson-lab-complete p {
   margin: 4px 0 0;
-  color: #a5bba2;
+  color: #a2acbb;
   font-size: 11px;
   overflow-wrap: anywhere;
 }
@@ -751,7 +751,7 @@
   margin: 24px 0;
 }
 .lesson-lab-form > label {
-  color: #c7d6cb;
+  color: #c7cdd6;
   font-size: 11px;
   font-weight: 650;
 }
@@ -766,15 +766,15 @@
   width: 100%;
   min-width: 0;
   padding: 11px 13px;
-  border: 1px solid #35473a;
+  border: 1px solid #34324a;
   border-radius: 9px;
   color: var(--text);
-  background: #0a1212;
+  background: #080914;
   font: inherit;
   font-size: 12px;
 }
 .lesson-lab-form input::placeholder {
-  color: #8c9e92;
+  color: #8c939e;
 }
 .lesson-lab-form input[aria-invalid="true"] {
   border-color: #e98181;
@@ -789,9 +789,9 @@
 }
 .lab-instructions .lesson-lab-reattempt-note {
   padding: 10px 12px;
-  border-left: 2px solid #8ca879;
-  color: #bdcdb5;
-  background: #172119;
+  border-left: 2px solid #798da8;
+  color: #b5bfcd;
+  background: #171622;
   font-size: 11px;
 }
 
@@ -801,7 +801,7 @@
   overflow: hidden;
   border: 1px solid #443e55;
   border-radius: 12px;
-  background: linear-gradient(115deg, #242033, #161d26);
+  background: linear-gradient(115deg, #242033, #12142a);
 }
 .lesson-hint > summary {
   display: flex;
@@ -875,8 +875,8 @@
   align-items: center;
   gap: 16px;
   padding: 17px 20px;
-  border-bottom: 1px solid #304534;
-  background: linear-gradient(110deg, #19291d, #142018);
+  border-bottom: 1px solid #302e47;
+  background: linear-gradient(110deg, #19172b, #141321);
 }
 .lab-terminal-title-group {
   display: flex;
@@ -894,14 +894,14 @@
   width: 37px;
   height: 37px;
   flex-shrink: 0;
-  border: 1px solid #405d3d;
+  border: 1px solid #3d3a60;
   border-radius: 10px;
   color: var(--green);
-  background: #243724;
+  background: #242239;
 }
 .lab-terminal-kicker {
   display: block;
-  color: #94b28b;
+  color: #8b9bb2;
   font-size: 9px;
   font-weight: 750;
   letter-spacing: 1.2px;
@@ -909,7 +909,7 @@
 .lab-terminal-title {
   display: block;
   margin-top: 3px;
-  color: #e0ecdd;
+  color: #dee3eb;
   font-size: 13px;
   font-weight: 650;
   line-height: 1.5;
@@ -927,10 +927,10 @@
   align-items: center;
   gap: 6px;
   padding: 5px 9px;
-  border: 1px solid #4c6138;
+  border: 1px solid #383465;
   border-radius: 6px;
-  color: #d0edac;
-  background: #b8f77709;
+  color: #c0aced;
+  background: #9d77f709;
   font-size: 10px;
   font-weight: 650;
   white-space: nowrap;
@@ -956,7 +956,7 @@
 .live-lab .lab-terminal-overlay {
   z-index: 10;
   color: #b9b0ce;
-  background: #090f13;
+  background: #070815;
   pointer-events: none;
   /* Gateway errors can be long; wrap them instead of clipping. */
   white-space: normal;
@@ -966,7 +966,7 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  color: #acbdae;
+  color: #acb3bd;
   font-size: 11px;
 }
 .lab-terminal-status > span {
@@ -975,11 +975,11 @@
   flex-shrink: 0;
   margin-top: 6px;
   border-radius: 50%;
-  background: #829183;
+  background: #828891;
 }
 .lab-terminal-status.is-connected > span {
   background: var(--green);
-  box-shadow: 0 0 9px #b8f77730;
+  box-shadow: 0 0 9px #9d77f730;
 }
 
 /* Responsive */
@@ -997,7 +997,7 @@
   .paths-catalog > li:only-child .paths-course-progress {
     align-self: center;
     margin-top: 0;
-    border-left: 1px solid #293741;
+    border-left: 1px solid #232547;
   }
   .paths-catalog > li:only-child .paths-course-footer {
     grid-column: 1 / -1;
@@ -1050,7 +1050,7 @@
     padding: 3px 4px 45px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: #384b3d transparent;
+    scrollbar-color: #37344f transparent;
   }
   .lesson-index-note {
     margin-inline: 20px;
@@ -1100,7 +1100,7 @@
   }
   .paths-summary > div:last-child {
     grid-column: 1 / -1;
-    border-top: 1px solid var(--workspace-line, #25323d);
+    border-top: 1px solid var(--workspace-line, #1f2243);
     border-left: 0;
   }
   .paths-summary dd {

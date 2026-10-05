@@ -1,14 +1,8 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Box, UserRound, Settings, NotebookPen } from "lucide-react";
-
-const navigation = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/paths", label: "Learning Paths" },
-  { href: "/homework", label: "Homework" },
-  { href: "/ctf", label: "CTF" },
-  { href: "/profile", label: "Profile" },
-];
+import { Box } from "lucide-react";
+import SiteNav from "@/components/ui/SiteNav";
+import PageTransition from "@/components/ui/PageTransition";
 
 export default function WorkspaceShell({
   current,
@@ -19,109 +13,37 @@ export default function WorkspaceShell({
   userId: string;
   children: ReactNode;
 }) {
-  const isAdmin = userId === "admin";
-  const creatorActive =
-    current === "/admin/creator" || current.startsWith("/admin/creator/");
-
   return (
-    <div className="workspace-frame">
-      <a href="#main-content" className="skip-link">
+    // workspace-frame stays for older page styles that are scoped under it.
+    <div className="ui-shell workspace-frame">
+      <a href="#main-content" className="ui-skip-link">
         Skip to content
       </a>
 
-      <header className="workspace-header">
-        <div className="workspace-header-inner">
-          <Link
-            href="/dashboard"
-            className="workspace-brand"
-            aria-label="Cyber Box home"
-          >
-            <span className="workspace-brand-mark">
-              <Box size={21} aria-hidden="true" />
-            </span>
-            <span>
-              Cyber <span className="accent">Box</span>
-            </span>
-          </Link>
+      <SiteNav current={current} userId={userId} />
 
-          <nav className="workspace-navigation" aria-label="Main navigation">
-            {navigation.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className={`workspace-nav-link${
-                  current === href ? " is-active" : ""
-                }`}
-                aria-current={current === href ? "page" : undefined}
-              >
-                {label}
-              </Link>
-            ))}
-
-            {isAdmin && (
-              <Link
-                href="/admin/creator"
-                className={`workspace-nav-link${
-                  creatorActive ? " is-active" : ""
-                }`}
-                aria-current={creatorActive ? "page" : undefined}
-              >
-                <span className="icon-label">
-                  <NotebookPen size={15} aria-hidden="true" />
-                  Creator
-                </span>
-              </Link>
-            )}
-          </nav>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            {isAdmin && (
-              <Link
-                href="/admin/settings"
-                className={`workspace-profile${
-                  current === "/admin/settings" ? " is-active" : ""
-                }`}
-                aria-label="Admin settings"
-                aria-current={
-                  current === "/admin/settings" ? "page" : undefined
-                }
-                style={{
-                  background:
-                    current === "/admin/settings"
-                      ? "var(--color-bg-elevated)"
-                      : "transparent",
-                }}
-              >
-                <span className="workspace-profile-icon">
-                  <Settings size={17} aria-hidden="true" />
-                </span>
-                <span>Settings</span>
-              </Link>
-            )}
-
-            <Link
-              href="/profile"
-              className={`workspace-profile${
-                current === "/profile" ? " is-active" : ""
-              }`}
-              aria-label={`${userId}'s profile`}
-              aria-current={current === "/profile" ? "page" : undefined}
-            >
-              <span className="workspace-profile-icon">
-                <UserRound size={17} aria-hidden="true" />
-              </span>
-              <span style={{ textTransform: "capitalize" }}>{userId}</span>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main id="main-content" className="workspace-main" tabIndex={-1}>
-        {children}
+      <main id="main-content" className="ui-main" tabIndex={-1}>
+        <PageTransition>{children}</PageTransition>
       </main>
 
-      <footer className="workspace-footer">
-        <span>Cyber Box</span>
+      <footer className="ui-footer">
+        <div className="ui-footer-inner">
+          <Link href="/dashboard" className="ui-brand ui-brand-footer" aria-label="Cyber Box home">
+            <span className="ui-brand-mark" aria-hidden="true">
+              <Box size={16} strokeWidth={1.8} />
+            </span>
+            <span className="ui-brand-word">
+              Cyber <span>Box</span>
+            </span>
+          </Link>
+          <p className="ui-footer-tag">Hands-on security learning · labs · homework · CTF</p>
+          <nav className="ui-footer-links" aria-label="Footer">
+            <Link href="/paths">Learning paths</Link>
+            <Link href="/homework">Homework</Link>
+            <Link href="/ctf">CTF</Link>
+            <Link href="/profile">Profile</Link>
+          </nav>
+        </div>
       </footer>
     </div>
   );
