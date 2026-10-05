@@ -1,47 +1,121 @@
 /* Catalog pages: Learning Paths, Homework, CTF topics and CTF detail.
-   Layout only; rows, accordions, badges and meters live in components.css. */
+   Tiles, accordions, badges and meters come from components.css; this file
+   lays them out. */
 
-/* Status text inside a row's meta line (paired with the row icon, so the
-   colour is never the only signal). */
-.cat-state {
-  font-weight: 500;
+/* ---------- Page hero: copy on the left, stat tiles on the right ---------- */
+
+.cat-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+  align-items: end;
+  gap: var(--ui-space-8) var(--ui-space-10);
+  margin: var(--ui-space-6) 0 var(--ui-space-10);
 }
-.cat-state.is-complete {
-  color: var(--ui-success);
+.cat-hero-copy {
+  display: grid;
+  align-content: end;
+  justify-items: start;
+  gap: var(--ui-space-4);
+  min-width: 0;
 }
-.cat-state.is-progress,
-.cat-state.is-practice {
+.cat-hero .ui-title {
+  font-size: clamp(44px, 6.2vw, 92px);
+  font-weight: 450;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+  overflow-wrap: anywhere;
+}
+.cat-hero .ui-lede {
+  max-width: 56ch;
+  font-size: var(--ui-text-lg);
+}
+.cat-hero-action {
+  margin-top: var(--ui-space-2);
+}
+
+.cat-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.cat-hero-stats > div {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  padding: 16px 18px;
+  overflow: hidden;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-card);
+}
+.cat-hero-stats > div::after {
+  content: "";
+  position: absolute;
+  inset: auto -30% -60% auto;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(167 139 250 / 0.18), transparent 70%);
+  pointer-events: none;
+}
+.cat-hero-stats dt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ui-text-3);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  letter-spacing: var(--ui-tracking-label);
+  text-transform: uppercase;
+}
+.cat-hero-stats dt svg {
   color: var(--ui-accent);
 }
-
-/* Points on the right of a row: "120/300". */
-.cat-points {
-  display: inline-flex;
-  align-items: baseline;
-  color: var(--ui-text);
-  font-size: var(--ui-text-sm);
-  font-weight: 500;
-  white-space: nowrap;
+.cat-hero-stats dd {
+  margin: 0;
+  font-size: var(--ui-text-2xl);
+  font-weight: 450;
+  letter-spacing: var(--ui-tracking-tight);
+  font-variant-numeric: tabular-nums;
 }
-.cat-points small {
+.cat-hero-stats dd span {
   color: var(--ui-text-3);
-  font-size: var(--ui-text-xs);
-  font-weight: 400;
+  font-size: var(--ui-text-sm);
 }
 
-.cat-review {
-  --btn-h: 30px;
-  padding-inline: 8px;
-  font-size: 11px;
-}
-
-@media (max-width: 520px) {
-  .cat-points small,
-  .cat-review {
-    display: none;
+@media (max-width: 900px) {
+  .cat-hero {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
+/* ---------- Topic sections ---------- */
+
+.cat-topics {
+  border-top: 0;
+}
+.cat-topic {
+  border-bottom: 1px solid var(--ui-border);
+}
+.cat-topic > summary {
+  min-height: 80px;
+}
+.cat-topic .ui-acc-title {
+  align-items: center;
+}
+.cat-topic .ui-acc-title h2 {
+  font-size: clamp(22px, 2.2vw, 30px);
+}
+.cat-topic-index {
+  color: var(--ui-accent);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+  letter-spacing: 0.08em;
+}
+.cat-topic .ui-acc-body {
+  padding: 4px 0 var(--ui-space-8);
+}
 .cat-topic-desc {
   font-size: var(--ui-text-sm);
 }
@@ -55,12 +129,307 @@
   margin: var(--ui-space-10) 0 0;
 }
 
-/* ---------- Homework ---------- */
+/* ---------- Cards ---------- */
 
-.cat-homework .ui-lock-note {
-  margin: 4px 0 0;
-  width: fit-content;
+.cat-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
+.cat-card-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgb(196 181 253 / 0.22);
+  border-radius: 12px;
+  background: linear-gradient(140deg, rgb(124 58 237 / 0.3), rgb(162 28 175 / 0.12));
+  color: var(--ui-accent);
+}
+.cat-card-icon.is-complete {
+  border-color: rgb(74 222 128 / 0.3);
+  background: var(--ui-success-soft);
+  color: var(--ui-success);
+}
+.cat-card-icon.is-locked {
+  border-style: dashed;
+  border-color: var(--ui-border-strong);
+  background: transparent;
+  color: var(--ui-text-3);
+}
+
+/* State shown as text with an icon where it matters, never colour alone. */
+.cat-state-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-pill);
+  color: var(--ui-text-2);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.cat-state-badge.is-complete {
+  border-color: rgb(74 222 128 / 0.3);
+  background: var(--ui-success-soft);
+  color: var(--ui-success);
+}
+.cat-state-badge.is-progress,
+.cat-state-badge.is-practice {
+  border-color: rgb(196 181 253 / 0.3);
+  background: var(--ui-accent-soft);
+  color: var(--ui-accent);
+}
+.cat-state-badge.is-locked {
+  border-color: rgb(251 191 36 / 0.3);
+  background: var(--ui-warning-soft);
+  color: var(--ui-warning);
+}
+
+.cat-card-body {
+  display: grid;
+  gap: 6px;
+}
+.cat-card-title {
+  margin: 0;
+  font-size: var(--ui-text-xl);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: var(--ui-leading-snug);
+  overflow-wrap: anywhere;
+}
+.cat-card-title a {
+  color: inherit;
+}
+.cat-card-sub {
+  margin: 0;
+  color: var(--ui-text-3);
+  font-size: var(--ui-text-sm);
+}
+.cat-card-desc {
+  display: -webkit-box;
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: var(--ui-text-2);
+  font-size: var(--ui-text-sm);
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.cat-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.cat-card-tags span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 9px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-xs);
+  background: rgb(255 255 255 / 0.03);
+  color: var(--ui-text-2);
+  font-size: var(--ui-text-xs);
+}
+.cat-card-tags span.is-accent {
+  border-color: rgb(196 181 253 / 0.3);
+  background: var(--ui-accent-soft);
+  color: var(--ui-accent);
+}
+
+.cat-card-points {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid var(--ui-border);
+}
+.cat-card-points > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ui-border);
+  font-size: var(--ui-text-sm);
+}
+.cat-card-points dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ui-text-2);
+}
+.cat-card-points dt svg {
+  color: var(--ui-text-3);
+}
+.cat-card-points dd {
+  margin: 0;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.cat-card-points dd span {
+  color: var(--ui-text-3);
+  font-weight: 400;
+}
+
+.cat-card-questions {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--ui-border);
+  list-style: none;
+}
+.cat-card-questions li {
+  display: flex;
+  gap: 10px;
+  overflow: hidden;
+  color: var(--ui-text-2);
+  font-size: var(--ui-text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cat-card-questions li span {
+  color: var(--ui-accent);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  line-height: 1.9;
+}
+.cat-card-questions li.is-more {
+  color: var(--ui-text-3);
+  font-size: var(--ui-text-xs);
+}
+
+.cat-card-progress {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+}
+.cat-card-progress-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ui-text-3);
+  font-size: var(--ui-text-xs);
+}
+.cat-card-progress-head strong {
+  color: var(--ui-text);
+  font-size: var(--ui-text-md);
+  font-weight: 500;
+}
+.cat-card-progress-head strong span {
+  color: var(--ui-text-3);
+  font-size: var(--ui-text-xs);
+  font-weight: 400;
+}
+.cat-card-progress .ui-meter {
+  height: 5px;
+}
+.cat-card-progress p {
+  margin: 0;
+  color: var(--ui-text-3);
+  font-size: var(--ui-text-xs);
+}
+
+.cat-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ui-border);
+}
+.cat-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-text);
+  color: var(--ui-text-inverse);
+  font-family: var(--ui-font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition:
+    background-color var(--ui-dur-fast) var(--ui-ease-out),
+    box-shadow var(--ui-dur) var(--ui-ease-out);
+}
+.cat-card-cta svg {
+  transition: transform var(--ui-dur) var(--ui-ease-out);
+}
+.cat-card-foot .cat-card-cta:only-child,
+.cat-card-count + .cat-card-cta,
+.cat-card-done + .cat-card-cta {
+  margin-left: auto;
+}
+.ui-tile:hover .cat-card-cta {
+  background: #fff;
+  box-shadow: 0 0 0 4px rgb(255 255 255 / 0.08), 0 8px 26px rgb(167 139 250 / 0.3);
+}
+.ui-tile:hover .cat-card-cta svg {
+  transform: translateX(3px);
+}
+.cat-card-link {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 6px;
+  color: var(--ui-text-2);
+  font-size: var(--ui-text-sm);
+  transition: color var(--ui-dur-fast) var(--ui-ease-out);
+}
+.cat-card-link:hover {
+  color: var(--ui-text);
+}
+.cat-card-count {
+  color: var(--ui-text-3);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+}
+.cat-card-done {
+  color: var(--ui-success);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Locked homework: the reason sits on the card itself. */
+.cat-lock-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid rgb(251 191 36 / 0.3);
+  border-radius: var(--ui-radius);
+  background: var(--ui-warning-soft);
+  color: var(--ui-warning);
+  font-size: var(--ui-text-sm);
+  font-weight: 500;
+  line-height: 1.4;
+}
+.cat-lock-message svg {
+  margin-top: 2px;
+}
+
+/* ---------- Homework detail ---------- */
 
 .cat-locked {
   flex-wrap: wrap;
@@ -72,7 +441,7 @@
 
 .cat-questions {
   display: grid;
-  gap: var(--ui-space-4);
+  gap: var(--ui-space-5);
 }
 
 /* ---------- CTF detail ---------- */
@@ -98,9 +467,9 @@
 }
 .cat-ctf-head h2 {
   margin: 0;
-  font-size: var(--ui-text-2xl);
+  font-size: clamp(26px, 2.8vw, 38px);
   font-weight: 450;
-  letter-spacing: var(--ui-tracking-tight);
+  letter-spacing: -0.03em;
 }
 .cat-ctf-head p {
   max-width: 70ch;
@@ -109,80 +478,91 @@
 }
 
 .cat-universe > summary {
-  min-height: 56px;
+  min-height: 60px;
 }
 .cat-universe .ui-acc-title h3 {
   font-size: var(--ui-text-lg);
 }
 
-/* Dense challenge tiles: many per row, one line each. */
-.cat-challenges {
+/* Mission tiles: the size of the original challenge cards. */
+.cat-missions {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-
-.cat-challenge {
+.cat-missions > li {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+.cat-mission {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  flex-direction: row;
   align-items: center;
-  gap: 10px;
-  min-height: 52px;
-  padding: 8px 12px;
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
-  background: var(--ui-surface);
+  gap: 14px;
+  min-height: 88px;
+  padding: 16px 18px;
   color: var(--ui-text);
-  transition:
-    border-color var(--ui-dur-fast) var(--ui-ease-out),
-    background-color var(--ui-dur-fast) var(--ui-ease-out),
-    transform var(--ui-dur-fast) var(--ui-ease-out);
 }
-.cat-challenge:hover {
-  border-color: var(--ui-border-strong);
-  background: var(--ui-surface-hover);
-  transform: translateY(-1px);
-}
-.cat-challenge:active {
-  transform: translateY(0) scale(0.99);
-}
-.cat-challenge-mark {
+.cat-mission-mark {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--ui-radius-sm);
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
   background: var(--ui-accent-soft);
   color: var(--ui-accent);
 }
-.cat-challenge.is-complete .cat-challenge-mark {
+.cat-mission.is-complete .cat-mission-mark {
   background: var(--ui-success-soft);
   color: var(--ui-success);
 }
-.cat-challenge-title {
+.cat-mission-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.cat-mission-copy small {
+  color: var(--ui-text-3);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.cat-mission-copy strong {
   overflow: hidden;
-  font-size: var(--ui-text-sm);
+  font-size: var(--ui-text-md);
   font-weight: 500;
   line-height: var(--ui-leading-snug);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.cat-challenge-xp {
+.cat-mission-xp {
   display: grid;
   justify-items: end;
-  font-size: var(--ui-text-sm);
+  font-size: var(--ui-text-lg);
   font-weight: 500;
   line-height: 1.1;
 }
-.cat-challenge-xp small {
+.cat-mission-xp small {
   color: var(--ui-text-3);
   font-family: var(--ui-font-mono);
   font-size: 10px;
-  letter-spacing: 0.03em;
+  font-weight: 400;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+.cat-mission-arrow {
+  color: var(--ui-text-3);
+  transition:
+    transform var(--ui-dur) var(--ui-ease-out),
+    color var(--ui-dur) var(--ui-ease-out);
+}
+.cat-mission:hover .cat-mission-arrow {
+  color: var(--ui-text);
+  transform: translateX(3px);
 }
 
 /* Recommended reading strip (RecommendedPaths.tsx), used on CTF pages. */
@@ -213,8 +593,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 32px;
-  padding: 0 10px;
+  min-height: 34px;
+  padding: 0 12px;
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius-sm);
   background: var(--ui-surface);

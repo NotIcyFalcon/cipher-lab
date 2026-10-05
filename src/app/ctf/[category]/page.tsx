@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Flag, Lightbulb, Orbit, Trophy } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Flag, Lightbulb, Orbit, Trophy } from "lucide-react";
 
 import RecommendedPaths from "@/components/RecommendedPaths";
 import { pathHref } from "@/lib/path-links";
@@ -31,26 +31,24 @@ export default async function CTFCategoryPage({
 
   return (
     <>
-      <header className="ui-page-head">
-        <nav aria-label="Breadcrumb">
-          <ol className="ui-breadcrumb">
-            <li>
-              <Link href="/ctf">
-                <ArrowLeft size={13} aria-hidden="true" />
-                CTF
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li aria-current="page">{category.name}</li>
-          </ol>
-        </nav>
-        <div className="ui-page-head-row">
-          <div>
-            <h1 className="ui-title">{category.name}</h1>
-            {category.description && <p className="ui-lede">{category.description}</p>}
-          </div>
+      <header className="ui-page-head cat-hero">
+        <div className="cat-hero-copy">
+          <nav aria-label="Breadcrumb">
+            <ol className="ui-breadcrumb">
+              <li>
+                <Link href="/ctf">
+                  <ArrowLeft size={13} aria-hidden="true" />
+                  CTF
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+              <li aria-current="page">{category.name}</li>
+            </ol>
+          </nav>
+          <h1 className="ui-title">{category.name}</h1>
+          {category.description && <p className="ui-lede">{category.description}</p>}
         </div>
-        <dl className="ui-stats" aria-label={`${category.name} progress`}>
+        <dl className="cat-hero-stats" aria-label={`${category.name} progress`}>
           <div>
             <dt>
               <Flag size={14} aria-hidden="true" />
@@ -68,6 +66,13 @@ export default async function CTFCategoryPage({
             <dd>
               {category.earnedXp} <span>/ {category.achievableXp}</span>
             </dd>
+          </div>
+          <div>
+            <dt>
+              <Orbit size={14} aria-hidden="true" />
+              CTFs
+            </dt>
+            <dd>{category.ctfs.length}</dd>
           </div>
           <div>
             <dt>
@@ -140,8 +145,8 @@ export default async function CTFCategoryPage({
                           </summary>
 
                           <div className="ui-acc-body">
-                            <ul className="cat-challenges">
-                              {universe.challenges.map((challenge) => {
+                            <ul className="cat-missions">
+                              {universe.challenges.map((challenge, index) => {
                                 const { completed, awardedXp, achievableXp, penaltyXp } = challenge.state;
                                 const xp = completed ? awardedXp ?? 0 : achievableXp;
 
@@ -149,19 +154,27 @@ export default async function CTFCategoryPage({
                                   <li key={challenge.id}>
                                     <Link
                                       href={`/ctf/challenge/${challenge.id}`}
-                                      className={`cat-challenge${completed ? " is-complete" : ""}`}
+                                      className={`ui-tile cat-mission${completed ? " is-complete" : ""}`}
+                                      data-spot
                                       aria-label={`${challenge.title}, ${
-                                        completed ? `captured, ${xp} XP earned` : `${xp} XP available`
+                                        completed ? `captured, ${xp} XP earned, re-attempt` : `${xp} XP available`
                                       }`}
                                     >
-                                      <span className="cat-challenge-mark" aria-hidden="true">
-                                        {completed ? <CheckCircle2 size={16} /> : <Flag size={15} />}
+                                      <span className="cat-mission-mark" aria-hidden="true">
+                                        {completed ? <CheckCircle2 size={19} /> : <Flag size={18} />}
                                       </span>
-                                      <span className="cat-challenge-title">{challenge.title}</span>
-                                      <span className="cat-challenge-xp ui-num" aria-hidden="true">
+                                      <span className="cat-mission-copy" aria-hidden="true">
+                                        <small>
+                                          Mission {String(index + 1).padStart(2, "0")}
+                                          {completed ? " · captured" : penaltyXp > 0 ? ` · −${penaltyXp} hints` : ""}
+                                        </small>
+                                        <strong>{challenge.title}</strong>
+                                      </span>
+                                      <span className="cat-mission-xp ui-num" aria-hidden="true">
                                         {xp}
-                                        <small>{completed ? "XP earned" : penaltyXp > 0 ? `XP · −${penaltyXp}` : "XP"}</small>
+                                        <small>{completed ? "XP earned" : "XP"}</small>
                                       </span>
+                                      <ArrowRight className="cat-mission-arrow" size={16} aria-hidden="true" />
                                     </Link>
                                   </li>
                                 );

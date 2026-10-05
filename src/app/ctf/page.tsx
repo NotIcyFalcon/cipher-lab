@@ -43,25 +43,26 @@ export default async function CTFPage() {
     { ctfs: 0, challenges: 0, completed: 0, earned: 0, achievable: 0 },
   );
 
-  const openTopic =
-    topics.find((topic) => topic.completedCount > 0 && topic.completedCount < topic.challengeCount)?.id ??
-    topics.find((topic) => topic.ctfs.length > 0)?.id;
+  const openTopics = new Set(
+    topics.filter((topic) => topic.completedCount > 0 && topic.completedCount < topic.challengeCount).map((topic) => topic.id),
+  );
+  const firstWithCtfs = topics.find((topic) => topic.ctfs.length > 0);
+  if (firstWithCtfs) openTopics.add(firstWithCtfs.id);
 
   return (
     <>
-      <header className="ui-page-head">
-        <span className="ui-eyebrow">Capture the flag</span>
-        <div className="ui-page-head-row">
-          <div>
-            <h1 className="ui-title">
-              Follow the signal. <em>Capture the flag.</em>
-            </h1>
-            <p className="ui-lede">
-              Topics hold CTFs, CTFs hold universes of challenges. Pick any challenge; captures are recorded once.
-            </p>
-          </div>
+      <header className="ui-page-head cat-hero">
+        <div className="cat-hero-copy">
+          <span className="ui-eyebrow">Capture the flag</span>
+          <h1 className="ui-title">
+            Follow the signal. <em>Capture the flag.</em>
+          </h1>
+          <p className="ui-lede">
+            Topics hold CTFs, CTFs hold universes of challenges. Pick any challenge; captures are recorded once and
+            hints lower what a challenge can still award.
+          </p>
         </div>
-        <dl className="ui-stats" aria-label="Your CTF progress">
+        <dl className="cat-hero-stats" aria-label="Your CTF progress">
           <div>
             <dt>
               <Compass size={14} aria-hidden="true" />
@@ -109,14 +110,17 @@ export default async function CTFPage() {
           placeholder="Search CTFs and challenges"
           categories={topics.map((topic) => ({ id: topic.id, label: topic.name, count: topic.ctfs.length }))}
         >
-          <div className="ui-accordion">
-            {topics.map((topic) => {
+          <div className="ui-accordion cat-topics">
+            {topics.map((topic, index) => {
               const Icon = TOPIC_ICONS[topic.id] ?? Boxes;
 
               return (
-                <details key={topic.id} className="ui-acc" open={topic.id === openTopic} data-filter-group>
+                <details key={topic.id} className="ui-acc cat-topic" open={openTopics.has(topic.id)} data-filter-group>
                   <summary>
                     <span className="ui-acc-title">
+                      <span className="cat-topic-index" aria-hidden="true">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
                       <h2>{topic.name}</h2>
                       {topic.description && <span className="ui-muted cat-topic-desc">{topic.description}</span>}
                     </span>
@@ -135,11 +139,11 @@ export default async function CTFPage() {
                         No CTFs in this topic yet.
                       </p>
                     ) : (
-                      <ul className="ui-list-grid">
+                      <ul className="ui-tile-grid">
                         {topic.ctfs.map((ctf) => {
                           const complete = ctf.challengeCount > 0 && ctf.completedCount === ctf.challengeCount;
                           const percentage =
-                            ctf.challengeCount > 0 ? Math.round((ctf.completedCount / ctf.challengeCount) * 100) : 0;
+                            ctf.achievableXp > 0 ? Math.round((ctf.earnedXp / ctf.achievableXp) * 100) : complete ? 100 : 0;
                           const challengeTitles = ctf.universes
                             .flatMap((universe: { challenges: { title: string }[] }) =>
                               universe.challenges.map((challenge) => challenge.title),
@@ -153,13 +157,17 @@ export default async function CTFPage() {
                               data-filter-category={topic.id}
                               data-filter-text={`${ctf.name} ${topic.name} ${ctf.difficulty ?? ""} ${challengeTitles}`}
                             >
-                              <article className="ui-row cat-ctf">
-                                <span className={`ui-row-icon${complete ? " is-complete" : ""}`} aria-hidden="true">
-                                  {complete ? <CheckCircle2 size={17} /> : <Icon size={17} />}
-                                </span>
+                              <article className="ui-tile cat-card" data-spot>
+                                <div className="cat-card-top">
+                                  <span className={`cat-card-icon${complete ? " is-complete" : ""}`} aria-hidden="true">
+                                    {complete ? <CheckCircle2 size={20} /> : <Icon size={20} strokeWidth={1.7} />}
+                                  </span>
+                                  {ctf.difficulty && <span className="cat-state-badge">{ctf.difficulty}</span>}
+                                </div>
 
-                                <div className="ui-row-main">
-                                  <h3 className="ui-row-title">
+                                <div className="cat-card-body">
+                                  <span className="ui-label">{topic.name}</span>
+                                  <h3 className="cat-card-title">
                                     <Link
                                       href={`/ctf/${encodeURIComponent(topic.id)}#ctf-${ctf.id}`}
                                       className="ui-stretched"
@@ -167,36 +175,38 @@ export default async function CTFPage() {
                                       {ctf.name}
                                     </Link>
                                   </h3>
-                                  <div className="ui-row-meta">
-                                    {ctf.difficulty && <span className="ui-badge">{ctf.difficulty}</span>}
-                                    <span>{plural(ctf.challengeCount, "challenge")}</span>
-                                    <span>
-                                      {ctf.completedCount}/{ctf.challengeCount} captured
-                                    </span>
-                                    {ctf.penaltyXp > 0 && (
-                                      <span>
-                                        <Lightbulb size={12} aria-hidden="true" />-{ctf.penaltyXp} hints
-                                      </span>
-                                    )}
+                                  <p className="cat-card-sub">
+                                    {plural(ctf.challengeCount, "challenge")} · {ctf.completedCount} captured
+                                    {ctf.universes.length > 1 && ` · ${plural(ctf.universes.length, "universe")}`}
+                                  </p>
+                                  {ctf.description && <p className="cat-card-desc">{ctf.description}</p>}
+                                </div>
+
+                                <div className="cat-card-progress">
+                                  <div className="cat-card-progress-head">
+                                    <span>Earned / achievable</span>
+                                    <strong className="ui-num">
+                                      {ctf.earnedXp} <span>/ {ctf.achievableXp} XP</span>
+                                    </strong>
                                   </div>
                                   <div
                                     className={`ui-meter${complete ? " is-complete" : ""}`}
                                     role="img"
-                                    aria-label={`${ctf.completedCount} of ${ctf.challengeCount} challenges captured`}
+                                    aria-label={`${ctf.earnedXp} of ${ctf.achievableXp} XP earned`}
                                   >
                                     <span style={{ "--value": percentage / 100 } as CSSProperties} />
                                   </div>
                                 </div>
 
-                                <div className="ui-row-end">
-                                  <span className="cat-points ui-num">
-                                    {ctf.earnedXp}
-                                    <small>/{ctf.achievableXp} XP</small>
+                                <footer className="cat-card-foot">
+                                  <span className={complete ? "cat-card-done" : "cat-card-count"}>
+                                    {complete ? "All captured" : `${ctf.completedCount}/${ctf.challengeCount}`}
                                   </span>
-                                  <span className="ui-arrow" aria-hidden="true">
-                                    <ArrowRight size={16} />
+                                  <span className="cat-card-cta" aria-hidden="true">
+                                    Explore
+                                    <ArrowRight size={14} />
                                   </span>
-                                </div>
+                                </footer>
                               </article>
                             </li>
                           );

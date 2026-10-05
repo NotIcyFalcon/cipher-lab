@@ -308,12 +308,22 @@
 
 /* ---------- Toolbar: search + filter chips ---------- */
 
+/* Sticks under the navigation while you scroll a long catalog. */
 .ui-toolbar {
+  position: sticky;
+  top: calc(var(--ui-nav-h-compact) + 8px);
+  z-index: 20;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ui-space-3);
-  margin-bottom: var(--ui-space-5);
+  margin-bottom: var(--ui-space-6);
+  padding: 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: rgb(5 7 40 / 0.78);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
 }
 
 .ui-search {
@@ -969,4 +979,92 @@
 [data-filter-item][hidden],
 [data-filter-group][hidden] {
   display: none !important;
+}
+
+
+/* ---------- Tiles: full-size cards with a cursor spotlight ---------- */
+
+/* PointerSpotlight.tsx sets --mx/--my (and a small tilt) on [data-spot]. */
+.ui-tile {
+  --mx: 50%;
+  --my: 0%;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  padding: 20px 20px 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-card);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset;
+  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--lift, 0px));
+  transition:
+    transform 500ms var(--ui-ease-out),
+    border-color var(--ui-dur) var(--ui-ease-out),
+    box-shadow var(--ui-dur-slow) var(--ui-ease-out);
+}
+.ui-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(420px circle at var(--mx) var(--my), rgb(167 139 250 / 0.17), transparent 45%);
+  opacity: 0;
+  transition: opacity var(--ui-dur-slow) var(--ui-ease-out);
+}
+.ui-tile::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(240px circle at var(--mx) var(--my), rgb(232 121 249 / 0.75), transparent 65%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ui-dur-slow) var(--ui-ease-out);
+}
+.ui-tile:hover {
+  --lift: -4px;
+  border-color: var(--ui-border-strong);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 30px 60px -30px rgb(0 0 0 / 0.8), 0 0 0 1px rgb(167 139 250 / 0.08);
+}
+.ui-tile:hover::before,
+.ui-tile:hover::after,
+.ui-tile:focus-within::before {
+  opacity: 1;
+}
+.ui-tile.is-locked {
+  border-style: dashed;
+  border-color: var(--ui-border-strong);
+  background: rgb(8 10 36 / 0.72);
+}
+.ui-tile.is-locked:hover {
+  --lift: 0px;
+  box-shadow: none;
+}
+.ui-tile.is-locked::after {
+  display: none;
+}
+
+.ui-tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr));
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ui-tile-grid > li {
+  display: grid;
 }

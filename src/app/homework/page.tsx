@@ -21,6 +21,8 @@ type Assignment = {
   earned: number;
   available: number;
   solved: number;
+  readingCount: number;
+  lessonCount: number;
 };
 
 const plural = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`;
@@ -43,7 +45,7 @@ export default async function HomeworkPage({
 
   const assignments: Assignment[] = paths.map((path) => {
     const unlocked = isHomeworkPathUnlocked(userId, path.id);
-    const readingComplete = getPathProgress(path, progress).readingComplete;
+    const stats = getPathProgress(path, progress);
     let earned = 0;
     let available = 0;
     let solved = 0;
@@ -55,7 +57,16 @@ export default async function HomeworkPage({
       if (question.totalPoints > 0 && best >= question.totalPoints) solved += 1;
     }
 
-    return { path, unlocked, preview: unlocked && !readingComplete, earned, available, solved };
+    return {
+      path,
+      unlocked,
+      preview: unlocked && !stats.readingComplete,
+      earned,
+      available,
+      solved,
+      readingCount: stats.readingCount,
+      lessonCount: stats.lessonCount,
+    };
   });
 
   const topics = new Map<string, { id: string; name: string; items: Assignment[] }>();
@@ -82,25 +93,23 @@ export default async function HomeworkPage({
 
   return (
     <>
-      <header className="ui-page-head">
-        <span className="ui-eyebrow">Assignments</span>
-        <div className="ui-page-head-row">
-          <div>
-            <h1 className="ui-title">
-              Home<em>work</em>
-            </h1>
-            <p className="ui-lede">
-              Finish a learning path&apos;s chapters to unlock its homework. Every passing test earns XP, a
-              question&apos;s bonus is added when all of its tests pass, and only your best attempt counts.
-            </p>
-          </div>
+      <header className="ui-page-head cat-hero">
+        <div className="cat-hero-copy">
+          <span className="ui-eyebrow">Assignments</span>
+          <h1 className="ui-title">
+            Home<em>work</em>
+          </h1>
+          <p className="ui-lede">
+            Finish a learning path&apos;s chapters to unlock its homework. Every passing test earns XP, a
+            question&apos;s bonus is added when all of its tests pass, and only your best attempt counts.
+          </p>
           {typeof query.path === "string" && (
-            <Link href="/homework" className="ui-btn ui-btn-ghost ui-btn-sm">
+            <Link href="/homework" className="ui-btn ui-btn-ghost ui-btn-sm cat-hero-action">
               Show all homework
             </Link>
           )}
         </div>
-        <dl className="ui-stats" aria-label="Homework overview">
+        <dl className="cat-hero-stats" aria-label="Homework overview">
           <div>
             <dt>
               <FileCode2 size={14} aria-hidden="true" />
@@ -148,14 +157,17 @@ export default async function HomeworkPage({
           placeholder="Search homework"
           categories={groups.map((group) => ({ id: group.id, label: group.name, count: group.items.length }))}
         >
-          <div className="ui-accordion">
+          <div className="ui-accordion cat-topics">
             {groups.map((group, index) => {
               const open = index === 0 || group.items.some((item) => item.unlocked && item.solved < item.path.homework.length);
 
               return (
-                <details key={group.id} className="ui-acc" open={open} data-filter-group>
+                <details key={group.id} className="ui-acc cat-topic" open={open} data-filter-group>
                   <summary>
                     <span className="ui-acc-title">
+                      <span className="cat-topic-index" aria-hidden="true">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
                       <h2>{group.name}</h2>
                       <span className="ui-label">{plural(group.items.length, "assignment")}</span>
                     </span>
@@ -168,7 +180,7 @@ export default async function HomeworkPage({
                   </summary>
 
                   <div className="ui-acc-body">
-                    <ul className="ui-list-grid">
+                    <ul className="ui-tile-grid">
                       {group.items.map((item) => (
                         <li
                           key={item.path.id}
@@ -178,7 +190,7 @@ export default async function HomeworkPage({
                             .map((question) => question.title)
                             .join(" ")}`}
                         >
-                          {item.unlocked ? <UnlockedRow item={item} /> : <LockedRow item={item} />}
+                          {item.unlocked ? <HomeworkCard item={item} /> : <LockedCard item={item} />}
                         </li>
                       ))}
                     </ul>
@@ -193,80 +205,114 @@ export default async function HomeworkPage({
   );
 }
 
-function UnlockedRow({ item }: { item: Assignment }) {
+function HomeworkCard({ item }: { item: Assignment }) {
   const { path, earned, available, solved } = item;
   const total = path.homework.length;
   const complete = total > 0 && solved >= total;
   const percentage = available > 0 ? Math.round((earned / available) * 100) : 0;
-  const status = complete ? "Complete" : earned > 0 ? "In progress" : "Not started";
+  const state = complete ? "complete" : earned > 0 ? "progress" : "new";
+  const label = complete ? "Complete" : earned > 0 ? "In progress" : "Not started";
 
   return (
-    <article className="ui-row cat-homework">
-      <span className={`ui-row-icon${complete ? " is-complete" : ""}`} aria-hidden="true">
-        {complete ? <Check size={17} /> : <FileCode2 size={17} />}
-      </span>
+    <article className="ui-tile cat-card" data-spot>
+      <div className="cat-card-top">
+        <span className={`cat-card-icon${complete ? " is-complete" : ""}`} aria-hidden="true">
+          {complete ? <Check size={20} /> : <FileCode2 size={20} />}
+        </span>
+        <span className={`cat-state-badge is-${state}`}>
+          {complete && <Check size={12} aria-hidden="true" />}
+          {label}
+        </span>
+      </div>
 
-      <div className="ui-row-main">
-        <h3 className="ui-row-title">
+      <div className="cat-card-body">
+        <span className="ui-label">Homework</span>
+        <h3 className="cat-card-title">
           <Link href={`/homework/${encodeURIComponent(path.id)}`} className="ui-stretched">
             {path.title}
           </Link>
         </h3>
-        <div className="ui-row-meta">
-          <span>{plural(total, "question")}</span>
-          <span>
-            {solved}/{total} solved
-          </span>
-          <span className={`cat-state is-${complete ? "complete" : earned > 0 ? "progress" : "new"}`}>{status}</span>
-          {item.preview && (
-            <span className="ui-badge ui-badge-accent" title="Learners see this as locked until the path is read">
-              <Eye size={11} aria-hidden="true" />
+        <p className="cat-card-sub">
+          {plural(total, "question")} · {solved}/{total} solved
+        </p>
+        {item.preview && (
+          <div className="cat-card-tags">
+            <span className="is-accent" title="Learners see this as locked until the path is read">
+              <Eye size={12} aria-hidden="true" />
               Admin preview
             </span>
-          )}
+          </div>
+        )}
+      </div>
+
+      <ul className="cat-card-questions">
+        {path.homework.slice(0, 3).map((question, index) => (
+          <li key={question.questionId}>
+            <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+            {question.title || `Question ${index + 1}`}
+          </li>
+        ))}
+        {total > 3 && <li className="is-more">+{total - 3} more</li>}
+      </ul>
+
+      <div className="cat-card-progress">
+        <div className="cat-card-progress-head">
+          <span>Homework XP</span>
+          <strong className="ui-num">
+            {earned} <span>/ {available}</span>
+          </strong>
         </div>
-        <div
-          className={`ui-meter${complete ? " is-complete" : ""}`}
-          role="img"
-          aria-label={`${earned} of ${available} XP earned`}
-        >
+        <div className={`ui-meter${complete ? " is-complete" : ""}`} role="img" aria-label={`${earned} of ${available} XP earned`}>
           <span style={{ "--value": percentage / 100 } as CSSProperties} />
         </div>
       </div>
 
-      <div className="ui-row-end">
-        <span className="cat-points ui-num">
-          {earned}
-          <small>/{available} XP</small>
+      <footer className="cat-card-foot">
+        <span className="cat-card-cta" aria-hidden="true">
+          {complete ? "Review answers" : earned > 0 ? "Continue homework" : "Open homework"}
+          <ArrowRight size={14} />
         </span>
-        <span className="ui-arrow" aria-hidden="true">
-          <ArrowRight size={16} />
-        </span>
-      </div>
+      </footer>
     </article>
   );
 }
 
 /** Locked homework is shown but cannot be opened or focused. */
-function LockedRow({ item }: { item: Assignment }) {
-  const { path, available } = item;
+function LockedCard({ item }: { item: Assignment }) {
+  const { path, available, readingCount, lessonCount } = item;
 
   return (
-    <article className="ui-row cat-homework is-locked">
-      <span className="ui-row-icon" aria-hidden="true">
-        <Lock size={16} />
-      </span>
+    <article className="ui-tile cat-card is-locked" data-spot>
+      <div className="cat-card-top">
+        <span className="cat-card-icon is-locked" aria-hidden="true">
+          <Lock size={18} />
+        </span>
+        <span className="cat-state-badge is-locked">Locked</span>
+      </div>
 
-      <div className="ui-row-main">
-        <h3 className="ui-row-title">{path.title}</h3>
-        <div className="ui-row-meta">
-          <span>{plural(path.homework.length, "question")}</span>
-          <span>{available} XP</span>
-        </div>
-        <p className="ui-lock-note">
-          <Lock size={12} aria-hidden="true" />
-          Complete {path.title} to unlock
+      <div className="cat-card-body">
+        <span className="ui-label">Homework</span>
+        <h3 className="cat-card-title">{path.title}</h3>
+        <p className="cat-card-sub">
+          {plural(path.homework.length, "question")} · {available} XP
         </p>
+      </div>
+
+      <p className="cat-lock-message">
+        <Lock size={14} aria-hidden="true" />
+        Complete {path.title} to unlock
+      </p>
+
+      <div className="cat-card-progress">
+        <div className="cat-card-progress-head">
+          <span>Chapters read</span>
+          <strong className="ui-num">
+            {readingCount} <span>/ {lessonCount}</span>
+          </strong>
+        </div>
+        <div className="ui-meter" role="img" aria-label={`${readingCount} of ${lessonCount} chapters read`}>
+          <span style={{ "--value": lessonCount > 0 ? readingCount / lessonCount : 0 } as CSSProperties} />
+        </div>
       </div>
     </article>
   );

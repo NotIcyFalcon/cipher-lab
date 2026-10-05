@@ -12,8 +12,11 @@
   /* ---------- Colour: canvas & surfaces ---------- */
   --ui-bg: #000120;
   --ui-bg-raised: #05072c;
-  --ui-surface: rgb(255 255 255 / 0.035);
-  --ui-surface-hover: rgb(255 255 255 / 0.06);
+  /* Surfaces are mostly opaque so foreground tiles read cleanly over the
+     animated background (AmbientBackground). */
+  --ui-surface: rgb(11 13 46 / 0.8);
+  --ui-surface-hover: rgb(17 19 60 / 0.88);
+  --ui-card: linear-gradient(180deg, rgb(17 19 58 / 0.9), rgb(8 10 38 / 0.9));
   --ui-surface-strong: rgb(255 255 255 / 0.085);
   --ui-surface-solid: #0b0d35;
   --ui-overlay: rgb(0 1 32 / 0.82);

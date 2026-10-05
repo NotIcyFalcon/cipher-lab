@@ -404,9 +404,22 @@
   }
 }
 
+/* ---------- Animated background (AmbientBackground.tsx) ---------- */
+
+.ui-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
 /* ---------- Main content & page transitions ---------- */
 
 .ui-main {
+  position: relative;
+  z-index: 1;
   flex: 1;
   padding-top: var(--ui-nav-h);
 }
@@ -462,8 +475,13 @@
 /* ---------- Footer ---------- */
 
 .ui-footer {
+  position: relative;
+  z-index: 1;
   margin-top: auto;
   border-top: 1px solid var(--ui-border);
+  background: rgb(0 1 32 / 0.6);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 .ui-footer-inner {
   display: flex;

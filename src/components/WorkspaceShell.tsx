@@ -3,27 +3,39 @@ import Link from "next/link";
 import { Box } from "lucide-react";
 import SiteNav from "@/components/ui/SiteNav";
 import PageTransition from "@/components/ui/PageTransition";
+import AmbientBackground from "@/components/ui/AmbientBackground";
+import PointerSpotlight from "@/components/ui/PointerSpotlight";
 
 export default function WorkspaceShell({
   current,
   userId,
   children,
+  immersive = false,
 }: {
   current: string;
   userId: string;
   children: ReactNode;
+  /** Full-bleed page that paints its own background (the dashboard showcase). */
+  immersive?: boolean;
 }) {
   return (
     // workspace-frame stays for older page styles that are scoped under it.
-    <div className="ui-shell workspace-frame">
+    <div className={`ui-shell workspace-frame${immersive ? " is-immersive" : ""}`}>
       <a href="#main-content" className="ui-skip-link">
         Skip to content
       </a>
 
+      {!immersive && (
+        <>
+          <AmbientBackground />
+          <PointerSpotlight />
+        </>
+      )}
+
       <SiteNav current={current} userId={userId} />
 
       <main id="main-content" className="ui-main" tabIndex={-1}>
-        <PageTransition>{children}</PageTransition>
+        {immersive ? children : <PageTransition>{children}</PageTransition>}
       </main>
 
       <footer className="ui-footer">

@@ -36,27 +36,25 @@ export default async function HomeworkPathPage({
 
   return (
     <>
-      <header className="ui-page-head">
-        <nav aria-label="Breadcrumb">
-          <ol className="ui-breadcrumb">
-            <li>
-              <Link href="/homework">
-                <ArrowLeft size={13} aria-hidden="true" />
-                Homework
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li aria-current="page">{path.topicName}</li>
-          </ol>
-        </nav>
-        <div className="ui-page-head-row">
-          <div>
-            <h1 className="ui-title">{path.title}</h1>
-            <p className="ui-lede">
-              Write a script for each question. It runs against hidden and visible tests; you get the expected and
-              actual output for every test that fails.
-            </p>
-          </div>
+      <header className="ui-page-head cat-hero">
+        <div className="cat-hero-copy">
+          <nav aria-label="Breadcrumb">
+            <ol className="ui-breadcrumb">
+              <li>
+                <Link href="/homework">
+                  <ArrowLeft size={13} aria-hidden="true" />
+                  Homework
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+              <li aria-current="page">{path.topicName}</li>
+            </ol>
+          </nav>
+          <h1 className="ui-title">{path.title}</h1>
+          <p className="ui-lede">
+            Write a script for each question. It runs against hidden and visible tests; you get the expected and
+            actual output for every test that fails.
+          </p>
           {unlocked && !stats.readingComplete && (
             <span className="ui-badge ui-badge-accent">
               <Eye size={11} aria-hidden="true" />
@@ -64,7 +62,7 @@ export default async function HomeworkPathPage({
             </span>
           )}
         </div>
-        <dl className="ui-stats" aria-label="Assignment overview">
+        <dl className="cat-hero-stats" aria-label="Assignment overview">
           <div>
             <dt>
               <ListChecks size={14} aria-hidden="true" />
